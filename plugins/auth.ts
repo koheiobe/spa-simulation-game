@@ -1,9 +1,9 @@
 import firebase from '~/plugins/firebase'
 
-export function getCurrentLoginUser() {
+export function getCurrentLoginUser(): Promise<firebase.User | null> {
   return new Promise((resolve) => {
     firebase.auth().onAuthStateChanged((user) => {
-      resolve(user || false)
+      resolve(user)
     })
   })
 }
