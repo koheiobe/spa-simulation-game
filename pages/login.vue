@@ -1,32 +1,123 @@
 <template>
   <div :class="$style.containerWrapper">
     <div :class="$style.container">
-      <div id="firebaseui-auth-container"></div>
+      <b-form @submit="onSubmit">
+        <b-form-group
+          id="input-group-1"
+          label="メールアドレス"
+          label-for="input-1"
+        >
+          <b-form-input
+            id="input-1"
+            v-model="email"
+            type="email"
+            required
+            placeholder=""
+          ></b-form-input>
+        </b-form-group>
+
+        <b-form-group id="input-group-2" label="パスワード" label-for="input-2">
+          <b-form-input
+            id="input-2"
+            v-model="password"
+            required
+            placeholder=""
+          ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+          v-if="isCreateAccount"
+          id="input-group-2"
+          label="名前"
+          label-for="input-2"
+        >
+          <b-form-input
+            id="input-2"
+            v-model="name"
+            required
+            placeholder=""
+          ></b-form-input>
+        </b-form-group>
+        <div v-if="!isCreateAccount">
+          <b-button type="submit" variant="primary">ログイン</b-button>
+          <p>
+            アカウントを作成する場合<a @click="toggleIsCreateAccount">こちら</a>
+          </p>
+        </div>
+        <div v-if="isCreateAccount">
+          <b-button type="submit" variant="primary">登録</b-button>
+          <p>ログインする場合<a @click="toggleIsCreateAccount">こちら</a></p>
+        </div>
+        <p v-if="errorMessage" :class="$style.errorMessage">
+          {{ errorMessage }}
+        </p>
+      </b-form>
     </div>
   </div>
 </template>
 
-<script>
-import * as firebaseui from 'firebaseui'
-import firebase from '~/plugins/firebase'
-import 'firebaseui/dist/firebaseui.css'
+<script lang="ts">
+import Component from 'vue-class-component'
+import { Vue } from 'vue-property-decorator'
+import { createUserWithEmailAndPassword, signIn } from '~/plugins/auth'
+import { isLoginUserExists, setLoginUser } from '~/plugins/database'
 
-// 下記サイトを参考にしつつ、自前のログインuiを作成する
-// 入力フォームは名前のみでOKの予定
-// https://employment.en-japan.com/engineerhub/entry/2019/06/07/103000#Authentication
-export default {
-  layout: 'login',
-  mounted() {
-    const uiConfig = {
-      signInSuccessUrl: '/',
-      signInOptions: [
-        firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID,
-        firebase.auth.GoogleAuthProvider.PROVIDER_ID
-      ]
+@Component({
+  layout: 'login'
+})
+export default class Login extends Vue {
+  public isCreateAccount: boolean = false
+  public email: string = ''
+  public password: string = ''
+  public name: string = ''
+  public errorMessage: string = ''
+
+  toggleIsCreateAccount() {
+    this.isCreateAccount = !this.isCreateAccount
+  }
+
+  async onSubmit(evt: any) {
+    evt.preventDefault()
+    const userCredential = this.isCreateAccount
+      ? await createUserWithEmailAndPassword(this.email, this.password).catch(
+          (err) => {
+            this.onErrorAuth(err)
+          }
+        )
+      : await signIn(this.email, this.password).catch((err) => {
+          this.onErrorAuth(err)
+        })
+    if (userCredential === undefined || userCredential.user === null) return
+    const uid = userCredential.user.uid
+    if (!isLoginUserExists(uid)) {
+      setLoginUser(uid, {
+        name: this.name,
+        battleId: '',
+        roomId: ''
+      })
     }
+    this.$router.push('/')
+  }
 
-    const ui = new firebaseui.auth.AuthUI(firebase.auth())
-    ui.start('#firebaseui-auth-container', uiConfig)
+  onErrorAuth(err: any) {
+    switch (err.code) {
+      case 'auth/user-not-found':
+        this.errorMessage = 'アカウントが存在しません'
+        break
+      case 'auth/wrong-password':
+        this.errorMessage = 'パスワードが違います'
+        break
+      case 'auth/email-already-in-use':
+        this.errorMessage = 'メールアドレスがすでに使用されています'
+        break
+      case 'auth/weak-password':
+        this.errorMessage = 'パスワードは6桁以上で設定してください'
+        break
+      default:
+        this.errorMessage = `${
+          this.isCreateAccount ? 'アカウント作成' : 'ログイン'
+        }に失敗しました。管理者に連絡してください。`
+    }
   }
 }
 </script>
@@ -42,6 +133,20 @@ export default {
 
   .container {
     background-color: white;
+    padding: 16px;
+    border-radius: 4px;
+
+    p {
+      font-size: 12px;
+      a {
+        color: blue;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .errorMessage {
+    color: red;
   }
 }
 </style>

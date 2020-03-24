@@ -1,21 +1,41 @@
-import { vuexfireMutations } from 'vuexfire'
-import Vue from 'vue'
-import Vuex, { StoreOptions } from 'vuex'
-import { RootState } from './types'
-import users from './user'
+import { vuexfireMutations, firestoreAction } from 'vuexfire'
+import { ActionTree } from 'vuex'
+import { IUser, RootState } from '~/types/store'
+// import Vue from 'vue'
+// import Vuex, { StoreOptions } from 'vuex'
+// import { RootState } from './types'
+// import users from './user'
 
-Vue.use(Vuex)
+// Vue.use(Vuex)
 
-const store: StoreOptions<RootState> = {
-  state: {
-    version: '1.0.0'
-  },
-  mutations: {
-    ...vuexfireMutations
-  },
-  modules: {
-    users
-  }
+// const store: StoreOptions<RootState> = {
+//   state: {
+//     version: '1.0.0'
+//   },
+//   mutations: {
+//     ...vuexfireMutations
+//   },
+//   modules: {
+//     users
+//   }
+// }
+
+// export default new Vuex.Store<RootState>(store)
+
+export const state = {
+  version: '1.0.0'
 }
 
-export default new Vuex.Store<RootState>(store)
+export const mutations = {
+  ...vuexfireMutations
+}
+
+const userActions: ActionTree<IUser, RootState> = {
+  setUserRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+    bindFirestoreRef('user', ref)
+  })
+}
+
+export const actions = {
+  ...userActions
+}

@@ -13,10 +13,10 @@
         <b-nav-item-dropdown right>
           <!-- Using 'button-content' slot -->
           <template v-slot:button-content>
-            <em>User</em>
+            <em>{{ userName }}</em>
           </template>
           <b-dropdown-item href="#">Profile</b-dropdown-item>
-          <b-dropdown-item href="#">Sign Out</b-dropdown-item>
+          <b-dropdown-item @click="signOut">Sign Out</b-dropdown-item>
         </b-nav-item-dropdown>
       </b-navbar-nav>
     </b-navbar>
@@ -26,30 +26,38 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
+import { namespace } from 'vuex-class'
 import * as auth from '~/plugins/auth'
+import * as db from '~/plugins/database'
+import { IUser } from '~/types/store'
+
+const ItemModule = namespace('user')
 
 @Component
 export default class NavBar extends Vue {
-  async mounted() {
-    const user = await auth.getCurrentLoginUser()
-    console.log(user)
-    // ログインしてなかったらログイン画面へ
-    if (!user) {
-      this.logout()
-      return null
-    }
-    // ユーザーemailが存在しなければゲストとして一時的にログインさせる
-    if (user.email === '' || user.email === null) {
-      // this.setLoginUser({
-      //   name: 'Guest',
-      //   email: ''
-      // })
-      return null
-    }
+  @ItemModule.Getter('getUser')
+  private getStoreUser!: IUser
+
+  get userName() {
+    return this.getStoreUser && this.getStoreUser.name
   }
 
-  logout() {
-    auth.logout().then(() => this.$router.push('/'))
+  mounted() {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        this.syncFirestoreVuex(user.uid)
+      } else {
+        this.$store.dispatch('user/setUserAsGuest')
+      }
+    })
+  }
+
+  signOut() {
+    auth.signOut().then(() => this.$router.push('/'))
+  }
+
+  syncFirestoreVuex(uid: string) {
+    this.$store.dispatch('setUserRef', db.getUser(uid))
   }
 }
 </script>
