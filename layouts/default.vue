@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <NavBar />
+  <div :class="$style.container">
+    <NavBar :class="$style.navBar" />
     <nuxt />
   </div>
 </template>
@@ -14,7 +14,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss" module>
 html {
   font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -61,5 +61,14 @@ html {
 .button--grey:hover {
   color: #fff;
   background-color: #35495e;
+}
+
+.container {
+  position: relative;
+}
+
+.navBar {
+  position: fixed;
+  right: 0;
 }
 </style>

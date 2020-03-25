@@ -21,6 +21,7 @@
     "nuxt": "^2.0.0",
     "vue-class-component": "^7.2.3",
     "vue-property-decorator": "^8.4.1",
+    "vue-svg-loader": "^0.16.0",
     "vuex-class": "^0.3.2",
     "vuexfire": "^3.2.2"
   },
