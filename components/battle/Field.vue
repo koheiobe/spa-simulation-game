@@ -86,7 +86,7 @@ export default class Field extends Vue {
     } else if (characterId > 0) {
       this.interactCharacterId = characterId
       this.fillMovableRange(latLng)
-    } else if (isPlacable) {
+    } else if (isPlacable && characterId < 0) {
       this.characters.forEach((character) => {
         if (this.interactCharacterId === character.id) character.latLng = latLng
       })
