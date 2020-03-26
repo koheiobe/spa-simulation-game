@@ -1,6 +1,6 @@
 <template>
-  <div :class="$style.iconContainer">
-    <Centaur v-if="id === 1" />
+  <div>
+    <Centaur v-if="id < 31" :class="[isDeployed ? $style.deployed : '']" />
   </div>
 </template>
 
@@ -16,13 +16,13 @@ export default class CharacterRenderer extends Vue {
   @Prop({ default: 0 })
   id!: number
 
-  mounted() {
-    console.log(this.id)
-  }
+  @Prop({ default: false })
+  isDeployed?: boolean
 }
 </script>
 
 <style lang="scss" module>
-.iconContainer {
+.deployed {
+  opacity: 0.5;
 }
 </style>

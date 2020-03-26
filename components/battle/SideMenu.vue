@@ -12,8 +12,13 @@
             v-for="character in characters"
             :key="character.id"
             :class="$style.iconContainer"
+            :style="selectedBorderStyle(character.id)"
           >
-            <CharacterRenderer :id="character.id" />
+            <CharacterRenderer
+              :id="character.id"
+              :is-deployed="character.isDeployed"
+              @click.native.stop="onClickCharacter(character.id)"
+            />
           </div>
         </div>
         <SideMenuLeftIcon @click="toggleSideMenu()" />
@@ -28,7 +33,7 @@ import { Vue, Prop } from 'vue-property-decorator'
 import SideMenuLeftIcon from '~/assets/leftArrow.svg'
 import SideMenuRightIcon from '~/assets/rightArrow.svg'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
-import Character from '~/class/character'
+import Character from '~/class/character/playableCharacter'
 
 @Component({
   components: {
@@ -41,13 +46,21 @@ export default class SideMenu extends Vue {
   @Prop({ default: () => [] })
   characters!: Character[]
 
-  mounted() {
-    console.log(this.characters)
-  }
+  @Prop({ default: () => [] })
+  selectedCharacterId!: number
 
   public isOpenSideMenu: boolean = false
+
+  selectedBorderStyle(id: number) {
+    return this.selectedCharacterId === id ? { border: '0.5px solid red' } : ''
+  }
+
   toggleSideMenu() {
     this.isOpenSideMenu = !this.isOpenSideMenu
+  }
+
+  onClickCharacter(id: number) {
+    this.$emit('onClickCharacter', id)
   }
 }
 </script>
@@ -65,10 +78,17 @@ export default class SideMenu extends Vue {
   transition: 0.5s;
   align-items: center;
   .sideMenuContent {
+    padding: 16px;
+    height: 100%;
+    width: 100%;
     margin-right: auto;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     .iconContainer {
       margin-right: 8px;
+      width: 50px;
+      height: 50px;
     }
   }
   .sideMenuCloser {

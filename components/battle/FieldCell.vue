@@ -1,5 +1,11 @@
 <template>
-  <div :class="$style.cell" :style="moveArea" @click="onClick">
+  <div
+    :class="[
+      $style.cell,
+      isCharacterPlacableCell ? $style.characterPlacableCell : ''
+    ]"
+    @click="onClick"
+  >
     <CharacterRenderer v-if="character !== undefined" :id="character.id" />
   </div>
 </template>
@@ -9,7 +15,7 @@ import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import { ILatlng } from 'types/battle'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
-import Character from '~/class/character'
+import Character from '~/class/character/playableCharacter'
 
 @Component({
   components: { CharacterRenderer }
@@ -19,21 +25,23 @@ export default class FieldCell extends Vue {
   latLng!: ILatlng
 
   @Prop({ default: false })
-  isMovableArea?: boolean
+  isCharacterPlacableCell?: boolean
 
   @Prop({ default: undefined })
   character?: Character
 
-  get moveArea() {
-    return this.isMovableArea
-      ? {
-          backgroundColor: '#e6e6e6'
-        }
-      : ''
-  }
-
-  onClick() {
-    this.$emit('onClick', this.latLng)
+  onClick(evt: Event) {
+    // placableCell以外をクリックした場合、deployModeをfalseにするために使用
+    if (this.isCharacterPlacableCell) {
+      evt.stopPropagation()
+    }
+    const characterId = this.character === undefined ? -1 : this.character.id
+    this.$emit(
+      'onClick',
+      this.latLng,
+      this.isCharacterPlacableCell,
+      characterId
+    )
   }
 }
 </script>
@@ -45,6 +53,11 @@ export default class FieldCell extends Vue {
   &:hover {
     background-color: #e6e6e6;
   }
-  // border: 1px solid black;
+}
+.characterPlacableCell {
+  background-color: #e6e6e6;
+  &:hover {
+    background-color: blue;
+  }
 }
 </style>
