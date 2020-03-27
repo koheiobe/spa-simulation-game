@@ -2,7 +2,9 @@
   <div
     :class="[
       $style.cell,
-      isCharacterPlacableCell ? $style.characterPlacableCell : ''
+      isCharacterPlacableCell || isInteractiveCell
+        ? $style.characterPlacableCell
+        : ''
     ]"
     @click="onClick"
   >
@@ -27,6 +29,9 @@ export default class FieldCell extends Vue {
   @Prop({ default: false })
   isCharacterPlacableCell?: boolean
 
+  @Prop({ default: false })
+  isInteractiveCell?: boolean
+
   @Prop({ default: undefined })
   character?: Character
 
@@ -40,6 +45,7 @@ export default class FieldCell extends Vue {
       'onClick',
       this.latLng,
       this.isCharacterPlacableCell,
+      this.isInteractiveCell,
       characterId
     )
   }

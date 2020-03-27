@@ -1,7 +1,8 @@
 import BaseCharacter from './baseCharacter'
+import { ILatlng } from '~/types/battle'
 
 export default class PlayableCharacter extends BaseCharacter {
-  private _isDeployed: boolean = false
+  private _lastLatLng: ILatlng = { x: -1, y: -1 }
 
   constructor({
     name,
@@ -40,11 +41,11 @@ export default class PlayableCharacter extends BaseCharacter {
     })
   }
 
-  get isDeployed() {
-    return this._isDeployed
+  set lastLatLng(latLng: ILatlng) {
+    this._lastLatLng = latLng
   }
 
-  set isDeployed(bool: boolean) {
-    this._isDeployed = bool
+  get lastLatLng() {
+    return this._lastLatLng
   }
 }

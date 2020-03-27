@@ -16,7 +16,7 @@
           >
             <CharacterRenderer
               :id="character.id"
-              :is-deployed="character.isDeployed"
+              :is-deployed="isDeployed(character)"
               @click.native.stop="onClickCharacter(character.id)"
             />
           </div>
@@ -57,6 +57,10 @@ export default class SideMenu extends Vue {
 
   toggleSideMenu() {
     this.isOpenSideMenu = !this.isOpenSideMenu
+  }
+
+  isDeployed(character: Character) {
+    return character.latLng.x >= 0 && character.latLng.y >= 0
   }
 
   onClickCharacter(id: number) {
