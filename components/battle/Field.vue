@@ -35,7 +35,8 @@ import {
   ILatlng,
   IDeployableArea,
   ActionType,
-  WeaponType
+  WeaponType,
+  CellType
 } from '~/types/battle'
 import {
   fillDeployableArea,
@@ -72,7 +73,7 @@ export default class Field extends Vue {
   public moveNum = 8
   public movableArea: ILatlng[] = []
   public interactiveArea: ILatlng[] = []
-  public interactCharacter: Character | undefined = undefined
+  public interactiveCharacter: Character | undefined = undefined
   public isBattleDialogueOpen: boolean = false
 
   isDeployableArea(latLng: ILatlng) {
@@ -103,64 +104,26 @@ export default class Field extends Vue {
     this.selectedCharacterId = 0
   }
 
-  onClickCell(
-    latLng: ILatlng,
-    isDeployableCell: boolean,
-    isMovableCell: boolean,
-    isInteractableCell: boolean,
-    cellCharacterId: number
-  ) {
-    // 戦闘開始前のdeploy stage
-    if (isDeployableCell) {
-      this.characters.forEach((character) => {
-        if (cellCharacterId === character.id) {
-          character.lastLatLng = character.latLng = { x: -1, y: -1 }
-        } else if (
-          cellCharacterId < 0 &&
-          this.selectedCharacterId === character.id
-        ) {
-          character.lastLatLng = character.latLng = latLng
-        }
-      })
-      return
+  onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: number) {
+    switch (cellType) {
+      case 'deploy':
+        this.deployCharacter(latLng, cellCharacterId)
+        break
+      case 'move':
+        this.moveCharacter(latLng, cellCharacterId)
+        break
+      case 'interact':
+        this.interactCharacter(cellCharacterId)
+        break
+      default:
+        this.onCancelBattleAction()
+        this.selectCharacter(latLng, cellCharacterId)
     }
+  }
 
-    // character move stage
-    if (isMovableCell) {
-      if (
-        !this.interactCharacter ||
-        (this.interactCharacter.id !== cellCharacterId && cellCharacterId > 0)
-      )
-        return
-      this.characters.forEach((character) => {
-        if (
-          this.interactCharacter &&
-          this.interactCharacter.id === character.id
-        )
-          character.latLng = latLng
-      })
-      this.setModal(true)
-      this.movableArea = []
-      return
-    }
-
-    // character interact stage. attacking, using item, etc...
-    if (this.interactCharacter && isInteractableCell && cellCharacterId > 0) {
-      if (this.interactCharacter.actionState.name === 'attack') {
-        // アタック処理
-        console.log('attack', cellCharacterId)
-      } else if (this.interactCharacter.actionState.name === 'item') {
-        console.log('item', cellCharacterId)
-      }
-      this.onFinishBattleAction()
-      return
-    } else {
-      this.onCancelBattleAction()
-    }
-
-    // select character to move
+  selectCharacter(latLng: ILatlng, cellCharacterId: number) {
     if (cellCharacterId > 0) {
-      this.interactCharacter = this.characters.find(
+      this.interactiveCharacter = this.characters.find(
         (character) => cellCharacterId === character.id
       )
       this.movableArea = fillMovableArea(latLng, this.moveNum)
@@ -169,14 +132,58 @@ export default class Field extends Vue {
     }
   }
 
+  deployCharacter(latLng: ILatlng, cellCharacterId: number) {
+    this.characters.forEach((character) => {
+      if (cellCharacterId === character.id) {
+        character.lastLatLng = character.latLng = { x: -1, y: -1 }
+      } else if (
+        cellCharacterId < 0 &&
+        this.selectedCharacterId === character.id
+      ) {
+        character.lastLatLng = character.latLng = latLng
+      }
+    })
+  }
+
+  moveCharacter(latLng: ILatlng, cellCharacterId: number) {
+    if (
+      !this.interactiveCharacter ||
+      (this.interactiveCharacter.id !== cellCharacterId && cellCharacterId > 0)
+    )
+      return
+    this.characters.forEach((character) => {
+      if (
+        this.interactiveCharacter &&
+        this.interactiveCharacter.id === character.id
+      )
+        character.latLng = latLng
+    })
+    this.setModal(true)
+    this.movableArea = []
+  }
+
+  interactCharacter(cellCharacterId: number) {
+    if (this.interactiveCharacter && cellCharacterId > 0) {
+      if (this.interactiveCharacter.actionState.name === 'attack') {
+        // アタック処理
+        console.log('attack', cellCharacterId)
+      } else if (this.interactiveCharacter.actionState.name === 'item') {
+        console.log('item', cellCharacterId)
+      }
+      this.onFinishBattleAction()
+    } else {
+      this.onCancelBattleAction()
+    }
+  }
+
   onCancelBattleAction() {
     this.onFinishBattleAction(true)
   }
 
   onFinishBattleAction(isCancel: boolean = false) {
-    if (this.interactCharacter === undefined) return
+    if (this.interactiveCharacter === undefined) return
     this.characters.forEach((character) => {
-      if (this.interactCharacter!.id !== character.id) return
+      if (this.interactiveCharacter!.id !== character.id) return
       if (isCancel) {
         character.latLng = character.lastLatLng
       } else {
@@ -189,15 +196,15 @@ export default class Field extends Vue {
   }
 
   resetMove() {
-    this.interactCharacter = undefined
+    this.interactiveCharacter = undefined
     this.movableArea = this.interactiveArea = []
   }
 
   onSelectBattleAction(action: ActionType) {
-    if (!this.interactCharacter) return
+    if (!this.interactiveCharacter) return
     switch (action) {
       case 'attack':
-        this.interactCharacter.actionState = {
+        this.interactiveCharacter.actionState = {
           name: 'attack'
         }
         this.changeInteractStage('closeRange')
@@ -206,7 +213,7 @@ export default class Field extends Vue {
         this.onFinishBattleAction()
         break
       case 'item':
-        this.interactCharacter.actionState = {
+        this.interactiveCharacter.actionState = {
           name: 'item'
         }
         this.changeInteractStage('closeRange')
@@ -215,9 +222,9 @@ export default class Field extends Vue {
   }
 
   changeInteractStage(interactType: WeaponType) {
-    if (!this.interactCharacter) return
+    if (!this.interactiveCharacter) return
     this.interactiveArea = fillInteractiveArea(
-      this.interactCharacter.latLng,
+      this.interactiveCharacter.latLng,
       interactType
     )
     this.setModal(false)

@@ -18,6 +18,7 @@ import { Vue, Prop } from 'vue-property-decorator'
 import { ILatlng } from 'types/battle'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import Character from '~/class/character/playableCharacter'
+import { CellType } from '~/types/battle'
 
 @Component({
   components: { CharacterRenderer }
@@ -48,14 +49,14 @@ export default class FieldCell extends Vue {
       evt.stopPropagation()
     }
     const characterId = this.character === undefined ? -1 : this.character.id
-    this.$emit(
-      'onClick',
-      this.latLng,
-      this.isCharacterDeployableCell,
-      this.isCharacterMovableCell,
-      this.isInteractableCell,
-      characterId
-    )
+    const cellType: CellType = this.isCharacterDeployableCell
+      ? 'deploy'
+      : this.isCharacterMovableCell
+      ? 'move'
+      : this.isInteractableCell
+      ? 'interact'
+      : 'selectCharacter'
+    this.$emit('onClick', cellType, this.latLng, characterId)
   }
 }
 </script>
