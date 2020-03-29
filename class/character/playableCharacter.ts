@@ -1,10 +1,10 @@
 import BaseCharacter from './baseCharacter'
-import { ILatlng } from '~/types/battle'
+import { ActionType, ILatlng } from '~/types/battle'
 
 export default class PlayableCharacter extends BaseCharacter {
   private _lastLatLng: ILatlng = { x: -1, y: -1 }
   private _actionState: {
-    name: 'attack' | 'item' | ''
+    name: ActionType | ''
     itemId?: number
   } = { name: '' }
 

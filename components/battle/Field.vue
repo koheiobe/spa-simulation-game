@@ -204,25 +204,22 @@ export default class Field extends Vue {
     if (!this.interactiveCharacter) return
     switch (action) {
       case 'attack':
-        this.interactiveCharacter.actionState = {
-          name: 'attack'
-        }
-        this.changeInteractStage('closeRange')
+        this.changeInteractStage(action, 'closeRange')
         break
       case 'wait':
         this.onFinishBattleAction()
         break
       case 'item':
-        this.interactiveCharacter.actionState = {
-          name: 'item'
-        }
-        this.changeInteractStage('closeRange')
+        this.changeInteractStage(action, 'closeRange')
         break
     }
   }
 
-  changeInteractStage(interactType: WeaponType) {
+  changeInteractStage(actionType: ActionType, interactType: WeaponType) {
     if (!this.interactiveCharacter) return
+    this.interactiveCharacter.actionState = {
+      name: actionType
+    }
     this.interactiveArea = fillInteractiveArea(
       this.interactiveCharacter.latLng,
       interactType
