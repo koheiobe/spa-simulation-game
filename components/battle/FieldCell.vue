@@ -2,7 +2,7 @@
   <div
     :class="[
       $style.cell,
-      isCharacterPlacableCell || isInteractiveCell
+      isCharacterDeployableCell || isCharacterMovableCell || isInteractableCell
         ? $style.characterPlacableCell
         : ''
     ]"
@@ -27,25 +27,33 @@ export default class FieldCell extends Vue {
   latLng!: ILatlng
 
   @Prop({ default: false })
-  isCharacterPlacableCell?: boolean
+  isCharacterDeployableCell?: boolean
 
   @Prop({ default: false })
-  isInteractiveCell?: boolean
+  isCharacterMovableCell?: boolean
+
+  @Prop({ default: false })
+  isInteractableCell?: boolean
 
   @Prop({ default: undefined })
   character?: Character
 
   onClick(evt: Event) {
     // placableCell以外をクリックした場合、deployModeをfalseにするために使用
-    if (this.isCharacterPlacableCell) {
+    if (
+      this.isCharacterDeployableCell ||
+      this.isCharacterMovableCell ||
+      this.isInteractableCell
+    ) {
       evt.stopPropagation()
     }
     const characterId = this.character === undefined ? -1 : this.character.id
     this.$emit(
       'onClick',
       this.latLng,
-      this.isCharacterPlacableCell,
-      this.isInteractiveCell,
+      this.isCharacterDeployableCell,
+      this.isCharacterMovableCell,
+      this.isInteractableCell,
       characterId
     )
   }

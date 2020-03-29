@@ -1,9 +1,9 @@
 <template>
   <div>
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
-      <li @click="onSelectAction('attack')">dd</li>
-      <li @click="onSelectAction('wait')">dd</li>
-      <li @click="onSelectAction('item')">dd</li>
+      <li @click="onSelectAction('attack')">攻撃</li>
+      <li @click="onSelectAction('wait')">待機</li>
+      <li @click="onSelectAction('item')">アイテム</li>
     </ul>
     <div v-if="selectedAction === 'item'">
       <ul :class="$style.itemOptions">
@@ -26,6 +26,7 @@
           </b-popover>
         </template>
       </ul>
+      <b-button @click="backToTop">戻る</b-button>
     </div>
   </div>
 </template>
@@ -52,7 +53,7 @@ export default class BattleDialogue extends Vue {
         this.$emit('onSelect', 'attack')
         break
       case 'wait':
-        this.$emit('onSelec', 'wait')
+        this.$emit('onSelect', 'wait')
         break
       case 'item':
         this.selectedAction = 'item'
@@ -63,6 +64,10 @@ export default class BattleDialogue extends Vue {
   onSelectItem() {
     this.$emit('onSelect', 'item')
   }
+
+  backToTop() {
+    this.selectedAction = 'none'
+  }
 }
 </script>
 
@@ -70,7 +75,6 @@ export default class BattleDialogue extends Vue {
 .baseOptions {
   padding: 0;
   list-style: none;
-  display: inline-block;
   li {
     cursor: pointer;
   }

@@ -3,6 +3,10 @@ import { ILatlng } from '~/types/battle'
 
 export default class PlayableCharacter extends BaseCharacter {
   private _lastLatLng: ILatlng = { x: -1, y: -1 }
+  private _actionState: {
+    name: 'attack' | 'item' | ''
+    itemId?: number
+  } = { name: '' }
 
   constructor({
     name,
@@ -47,5 +51,13 @@ export default class PlayableCharacter extends BaseCharacter {
 
   get lastLatLng() {
     return this._lastLatLng
+  }
+
+  get actionState() {
+    return this._actionState
+  }
+
+  set actionState(state) {
+    this._actionState = state
   }
 }
