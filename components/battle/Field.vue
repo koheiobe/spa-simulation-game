@@ -30,7 +30,8 @@
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { Vue, Prop } from 'vue-property-decorator'
+import { Vue, Prop, Watch } from 'vue-property-decorator'
+import { namespace } from 'vuex-class'
 import {
   ILatlng,
   IDeployableArea,
@@ -48,6 +49,9 @@ import SideMenu from '~/components/battle/SideMenu.vue'
 import Character from '~/class/character/playableCharacter'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
+import { initBattleCharacters } from '~/plugins/database'
+import { IUser } from '~/types/store'
+const ItemModule = namespace('user')
 
 @Component({
   components: {
@@ -58,6 +62,9 @@ import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
   }
 })
 export default class Field extends Vue {
+  @ItemModule.Getter('getUser')
+  private getStoreUser!: IUser
+
   @Prop({ default: () => [] })
   characters!: Character[]
 
@@ -75,6 +82,12 @@ export default class Field extends Vue {
   public interactiveArea: ILatlng[] = []
   public interactiveCharacter: Character | undefined = undefined
   public isBattleDialogueOpen: boolean = false
+
+  @Watch('getStoreUser')
+  onChangeStoreUser() {
+    console.log('store user', this.getStoreUser)
+    initBattleCharacters(this.getStoreUser.uid, this.characters)
+  }
 
   isDeployableArea(latLng: ILatlng) {
     return this.deployableArea.some(

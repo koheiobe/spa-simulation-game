@@ -89,11 +89,13 @@ export default class Login extends Vue {
         })
     if (userCredential === undefined || userCredential.user === null) return
     const uid = userCredential.user.uid
-    if (!isLoginUserExists(uid)) {
+    if ((await isLoginUserExists(uid)) === false) {
+      console.log('running setLoginUser')
       setLoginUser(uid, {
         name: this.name,
         battleId: '',
-        roomId: ''
+        roomId: '',
+        uid
       })
     }
     this.$router.push('/')

@@ -60,4 +60,8 @@ export default class PlayableCharacter extends BaseCharacter {
   set actionState(state) {
     this._actionState = state
   }
+
+  get attackPoint() {
+    return this._attackPoint
+  }
 }

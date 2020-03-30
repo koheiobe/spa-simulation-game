@@ -4,6 +4,7 @@ export interface RootState {
 
 export interface IUser {
   name: string
+  uid: string
   battleId: string
   roomId: string
   isLogin: boolean

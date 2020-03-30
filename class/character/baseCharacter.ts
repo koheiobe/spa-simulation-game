@@ -1,16 +1,16 @@
 import { ILatlng } from '~/types/battle'
 
 export default class BaseCharacter {
-  private _name: string
-  private _hp: number
-  private _attackPoint: number
-  private _defense: number
-  private _critical: number
-  private _luck: number
-  private _speed: number
-  private _level: number
-  private _moveDistance: number
-  private _id: number
+  protected _name: string
+  protected _hp: number
+  protected _attackPoint: number
+  protected _defense: number
+  protected _critical: number
+  protected _luck: number
+  protected _speed: number
+  protected _level: number
+  protected _moveDistance: number
+  protected _id: number
 
   private _latLng: ILatlng = {
     x: -1,

@@ -3,6 +3,7 @@ import { IUser, RootState } from '~/types/store'
 
 export const state: IUser = {
   name: '',
+  uid: '',
   battleId: '',
   roomId: '',
   isLogin: false
@@ -17,6 +18,10 @@ export const getters: GetterTree<IUser, RootState> = {
 export const mutations: MutationTree<IUser> = {
   setUser(state, user) {
     state.name = user.name
+    state.uid = user.uid
+    state.battleId = user.battleId
+    state.roomId = user.roomId
+    state.isLogin = user.isLogin
   }
 }
 
@@ -24,6 +29,7 @@ export const actions: ActionTree<IUser, RootState> = {
   setUserAsGuest(context) {
     context.commit('setUser', {
       name: 'ゲスト',
+      uid: '',
       battleId: '',
       roomId: '',
       isLogin: false
