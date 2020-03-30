@@ -10,6 +10,7 @@ if (!firebase.apps.length) {
     messagingSenderId: process.env.MESSAGING_SENDER_ID,
     appID: process.env.APP_ID
   })
+  firebase.analytics()
 }
 
 export default firebase
