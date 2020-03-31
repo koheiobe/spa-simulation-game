@@ -61,7 +61,39 @@ export default class PlayableCharacter extends BaseCharacter {
     this._actionState = state
   }
 
+  get name() {
+    return this._name
+  }
+
+  get hp() {
+    return this._hp
+  }
+
   get attackPoint() {
     return this._attackPoint
+  }
+
+  get defense() {
+    return this._defense
+  }
+
+  get critical() {
+    return this._critical
+  }
+
+  get luck() {
+    return this._luck
+  }
+
+  get speed() {
+    return this._speed
+  }
+
+  get level() {
+    return this._level
+  }
+
+  get moveDistance() {
+    return this._moveDistance
   }
 }

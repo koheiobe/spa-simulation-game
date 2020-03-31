@@ -46,12 +46,12 @@ import {
 } from '~/utility/helper/field'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
-import Character from '~/class/character/playableCharacter'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
-import { initBattleCharacters } from '~/plugins/database'
-import { IUser } from '~/types/store'
-const ItemModule = namespace('user')
+import { initDBCharacters, getCharactersRef } from '~/plugins/database'
+import { IUser, ICharacter } from '~/types/store'
+const ItemUserModule = namespace('user')
+const ItemBattleModule = namespace('battle')
 
 @Component({
   components: {
@@ -62,31 +62,59 @@ const ItemModule = namespace('user')
   }
 })
 export default class Field extends Vue {
-  @ItemModule.Getter('getUser')
-  private getStoreUser!: IUser
+  @ItemUserModule.Getter('getUser')
+  private storeUser!: IUser
 
-  @Prop({ default: () => [] })
-  characters!: Character[]
+  @ItemBattleModule.Getter('getCharacters')
+  private storeCharacters!: ICharacter[]
+
+  @Prop({ default: () => {} })
+  characters!: ICharacter[]
 
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]
 
   // deploy property
   public deployableArea: ILatlng[] = []
-  public selectedCharacterId: number = 0
+  public selectedCharacterId: string = ''
 
   // 戦闘モードプロパティ
   // 各characterの移動距離と置き換え
   public moveNum = 8
   public movableArea: ILatlng[] = []
+  public cellCharacterId: string = ''
   public interactiveArea: ILatlng[] = []
-  public interactiveCharacter: Character | undefined = undefined
   public isBattleDialogueOpen: boolean = false
 
-  @Watch('getStoreUser')
+  mounted() {
+    if (this.storeUser.uid.length > 0) {
+      this.onChangeStoreUser()
+    }
+  }
+
+  @Watch('storeUser')
   onChangeStoreUser() {
-    console.log('store user', this.getStoreUser)
-    initBattleCharacters(this.getStoreUser.uid, this.characters)
+    if (Object.keys(this.characters).length === 0) {
+      console.error(
+        'charactersがnullなので、オンライン対戦選択ルームから遷移してもらう'
+      )
+      return
+    }
+    initDBCharacters(
+      this.storeUser.uid,
+      this.storeUser.battleId,
+      this.characters
+    )
+    this.$store.dispatch(
+      'battle/setCharactersRef',
+      getCharactersRef(this.storeUser.battleId, this.storeUser.uid)
+    )
+  }
+
+  get interactiveCharacter() {
+    return this.storeCharacters.find(
+      (character) => this.cellCharacterId === character.id
+    )
   }
 
   isDeployableArea(latLng: ILatlng) {
@@ -107,81 +135,90 @@ export default class Field extends Vue {
     )
   }
 
-  startDeployMode(id: number) {
+  startDeployMode(id: string) {
     this.deployableArea = fillDeployableArea(this.deployableAreas)
     this.selectedCharacterId = id
   }
 
   finishDeployMode() {
     this.deployableArea = []
-    this.selectedCharacterId = 0
+    this.selectedCharacterId = ''
   }
 
-  onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: number) {
+  onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
     switch (cellType) {
       case 'deploy':
         this.deployCharacter(latLng, cellCharacterId)
         break
       case 'move':
-        this.moveCharacter(latLng, cellCharacterId)
+        this.moveCharacter(latLng)
         break
       case 'interact':
-        this.interactCharacter(cellCharacterId)
+        this.interactCharacter()
         break
       default:
-        this.onCancelBattleAction()
         this.selectCharacter(latLng, cellCharacterId)
     }
   }
 
-  selectCharacter(latLng: ILatlng, cellCharacterId: number) {
-    if (cellCharacterId > 0) {
-      this.interactiveCharacter = this.characters.find(
-        (character) => cellCharacterId === character.id
-      )
+  selectCharacter(latLng: ILatlng, cellCharacterId: string) {
+    if (cellCharacterId.length > 0) {
+      this.cellCharacterId = cellCharacterId
       this.movableArea = fillMovableArea(latLng, this.moveNum)
     } else {
-      this.resetMove()
+      // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
+      this.onCancelBattleAction()
     }
   }
 
-  deployCharacter(latLng: ILatlng, cellCharacterId: number) {
-    this.characters.forEach((character) => {
-      if (cellCharacterId === character.id) {
-        character.lastLatLng = character.latLng = { x: -1, y: -1 }
-      } else if (
-        cellCharacterId < 0 &&
-        this.selectedCharacterId === character.id
-      ) {
-        character.lastLatLng = character.latLng = latLng
-      }
-    })
+  deployCharacter(latLng: ILatlng, cellCharacterId: string) {
+    this.$store.dispatch(
+      'battle/setLatLng',
+      this.cellCharacterId.length > 0
+        ? {
+            id: cellCharacterId,
+            value: {
+              latLng: { x: -1, y: -1 },
+              lastLatLng: { x: -1, y: -1 }
+            }
+          }
+        : {
+            id: this.selectedCharacterId,
+            value: {
+              latLng,
+              lastLatLng: latLng
+            }
+          }
+    )
   }
 
-  moveCharacter(latLng: ILatlng, cellCharacterId: number) {
+  moveCharacter(latLng: ILatlng) {
+    const interactiveCharacter = this.interactiveCharacter
+    if (!interactiveCharacter) return
     if (
-      !this.interactiveCharacter ||
-      (this.interactiveCharacter.id !== cellCharacterId && cellCharacterId > 0)
-    )
-      return
-    this.characters.forEach((character) => {
-      if (
-        this.interactiveCharacter &&
-        this.interactiveCharacter.id === character.id
-      )
-        character.latLng = latLng
-    })
-    this.setModal(true)
+      interactiveCharacter.id === this.cellCharacterId ||
+      this.cellCharacterId.length === 0
+    ) {
+      this.$store.dispatch('battle/setLatLng', {
+        id: interactiveCharacter.id,
+        value: {
+          latLng,
+          lastLatLng: interactiveCharacter.lastLatLng
+        }
+      })
+      this.setModal(true)
+    }
     this.movableArea = []
   }
 
-  interactCharacter(cellCharacterId: number) {
-    if (this.interactiveCharacter && cellCharacterId > 0) {
-      if (this.interactiveCharacter.actionState.name === 'attack') {
+  interactCharacter() {
+    const interactiveCharacter = this.interactiveCharacter
+    if (interactiveCharacter && this.cellCharacterId.length > 0) {
+      if (interactiveCharacter.actionState.name === 'attack') {
         // アタック処理
-        console.log('attack', cellCharacterId)
-      } else if (this.interactiveCharacter.actionState.name === 'item') {
-        console.log('item', cellCharacterId)
+        console.log('attack', this.cellCharacterId)
+      } else if (interactiveCharacter.actionState.name === 'item') {
+        console.log('item', this.cellCharacterId)
       }
       this.onFinishBattleAction()
     } else {
@@ -194,27 +231,38 @@ export default class Field extends Vue {
   }
 
   onFinishBattleAction(isCancel: boolean = false) {
-    if (this.interactiveCharacter === undefined) return
-    this.characters.forEach((character) => {
-      if (this.interactiveCharacter!.id !== character.id) return
-      if (isCancel) {
-        character.latLng = character.lastLatLng
-      } else {
-        character.lastLatLng = character.latLng
+    const interactiveCharacter = this.interactiveCharacter
+    if (interactiveCharacter === undefined) return
+    this.$store.dispatch('battle/setLatLng', {
+      id: interactiveCharacter.id,
+      value: isCancel
+        ? {
+            latLng: interactiveCharacter.lastLatLng,
+            lastLatLng: interactiveCharacter.lastLatLng
+          }
+        : {
+            latLng: interactiveCharacter.latLng,
+            lastLatLng: interactiveCharacter.latLng
+          }
+    })
+    this.$store.dispatch('battle/setActionState', {
+      id: interactiveCharacter.id,
+      value: {
+        actionState: {
+          name: ''
+        }
       }
-      character.actionState = { name: '' }
     })
     this.setModal(false)
     this.resetMove()
   }
 
   resetMove() {
-    this.interactiveCharacter = undefined
+    this.cellCharacterId = ''
     this.movableArea = this.interactiveArea = []
   }
 
   onSelectBattleAction(action: ActionType) {
-    if (!this.interactiveCharacter) return
     switch (action) {
       case 'attack':
         this.changeInteractStage(action, 'closeRange')
@@ -229,12 +277,16 @@ export default class Field extends Vue {
   }
 
   changeInteractStage(actionType: ActionType, interactType: WeaponType) {
-    if (!this.interactiveCharacter) return
-    this.interactiveCharacter.actionState = {
-      name: actionType
-    }
+    const interactiveCharacter = this.interactiveCharacter
+    if (interactiveCharacter === undefined) return
+    this.$store.dispatch('battle/setActionState', {
+      id: interactiveCharacter.id,
+      value: {
+        name: actionType
+      }
+    })
     this.interactiveArea = fillInteractiveArea(
-      this.interactiveCharacter.latLng,
+      interactiveCharacter.latLng,
       interactType
     )
     this.setModal(false)
@@ -245,8 +297,8 @@ export default class Field extends Vue {
   }
 
   getCharacter(latLng: ILatlng) {
-    return this.characters.find(
-      (character) =>
+    return this.storeCharacters.find(
+      (character: ICharacter) =>
         character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
   }

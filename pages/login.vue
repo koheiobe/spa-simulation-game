@@ -93,7 +93,8 @@ export default class Login extends Vue {
       console.log('running setLoginUser')
       setLoginUser(uid, {
         name: this.name,
-        battleId: '',
+        // TODO 暫定的に固定値を入れる
+        battleId: 'hodaioduioauda',
         roomId: '',
         uid
       })

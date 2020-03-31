@@ -1,5 +1,5 @@
 import firebase from '~/plugins/firebase'
-import Character from '~/class/character/playableCharacter'
+import { ICharacter } from '~/types/store'
 
 const db = firebase.firestore()
 
@@ -29,22 +29,32 @@ export const setLoginUser = (
     .set(user)
 
 // battle
-export const initBattleCharacters = (
+export const initDBCharacters = (
   userId: string,
-  characters: Character[]
+  battleId: string,
+  characters: ICharacter[]
 ) => {
   const batch = db.batch()
   const battleCharacterRef = db
     .collection('battles')
-    .doc()
+    .doc(battleId)
     .collection(userId)
+  if (characters.length === 0) return
   characters.forEach((character) => {
-    if (character === undefined) return
-
     batch.set(battleCharacterRef.doc(String(character.id)), {
-      status: {
-        attack: character.attackPoint
-      }
+      name: character.name,
+      hp: character.hp,
+      attack: character.attackPoint,
+      defense: character.defense,
+      critical: character.critical,
+      luck: character.luck,
+      speed: character.speed,
+      level: character.level,
+      moveDistance: character.moveDistance,
+      id: character.id,
+      latLng: character.latLng,
+      lastLatLng: character.lastLatLng,
+      actionState: character.actionState
     })
   })
   try {
@@ -52,4 +62,11 @@ export const initBattleCharacters = (
   } catch (e) {
     console.error('firestoreの初期化に失敗しました', e)
   }
+}
+
+export const getCharactersRef = (battleId: string, userId: string) => {
+  return db
+    .collection('battles')
+    .doc(battleId)
+    .collection(userId)
 }

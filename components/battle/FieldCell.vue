@@ -17,7 +17,7 @@ import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import { ILatlng } from 'types/battle'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
-import Character from '~/class/character/playableCharacter'
+import { ICharacter } from '~/types/store'
 import { CellType } from '~/types/battle'
 
 @Component({
@@ -37,7 +37,7 @@ export default class FieldCell extends Vue {
   isInteractableCell?: boolean
 
   @Prop({ default: undefined })
-  character?: Character
+  character?: ICharacter
 
   onClick(evt: Event) {
     // placableCell以外をクリックした場合、deployModeをfalseにするために使用
@@ -48,7 +48,7 @@ export default class FieldCell extends Vue {
     ) {
       evt.stopPropagation()
     }
-    const characterId = this.character === undefined ? -1 : this.character.id
+    const characterId = this.character === undefined ? '' : this.character.id
     const cellType: CellType = this.isCharacterDeployableCell
       ? 'deploy'
       : this.isCharacterMovableCell

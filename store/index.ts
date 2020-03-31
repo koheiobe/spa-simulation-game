@@ -30,12 +30,12 @@ export const mutations = {
   ...vuexfireMutations
 }
 
-const userActions: ActionTree<IUser, RootState> = {
+const vuexfireUserActions: ActionTree<IUser, RootState> = {
   setUserRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     bindFirestoreRef('user', ref)
   })
 }
 
 export const actions = {
-  ...userActions
+  ...vuexfireUserActions
 }

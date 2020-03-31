@@ -1,13 +1,13 @@
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { IUser, RootState } from '~/types/store'
 
-export const state: IUser = {
+export const state = () => ({
   name: '',
   uid: '',
   battleId: '',
   roomId: '',
   isLogin: false
-}
+})
 
 export const getters: GetterTree<IUser, RootState> = {
   getUser: (state) => {

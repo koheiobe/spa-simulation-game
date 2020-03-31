@@ -34,6 +34,7 @@ import SideMenuLeftIcon from '~/assets/leftArrow.svg'
 import SideMenuRightIcon from '~/assets/rightArrow.svg'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import Character from '~/class/character/playableCharacter'
+import { ICharacter } from '~/types/store'
 
 @Component({
   components: {
@@ -44,7 +45,7 @@ import Character from '~/class/character/playableCharacter'
 })
 export default class SideMenu extends Vue {
   @Prop({ default: () => [] })
-  characters!: Character[]
+  characters!: ICharacter[]
 
   @Prop({ default: () => [] })
   selectedCharacterId!: number
@@ -63,7 +64,7 @@ export default class SideMenu extends Vue {
     return character.latLng.x >= 0 && character.latLng.y >= 0
   }
 
-  onClickCharacter(id: number) {
+  onClickCharacter(id: string) {
     this.$emit('onClickCharacter', id)
   }
 }

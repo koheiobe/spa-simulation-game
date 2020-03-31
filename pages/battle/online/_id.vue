@@ -7,15 +7,16 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
+
 import Field from '~/components/battle/Field.vue'
-import Character from '~/class/character/playableCharacter'
+import { ICharacter } from '~/types/store'
 import { IDeployableArea } from '~/types/battle'
 
 @Component({
   components: { Field }
 })
 export default class OnlineBattleRoom extends Vue {
-  public characters: Character[] = []
+  public characters: ICharacter[] = []
   public deployableAreas: IDeployableArea[] = [
     {
       upperLeft: {
@@ -39,18 +40,21 @@ export default class OnlineBattleRoom extends Vue {
 
   created() {
     for (let i = 1; i <= 30; i++) {
-      const character = new Character({
+      const character: ICharacter = {
         name: 'Centaur',
-        hp: 10,
+        hp: 90,
         attackPoint: 10,
         defense: 10,
-        critical: 10,
+        critical: 5,
         luck: 10,
         speed: 10,
-        level: 10,
-        moveDistance: 10,
-        id: i
-      })
+        level: 1,
+        moveDistance: 5,
+        id: `Centaur${i}`,
+        latLng: { x: -1, y: -1 },
+        lastLatLng: { x: -1, y: -1 },
+        actionState: { name: '' }
+      }
       this.characters.push(character)
     }
   }

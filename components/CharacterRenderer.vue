@@ -1,6 +1,9 @@
 <template>
   <div>
-    <Centaur v-if="id < 31" :class="[isDeployed ? $style.deployed : '']" />
+    <Centaur
+      v-if="characterName === 'Centaur'"
+      :class="[isDeployed ? $style.deployed : '']"
+    />
   </div>
 </template>
 
@@ -14,10 +17,14 @@ import Centaur from '~/assets/centaur.svg'
 })
 export default class CharacterRenderer extends Vue {
   @Prop({ default: 0 })
-  id!: number
+  id!: string
 
   @Prop({ default: false })
   isDeployed?: boolean
+
+  get characterName() {
+    return this.id.replace(/[0-9]+$/, '')
+  }
 }
 </script>
 
