@@ -28,7 +28,11 @@ export const setLoginUser = (
     .doc(uid)
     .set(user)
 
-// battle
+// online battle
+export const getBattleRooms = {}
+export const createBattleRoom = () => {
+  db.collection('battles').doc(battleId)
+}
 export const updateCharacters = (
   battleId: string,
   characters: ICharacter[]
