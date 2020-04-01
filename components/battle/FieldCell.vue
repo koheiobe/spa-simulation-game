@@ -68,6 +68,9 @@ export default class FieldCell extends Vue {
   &:hover {
     background-color: #e6e6e6;
   }
+  img {
+    width: 30px;
+  }
 }
 .characterPlacableCell {
   background-color: #e6e6e6;

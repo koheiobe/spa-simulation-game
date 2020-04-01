@@ -53,7 +53,7 @@ export default class OnlineBattleRoom extends Vue {
         id: `Centaur${i}`,
         latLng: { x: -1, y: -1 },
         lastLatLng: { x: -1, y: -1 },
-        actionState: { name: '' }
+        actionState: { name: '', itemId: 0 }
       }
       this.characters.push(character)
     }

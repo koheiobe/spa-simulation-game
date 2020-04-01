@@ -27,7 +27,7 @@ export interface ICharacter {
   lastLatLng: ILatlng
   actionState: {
     name: ActionType | ''
-    itemId?: number
+    itemId: number
   }
 }
 

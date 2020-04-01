@@ -26,24 +26,50 @@ export const actions: ActionTree<{ list: ICharacter[] }, RootState> = {
   setCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     bindFirestoreRef('list', ref)
   }),
-  setLatLng(context, obj) {
-    context.commit('setCharacterParam', {
-      id: obj.id,
-      value: {
-        latLng: obj.value.latLng,
-        lastLatLng: obj.value.lastLatLng
-      }
-    })
-  },
-  setActionState(context, obj) {
-    context.commit('setCharacterParam', {
-      id: obj.id,
-      value: {
-        actionState: {
-          name: obj.value.name,
-          itemId: obj.value.itemId
-        }
-      }
+  setCharacterParam(context, obj) {
+    return new Promise((resolve) => {
+      context.commit('setCharacterParam', {
+        id: obj.id,
+        value: obj.value
+      })
+      resolve()
     })
   }
 }
+
+// export const mutations: MutationTree<{ list: ICharacter[] }> = {
+//   setCharacterParam(state, obj) {
+//     state.list = state.list.map((character) => {
+//       return character.id === obj.id
+//         ? { ...character, ...obj.value }
+//         : character
+//     })
+//   },
+//   setLatLng(state, obj) {
+//     state.list = state.list.map((character) =>
+//       character.id === obj.id
+//         ? {
+//             ...character,
+//             actionState: { ...character.actionState },
+//             latLng: obj.value.latLng,
+//             lastLatLng: obj.value.lastLatLng
+//           }
+//         : character
+//     )
+//   },
+//   setActionState(state, obj) {
+//     state.list = state.list.map((character) =>
+//       character.id === obj.id
+//         ? {
+//             ...character,
+//             latLng: { ...character.latLng },
+//             lastLatLng: { ...character.lastLatLng },
+//             actionState: {
+//               name: obj.value.actionState.name,
+//               itemId: obj.value.actionState.itemId
+//             }
+//           }
+//         : character
+//     )
+//   }
+// }

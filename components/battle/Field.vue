@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.field" @click="finishDeployMode">
     <SideMenu
-      :characters="characters"
+      :characters="storeCharacters"
       :selected-character-id="selectedCharacterId"
       @onClickCharacter="startDeployMode"
     />
@@ -48,7 +48,7 @@ import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
-import { initDBCharacters, getCharactersRef } from '~/plugins/database'
+import * as db from '~/plugins/database'
 import { IUser, ICharacter } from '~/types/store'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
@@ -93,22 +93,24 @@ export default class Field extends Vue {
   }
 
   @Watch('storeUser')
-  onChangeStoreUser() {
+  async onChangeStoreUser() {
     if (Object.keys(this.characters).length === 0) {
       console.error(
         'charactersがnullなので、オンライン対戦選択ルームから遷移してもらう'
       )
       return
     }
-    initDBCharacters(
-      this.storeUser.uid,
-      this.storeUser.battleId,
-      this.characters
-    )
-    this.$store.dispatch(
-      'battle/setCharactersRef',
-      getCharactersRef(this.storeUser.battleId, this.storeUser.uid)
-    )
+    const dbCharactersRef = db.getCharactersRef(this.storeUser.battleId)
+    const dbCharacters = await dbCharactersRef.get()
+    if (dbCharacters.empty) {
+      db.updateCharacters(this.storeUser.battleId, this.characters)
+      this.$store.dispatch(
+        'battle/setCharactersRef',
+        db.getCharactersRef(this.storeUser.battleId)
+      )
+    } else {
+      this.$store.dispatch('battle/setCharactersRef', dbCharactersRef)
+    }
   }
 
   get interactiveCharacter() {
@@ -143,6 +145,7 @@ export default class Field extends Vue {
   finishDeployMode() {
     this.deployableArea = []
     this.selectedCharacterId = ''
+    db.updateCharacters(this.storeUser.battleId, this.storeCharacters)
   }
 
   onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
@@ -157,39 +160,32 @@ export default class Field extends Vue {
         this.interactCharacter()
         break
       default:
-        this.selectCharacter(latLng, cellCharacterId)
+        // 通常戦闘モード キャラクターを選択するステージ
+        if (cellCharacterId.length > 0) {
+          this.cellCharacterId = cellCharacterId
+          this.selectCharacter(latLng)
+        } else {
+          // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
+          this.onCancelBattleAction()
+        }
     }
   }
 
-  selectCharacter(latLng: ILatlng, cellCharacterId: string) {
-    if (cellCharacterId.length > 0) {
-      this.cellCharacterId = cellCharacterId
-      this.movableArea = fillMovableArea(latLng, this.moveNum)
-    } else {
-      // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
-      this.onCancelBattleAction()
-    }
+  selectCharacter(latLng: ILatlng) {
+    this.movableArea = fillMovableArea(latLng, this.moveNum)
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
-    this.$store.dispatch(
-      'battle/setLatLng',
-      this.cellCharacterId.length > 0
-        ? {
-            id: cellCharacterId,
-            value: {
-              latLng: { x: -1, y: -1 },
-              lastLatLng: { x: -1, y: -1 }
-            }
-          }
-        : {
-            id: this.selectedCharacterId,
-            value: {
-              latLng,
-              lastLatLng: latLng
-            }
-          }
-    )
+    const updatedLatLng = cellCharacterId.length > 0 ? { x: -1, y: -1 } : latLng
+    const characterId =
+      cellCharacterId.length > 0 ? cellCharacterId : this.selectedCharacterId
+    this.$store.dispatch('battle/setCharacterParam', {
+      id: characterId,
+      value: {
+        latLng: updatedLatLng,
+        lastLatLng: updatedLatLng
+      }
+    })
   }
 
   moveCharacter(latLng: ILatlng) {
@@ -199,7 +195,7 @@ export default class Field extends Vue {
       interactiveCharacter.id === this.cellCharacterId ||
       this.cellCharacterId.length === 0
     ) {
-      this.$store.dispatch('battle/setLatLng', {
+      this.$store.dispatch('battle/setCharacterParam', {
         id: interactiveCharacter.id,
         value: {
           latLng,
@@ -216,7 +212,15 @@ export default class Field extends Vue {
     if (interactiveCharacter && this.cellCharacterId.length > 0) {
       if (interactiveCharacter.actionState.name === 'attack') {
         // アタック処理
-        console.log('attack', this.cellCharacterId)
+        const targetCharacter = this.storeCharacters.find(
+          (character) => character.id === this.cellCharacterId
+        )
+        if (!targetCharacter || !interactiveCharacter) return
+        const damageTakenCharacter = {
+          ...targetCharacter,
+          hp: targetCharacter.hp - interactiveCharacter.attackPoint
+        }
+        db.updateCharacter(this.storeUser.battleId, damageTakenCharacter)
       } else if (interactiveCharacter.actionState.name === 'item') {
         console.log('item', this.cellCharacterId)
       }
@@ -230,29 +234,37 @@ export default class Field extends Vue {
     this.onFinishBattleAction(true)
   }
 
-  onFinishBattleAction(isCancel: boolean = false) {
+  async onFinishBattleAction(isCancel: boolean = false) {
     const interactiveCharacter = this.interactiveCharacter
     if (interactiveCharacter === undefined) return
-    this.$store.dispatch('battle/setLatLng', {
-      id: interactiveCharacter.id,
-      value: isCancel
-        ? {
-            latLng: interactiveCharacter.lastLatLng,
-            lastLatLng: interactiveCharacter.lastLatLng
-          }
-        : {
-            latLng: interactiveCharacter.latLng,
-            lastLatLng: interactiveCharacter.latLng
-          }
-    })
-    this.$store.dispatch('battle/setActionState', {
+    const defaultActionState = {
+      name: '',
+      itemId: 0
+    } as const
+    const updatedLatLng = isCancel
+      ? interactiveCharacter.lastLatLng
+      : interactiveCharacter.latLng
+    await this.$store.dispatch('battle/setCharacterParam', {
       id: interactiveCharacter.id,
       value: {
-        actionState: {
-          name: ''
-        }
+        latLng: updatedLatLng,
+        lastLatLng: updatedLatLng,
+        actionState: defaultActionState
       }
     })
+
+    if (!isCancel) {
+      const updatedInteractiveCharacter = this.interactiveCharacter
+      if (updatedInteractiveCharacter) {
+        const movedCharacter = {
+          ...updatedInteractiveCharacter,
+          latLng: updatedInteractiveCharacter.latLng,
+          actionState: defaultActionState
+        }
+        db.updateCharacter(this.storeUser.battleId, movedCharacter)
+      }
+    }
+
     this.setModal(false)
     this.resetMove()
   }
@@ -271,18 +283,23 @@ export default class Field extends Vue {
         this.onFinishBattleAction()
         break
       case 'item':
-        this.changeInteractStage(action, 'closeRange')
+        this.changeInteractStage(action, 'closeRange', 1)
         break
     }
   }
 
-  changeInteractStage(actionType: ActionType, interactType: WeaponType) {
+  changeInteractStage(
+    actionType: ActionType,
+    interactType: WeaponType,
+    itemId: number = 0
+  ) {
     const interactiveCharacter = this.interactiveCharacter
     if (interactiveCharacter === undefined) return
-    this.$store.dispatch('battle/setActionState', {
+    this.$store.dispatch('battle/setCharacterParam', {
       id: interactiveCharacter.id,
       value: {
-        name: actionType
+        name: actionType,
+        itemId
       }
     })
     this.interactiveArea = fillInteractiveArea(

@@ -1,7 +1,8 @@
 <template>
   <div>
-    <Centaur
+    <img
       v-if="characterName === 'Centaur'"
+      src="~/assets/幅49×高さ40.png"
       :class="[isDeployed ? $style.deployed : '']"
     />
   </div>

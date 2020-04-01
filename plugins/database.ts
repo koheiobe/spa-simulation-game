@@ -29,8 +29,7 @@ export const setLoginUser = (
     .set(user)
 
 // battle
-export const initDBCharacters = (
-  userId: string,
+export const updateCharacters = (
   battleId: string,
   characters: ICharacter[]
 ) => {
@@ -38,24 +37,16 @@ export const initDBCharacters = (
   const battleCharacterRef = db
     .collection('battles')
     .doc(battleId)
-    .collection(userId)
+    .collection('characters')
   if (characters.length === 0) return
   characters.forEach((character) => {
-    batch.set(battleCharacterRef.doc(String(character.id)), {
-      name: character.name,
-      hp: character.hp,
-      attack: character.attackPoint,
-      defense: character.defense,
-      critical: character.critical,
-      luck: character.luck,
-      speed: character.speed,
-      level: character.level,
-      moveDistance: character.moveDistance,
-      id: character.id,
-      latLng: character.latLng,
-      lastLatLng: character.lastLatLng,
-      actionState: character.actionState
-    })
+    batch.set(
+      battleCharacterRef.doc(String(character.id)),
+      {
+        ...character
+      },
+      { merge: true }
+    )
   })
   try {
     batch.commit()
@@ -64,9 +55,18 @@ export const initDBCharacters = (
   }
 }
 
-export const getCharactersRef = (battleId: string, userId: string) => {
+export const getCharactersRef = (battleId: string) => {
   return db
     .collection('battles')
     .doc(battleId)
-    .collection(userId)
+    .collection('characters')
+}
+
+export const updateCharacter = (battleId: string, character: ICharacter) => {
+  return db
+    .collection('battles')
+    .doc(battleId)
+    .collection('characters')
+    .doc(character.id)
+    .set(character, { merge: true })
 }
