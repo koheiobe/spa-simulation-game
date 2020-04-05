@@ -55,6 +55,7 @@ export default class OnlineBattle extends Vue {
       this.storeUser.name
     )
     setBattleId(this.storeUser.uid, battleRoomRef.id)
+    this.$router.push(`/battle/online/${battleRoomRef.id}`)
   }
 
   goToBattleRoom(battleId: string) {
