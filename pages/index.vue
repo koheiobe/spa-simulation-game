@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <router-link to="/battle/online/1"
+    <router-link to="/battle/online"
       ><button>online battle</button></router-link
     >
   </div>
