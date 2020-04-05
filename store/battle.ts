@@ -2,17 +2,21 @@ import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter, RootState } from '~/types/store'
 
-export const state: { list: ICharacter[] } = {
-  list: []
+interface state {
+  list: ICharacter[]
 }
 
-export const getters: GetterTree<{ list: ICharacter[] }, RootState> = {
+export const state = () => ({
+  list: []
+})
+
+export const getters: GetterTree<state, RootState> = {
   getCharacters: (state) => {
     return state.list
   }
 }
 
-export const mutations: MutationTree<{ list: ICharacter[] }> = {
+export const mutations: MutationTree<state> = {
   setCharacterParam(state, obj) {
     state.list = state.list.map((character) => {
       return character.id === obj.id
@@ -22,7 +26,7 @@ export const mutations: MutationTree<{ list: ICharacter[] }> = {
   }
 }
 
-export const actions: ActionTree<{ list: ICharacter[] }, RootState> = {
+export const actions: ActionTree<state, RootState> = {
   setCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     bindFirestoreRef('list', ref)
   }),
@@ -36,40 +40,3 @@ export const actions: ActionTree<{ list: ICharacter[] }, RootState> = {
     })
   }
 }
-
-// export const mutations: MutationTree<{ list: ICharacter[] }> = {
-//   setCharacterParam(state, obj) {
-//     state.list = state.list.map((character) => {
-//       return character.id === obj.id
-//         ? { ...character, ...obj.value }
-//         : character
-//     })
-//   },
-//   setLatLng(state, obj) {
-//     state.list = state.list.map((character) =>
-//       character.id === obj.id
-//         ? {
-//             ...character,
-//             actionState: { ...character.actionState },
-//             latLng: obj.value.latLng,
-//             lastLatLng: obj.value.lastLatLng
-//           }
-//         : character
-//     )
-//   },
-//   setActionState(state, obj) {
-//     state.list = state.list.map((character) =>
-//       character.id === obj.id
-//         ? {
-//             ...character,
-//             latLng: { ...character.latLng },
-//             lastLatLng: { ...character.lastLatLng },
-//             actionState: {
-//               name: obj.value.actionState.name,
-//               itemId: obj.value.actionState.itemId
-//             }
-//           }
-//         : character
-//     )
-//   }
-// }

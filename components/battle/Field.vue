@@ -4,6 +4,7 @@
       :characters="storeCharacters"
       :selected-character-id="selectedCharacterId"
       @onClickCharacter="startDeployMode"
+      @onSurrender="onSurrender"
     />
     <!-- <div :class="$style.debugArea">
       <button @click="resetMove">デプロイ完了</button>
@@ -318,6 +319,11 @@ export default class Field extends Vue {
       (character: ICharacter) =>
         character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
+  }
+
+  onSurrender() {
+    db.setBattleId(this.storeUser.uid, '')
+    this.$router.push('/battle/online')
   }
 }
 </script>

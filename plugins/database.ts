@@ -29,9 +29,18 @@ export const setLoginUser = (
     .set(user)
 
 // online battle
-export const getBattleRooms = {}
-export const createBattleRoom = () => {
-  db.collection('battles').doc(battleId)
+export const getBattleRooms = () => {
+  return db.collection('battles')
+}
+export const createBattleRoom = (uid: string, name: string) => {
+  return db
+    .collection('battles')
+    .add({ creater: { uid, name }, opponent: { uid: '', name: '' } })
+}
+export const setBattleId = (uid: string, battleId: string) => {
+  db.collection('users')
+    .doc(uid)
+    .update({ battleId })
 }
 export const updateCharacters = (
   battleId: string,

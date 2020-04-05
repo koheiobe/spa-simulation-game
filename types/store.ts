@@ -31,6 +31,7 @@ export interface ICharacter {
   }
 }
 
-export interface UserState {
-  user: IUser
+export interface IBattleRoom {
+  creater: { uid: IUser['uid']; name: IUser['name'] }
+  opponent: { uid: IUser['uid']; name: IUser['name'] }
 }
