@@ -1,31 +1,29 @@
+import { firestoreAction } from 'vuexfire'
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
-import { IUser, RootState } from '~/types/store'
+import { IUser } from '~/types/store'
 
 export const state = () => ({
-  name: '',
-  uid: '',
-  battleId: '',
-  roomId: '',
-  isLogin: false
+  loginUser: {} as IUser
 })
 
-export const getters: GetterTree<IUser, RootState> = {
+export type RootState = ReturnType<typeof state>
+
+export const getters: GetterTree<RootState, RootState> = {
   getUser: (state) => {
-    return state
+    return state.loginUser
   }
 }
 
-export const mutations: MutationTree<IUser> = {
-  setUser(state, user) {
-    state.name = user.name
-    state.uid = user.uid
-    state.battleId = user.battleId
-    state.roomId = user.roomId
-    state.isLogin = user.isLogin
+export const mutations: MutationTree<RootState> = {
+  setUser(state, loginUser) {
+    state.loginUser = loginUser
   }
 }
 
-export const actions: ActionTree<IUser, RootState> = {
+export const actions: ActionTree<RootState, RootState> = {
+  setUserRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+    bindFirestoreRef('loginUser', ref)
+  }),
   setUserAsGuest(context) {
     context.commit('setUser', {
       name: 'ゲスト',
@@ -36,19 +34,3 @@ export const actions: ActionTree<IUser, RootState> = {
     })
   }
 }
-
-// export default {
-//   namespaced: true,
-//   state,
-//   mutations,
-//   actions,
-//   getters
-// }
-
-// export const ItemState: Module<UserState, RootState> = {
-//   namespaced: true,
-//   state,
-//   mutations,
-//   actions,
-//   getters
-// }

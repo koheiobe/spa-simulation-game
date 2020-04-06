@@ -67,7 +67,7 @@ export default class NavBar extends Vue {
   }
 
   syncFirestoreVuex(uid: string) {
-    this.$store.dispatch('setUserRef', db.getUser(uid))
+    this.$store.dispatch('user/setUserRef', db.getUser(uid))
   }
 }
 </script>
