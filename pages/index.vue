@@ -1,15 +1,36 @@
 <template>
   <div class="container">
-    <router-link to="/battle/online"
-      ><button>online battle</button></router-link
-    >
+    <!-- <router-link to="/battle/online"> -->
+    <button @click="tryGoToOnlineBattle">online battle</button>
+    <!-- </router-link> -->
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
+import Component from 'vue-class-component'
+import { namespace } from 'vuex-class'
+import { IUser } from '~/types/store'
+const ItemUserModule = namespace('user')
 
-export default class index extends Vue {}
+@Component
+export default class index extends Vue {
+  @ItemUserModule.Getter('getUser')
+  private storeUser!: IUser
+
+  tryGoToOnlineBattle() {
+    if (this.storeUser.uid.length <= 0) {
+      this.$bvToast.toast('オンライン対戦を行うにはログインしてください。', {
+        title: 'エラー',
+        variant: 'danger',
+        autoHideDelay: 1500,
+        appendToast: true
+      })
+      return
+    }
+    this.$router.push('/battle/online')
+  }
+}
 </script>
 
 <style>
