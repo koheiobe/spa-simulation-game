@@ -1,5 +1,5 @@
 import { Plugin } from '@nuxt/types'
-import firebase from '~/plugins/firebase'
+import firebase from './firebase'
 
 class FirebaseAuth {
   createUserWithEmailAndPassword(
@@ -44,7 +44,6 @@ class FirebaseAuth {
 
   deleteAccount() {
     const user = firebase.auth().currentUser
-    console.log(user)
     if (user === null) return
     user
       .delete()

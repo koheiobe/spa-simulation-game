@@ -1,5 +1,5 @@
 import { Plugin } from '@nuxt/types'
-import firebase from '~/plugins/firebase'
+import firebase from './firebase'
 import { ICharacter } from '~/types/store'
 
 const db = firebase.firestore()

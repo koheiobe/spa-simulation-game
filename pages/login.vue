@@ -87,7 +87,6 @@ export default class Login extends Vue {
         })
     if (userCredential === undefined || userCredential.user === null) return
     const uid = userCredential.user.uid
-    console.log(this.$firestore)
     if ((await this.$firestore.isLoginUserExists(uid)) === false) {
       this.$firestore.setLoginUser(uid, {
         name: this.name,
