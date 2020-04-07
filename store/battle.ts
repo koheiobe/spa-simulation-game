@@ -1,22 +1,20 @@
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
-import { ICharacter, RootState } from '~/types/store'
-
-interface state {
-  list: ICharacter[]
-}
+import { ICharacter } from '~/types/store'
 
 export const state = () => ({
-  list: []
+  list: [] as ICharacter[]
 })
 
-export const getters: GetterTree<state, RootState> = {
+export type RootState = ReturnType<typeof state>
+
+export const getters: GetterTree<RootState, RootState> = {
   getCharacters: (state) => {
     return state.list
   }
 }
 
-export const mutations: MutationTree<state> = {
+export const mutations: MutationTree<RootState> = {
   setCharacterParam(state, obj) {
     state.list = state.list.map((character) => {
       return character.id === obj.id
@@ -26,7 +24,7 @@ export const mutations: MutationTree<state> = {
   }
 }
 
-export const actions: ActionTree<state, RootState> = {
+export const actions: ActionTree<RootState, RootState> = {
   setCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     bindFirestoreRef('list', ref)
   }),
