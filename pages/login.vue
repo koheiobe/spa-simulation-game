@@ -59,7 +59,6 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
-import { isLoginUserExists, setLoginUser } from '~/plugins/database'
 
 @Component({
   layout: 'login'
@@ -88,9 +87,9 @@ export default class Login extends Vue {
         })
     if (userCredential === undefined || userCredential.user === null) return
     const uid = userCredential.user.uid
-    if ((await isLoginUserExists(uid)) === false) {
-      console.log('running setLoginUser')
-      setLoginUser(uid, {
+    console.log(this.$firestore)
+    if ((await this.$firestore.isLoginUserExists(uid)) === false) {
+      this.$firestore.setLoginUser(uid, {
         name: this.name,
         battleId: '',
         roomId: '',

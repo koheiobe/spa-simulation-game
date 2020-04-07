@@ -49,7 +49,6 @@ import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
-import * as db from '~/plugins/database'
 import { IUser, ICharacter } from '~/types/store'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
@@ -101,13 +100,15 @@ export default class Field extends Vue {
       )
       return
     }
-    const dbCharactersRef = db.getCharactersRef(this.storeUser.battleId)
+    const dbCharactersRef = this.$firestore.getCharactersRef(
+      this.storeUser.battleId
+    )
     const dbCharacters = await dbCharactersRef.get()
     if (dbCharacters.empty) {
-      db.updateCharacters(this.storeUser.battleId, this.characters)
+      this.$firestore.updateCharacters(this.storeUser.battleId, this.characters)
       this.$store.dispatch(
         'battle/setCharactersRef',
-        db.getCharactersRef(this.storeUser.battleId)
+        this.$firestore.getCharactersRef(this.storeUser.battleId)
       )
     } else {
       this.$store.dispatch('battle/setCharactersRef', dbCharactersRef)
@@ -146,7 +147,10 @@ export default class Field extends Vue {
   finishDeployMode() {
     this.deployableArea = []
     this.selectedCharacterId = ''
-    db.updateCharacters(this.storeUser.battleId, this.storeCharacters)
+    this.$firestore.updateCharacters(
+      this.storeUser.battleId,
+      this.storeCharacters
+    )
   }
 
   onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
@@ -221,7 +225,10 @@ export default class Field extends Vue {
           ...targetCharacter,
           hp: targetCharacter.hp - interactiveCharacter.attackPoint
         }
-        db.updateCharacter(this.storeUser.battleId, damageTakenCharacter)
+        this.$firestore.updateCharacter(
+          this.storeUser.battleId,
+          damageTakenCharacter
+        )
       } else if (interactiveCharacter.actionState.name === 'item') {
         console.log('item', this.cellCharacterId)
       }
@@ -262,7 +269,7 @@ export default class Field extends Vue {
           latLng: updatedInteractiveCharacter.latLng,
           actionState: defaultActionState
         }
-        db.updateCharacter(this.storeUser.battleId, movedCharacter)
+        this.$firestore.updateCharacter(this.storeUser.battleId, movedCharacter)
       }
     }
 
@@ -322,7 +329,7 @@ export default class Field extends Vue {
   }
 
   onSurrender() {
-    db.setBattleId(this.storeUser.uid, '')
+    this.$firestore.setBattleId(this.storeUser.uid, '')
     this.$router.push('/battle/online')
   }
 }

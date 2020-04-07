@@ -19,11 +19,6 @@
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import {
-  createBattleRoom,
-  setBattleId,
-  getBattleRooms
-} from '~/plugins/database'
 import { IUser, IBattleRoom } from '~/types/store'
 const UserModule = namespace('user')
 const BattleRoomsModule = namespace('battleRooms')
@@ -50,21 +45,24 @@ export default class OnlineBattle extends Vue {
   }
 
   async createBattleRoom() {
-    const battleRoomRef = await createBattleRoom(
+    const battleRoomRef = await this.$firestore.createBattleRoom(
       this.storeUser.uid,
       this.storeUser.name
     )
-    setBattleId(this.storeUser.uid, battleRoomRef.id)
+    this.$firestore.setBattleId(this.storeUser.uid, battleRoomRef.id)
     this.$router.push(`/battle/online/${battleRoomRef.id}`)
   }
 
   goToBattleRoom(battleId: string) {
-    setBattleId(this.storeUser.uid, battleId)
+    this.$firestore.setBattleId(this.storeUser.uid, battleId)
     this.$router.push(`/battle/online/${battleId}`)
   }
 
   syncFirestoreVuexBattleRooms() {
-    this.$store.dispatch('battleRooms/setBattleRoomsRef', getBattleRooms())
+    this.$store.dispatch(
+      'battleRooms/setBattleRoomsRef',
+      this.$firestore.getBattleRooms()
+    )
   }
 }
 </script>

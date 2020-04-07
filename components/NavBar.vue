@@ -30,7 +30,6 @@
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import * as db from '~/plugins/database'
 import { IUser } from '~/types/store'
 
 const ItemModule = namespace('user')
@@ -66,7 +65,7 @@ export default class NavBar extends Vue {
   }
 
   syncFirestoreVuex(uid: string) {
-    this.$store.dispatch('user/setUserRef', db.getUser(uid))
+    this.$store.dispatch('user/setUserRef', this.$firestore.getUser(uid))
   }
 }
 </script>
