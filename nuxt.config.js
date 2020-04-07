@@ -1,5 +1,8 @@
 export default {
   mode: 'spa',
+  router: {
+    middleware: ['authChecker']
+  },
   /*
    ** Headers of the page
    */
@@ -52,7 +55,7 @@ export default {
     /*
      ** You can extend webpack config here
      */
-    extend(config, ctx) {
+    extend(config) {
       const svgRule = config.module.rules.find((rule) => rule.test.test('.svg'))
       svgRule.test = /\.(png|jpe?g|gif|webp)$/i
 
