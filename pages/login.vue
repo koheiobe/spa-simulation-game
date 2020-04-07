@@ -59,7 +59,6 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
-import { createUserWithEmailAndPassword, signIn } from '~/plugins/auth'
 import { isLoginUserExists, setLoginUser } from '~/plugins/database'
 
 @Component({
@@ -79,12 +78,12 @@ export default class Login extends Vue {
   async onSubmit(evt: any) {
     evt.preventDefault()
     const userCredential = this.isCreateAccount
-      ? await createUserWithEmailAndPassword(this.email, this.password).catch(
-          (err) => {
+      ? await this.$auth
+          .createUserWithEmailAndPassword(this.email, this.password)
+          .catch((err) => {
             this.onErrorAuth(err)
-          }
-        )
-      : await signIn(this.email, this.password).catch((err) => {
+          })
+      : await this.$auth.signIn(this.email, this.password).catch((err) => {
           this.onErrorAuth(err)
         })
     if (userCredential === undefined || userCredential.user === null) return

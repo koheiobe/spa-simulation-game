@@ -30,7 +30,6 @@
 import Component from 'vue-class-component'
 import { Vue } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import * as auth from '~/plugins/auth'
 import * as db from '~/plugins/database'
 import { IUser } from '~/types/store'
 
@@ -48,7 +47,7 @@ export default class NavBar extends Vue {
   }
 
   mounted() {
-    auth.onAuthStateChanged((user) => {
+    this.$auth.onAuthStateChanged((user) => {
       this.user = user
       if (user) {
         this.syncFirestoreVuex(user.uid)
@@ -59,7 +58,7 @@ export default class NavBar extends Vue {
   }
 
   signOut() {
-    auth.signOut().then(() => this.$router.push('/'))
+    this.$auth.signOut().then(() => this.$router.push('/'))
   }
 
   signIn() {
