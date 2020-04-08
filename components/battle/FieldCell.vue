@@ -21,23 +21,17 @@
         )
     "
   >
-    <CharacterRenderer
-      :id="props.character === undefined ? '' : props.character.id"
-    />
+    <slot />
   </div>
 </template>
 
 <script lang="ts">
 import { ILatlng } from 'types/battle'
-import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { CellType } from '~/types/battle'
 
 export default {
   name: 'FieldCell',
-  components: {
-    CharacterRenderer
-  },
   props: {
     latLng: {
       default: (): ILatlng => ({ x: 0, y: 0 }),

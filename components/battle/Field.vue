@@ -20,7 +20,16 @@
           :character="getCharacter({ x: l, y: n })"
           :lat-lng="{ x: l, y: n }"
           @onClick="onClickCell"
-        />
+        >
+          <CharacterRenderer
+            v-if="getCharacter({ x: l, y: n })"
+            :id="
+              getCharacter({ x: l, y: n }) === undefined
+                ? ''
+                : getCharacter({ x: l, y: n }).id
+            "
+          />
+        </FieldCell>
       </template>
     </div>
     <Modal :is-open="isBattleDialogueOpen" @onClickOuter="onCancelBattleAction">
@@ -49,6 +58,7 @@ import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
+import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter } from '~/types/store'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
@@ -58,7 +68,8 @@ const ItemBattleModule = namespace('battle')
     FieldCell,
     SideMenu,
     Modal,
-    BattleDialogue
+    BattleDialogue,
+    CharacterRenderer
   }
 })
 export default class Field extends Vue {
