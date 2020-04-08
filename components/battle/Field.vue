@@ -10,8 +10,8 @@
       <button @click="resetMove">デプロイ完了</button>
       <button @click="changeDeployMode">デプロイ</button>
     </div> -->
-    <div v-for="n of 60" :key="n" :class="$style.row">
-      <template v-for="l of 60">
+    <div v-for="n of 30" :key="n" :class="$style.row">
+      <template v-for="l of 30">
         <FieldCell
           :key="`${n}-${l}`"
           :is-character-deployable-cell="isDeployableArea({ x: l, y: n })"

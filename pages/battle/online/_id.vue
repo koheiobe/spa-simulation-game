@@ -20,20 +20,20 @@ export default class OnlineBattleRoom extends Vue {
   public deployableAreas: IDeployableArea[] = [
     {
       upperLeft: {
-        x: 50,
-        y: 10
+        x: 25,
+        y: 5
       },
       upperRight: {
-        x: 55,
-        y: 10
+        x: 30,
+        y: 5
       },
       lowerLeft: {
-        x: 50,
-        y: 20
+        x: 25,
+        y: 10
       },
       lowerRight: {
-        x: 55,
-        y: 20
+        x: 30,
+        y: 10
       }
     }
   ]
@@ -57,6 +57,10 @@ export default class OnlineBattleRoom extends Vue {
       }
       this.characters.push(character)
     }
+  }
+
+  mounted() {
+    window.scrollTo(1000, 0)
   }
 }
 </script>
