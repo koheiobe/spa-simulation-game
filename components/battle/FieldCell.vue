@@ -1,70 +1,139 @@
-<template>
+<template functional>
   <div
     :class="[
       $style.cell,
-      isCharacterDeployableCell || isCharacterMovableCell || isInteractableCell
+      props.isCharacterDeployableCell ||
+      props.isCharacterMovableCell ||
+      props.isInteractableCell
         ? $style.characterPlacableCell
         : ''
     ]"
-    @click="onClick"
+    @click="
+      (evt) =>
+        $options.methods.onClick(
+          evt,
+          props.isCharacterDeployableCell,
+          props.isCharacterMovableCell,
+          props.isInteractableCell,
+          props.character,
+          props.latLng,
+          listeners
+        )
+    "
   >
-    <CharacterRenderer v-if="character !== undefined" :id="character.id" />
+    <CharacterRenderer
+      :id="props.character === undefined ? '' : props.character.id"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import Component from 'vue-class-component'
-import { Vue, Prop } from 'vue-property-decorator'
 import { ILatlng } from 'types/battle'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { CellType } from '~/types/battle'
 
-@Component({
-  components: { CharacterRenderer }
-})
-export default class FieldCell extends Vue {
-  @Prop({ default: () => {} })
-  latLng!: ILatlng
-
-  @Prop({ default: false })
-  isCharacterDeployableCell?: boolean
-
-  @Prop({ default: false })
-  isCharacterMovableCell?: boolean
-
-  @Prop({ default: false })
-  isInteractableCell?: boolean
-
-  @Prop({ default: undefined })
-  character?: ICharacter
-
-  onClick(evt: Event) {
-    // placableCell以外をクリックした場合、deployModeをfalseにするために使用
-    if (
-      this.isCharacterDeployableCell ||
-      this.isCharacterMovableCell ||
-      this.isInteractableCell
-    ) {
-      evt.stopPropagation()
+export default {
+  name: 'FieldCell',
+  components: {
+    CharacterRenderer
+  },
+  props: {
+    latLng: {
+      default: (): ILatlng => ({ x: 0, y: 0 }),
+      type: Object,
+      require: true
+    },
+    isCharacterDeployableCell: {
+      default: false,
+      type: Boolean
+    },
+    isCharacterMovableCell: {
+      default: false,
+      type: Boolean
+    },
+    isInteractableCell: {
+      default: false,
+      type: Boolean
+    },
+    character: {
+      default: (): ICharacter | undefined => undefined,
+      type: Object
     }
-    const characterId = this.character === undefined ? '' : this.character.id
-    const cellType: CellType = this.isCharacterDeployableCell
-      ? 'deploy'
-      : this.isCharacterMovableCell
-      ? 'move'
-      : this.isInteractableCell
-      ? 'interact'
-      : 'selectCharacter'
-    this.$emit('onClick', cellType, this.latLng, characterId)
+  },
+  methods: {
+    onClick(
+      evt: Event,
+      isCharacterDeployableCell: Boolean,
+      isCharacterMovableCell: Boolean,
+      isInteractableCell: Boolean,
+      character: ICharacter,
+      latLng: ILatlng,
+      listeners: any
+    ) {
+      // placableCell以外をクリックした場合、deployModeをfalseにするために使用
+      if (
+        isCharacterDeployableCell ||
+        isCharacterMovableCell ||
+        isInteractableCell
+      ) {
+        evt.stopPropagation()
+      }
+      const characterId = character === undefined ? '' : character.id
+      const cellType: CellType = isCharacterDeployableCell
+        ? 'deploy'
+        : isCharacterMovableCell
+        ? 'move'
+        : isInteractableCell
+        ? 'interact'
+        : 'selectCharacter'
+      listeners.onClick(cellType, latLng, characterId)
+    }
   }
 }
+// export default class FieldCell extends Vue {
+//   @Prop({ default: () => {} })
+//   latLng!: ILatlng
+
+//   @Prop({ default: false })
+//   isCharacterDeployableCell?: boolean
+
+//   @Prop({ default: false })
+//   isCharacterMovableCell?: boolean
+
+//   @Prop({ default: false })
+//   isInteractableCell?: boolean
+
+//   @Prop({ default: undefined })
+//   character?: ICharacter
+
+//   onClick(evt: Event) {
+//     // placableCell以外をクリックした場合、deployModeをfalseにするために使用
+//     if (
+//       this.isCharacterDeployableCell ||
+//       this.isCharacterMovableCell ||
+//       this.isInteractableCell
+//     ) {
+//       evt.stopPropagation()
+//     }
+//     const characterId = this.character === undefined ? '' : this.character.id
+//     const cellType: CellType = this.isCharacterDeployableCell
+//       ? 'deploy'
+//       : this.isCharacterMovableCell
+//       ? 'move'
+//       : this.isInteractableCell
+//       ? 'interact'
+//       : 'selectCharacter'
+//     this.$emit('onClick', cellType, this.latLng, characterId)
+//   }
+// }
 </script>
 
 <style lang="scss" module>
 .cell {
   min-width: 30px;
   height: 30px;
+  background-color: gray;
   &:hover {
     background-color: #e6e6e6;
   }
