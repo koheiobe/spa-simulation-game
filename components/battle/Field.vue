@@ -15,9 +15,7 @@
         <template v-for="l of 30">
           <FieldCell
             :key="`${n}-${l}`"
-            :is-character-deployable-cell="isDeployableArea({ x: l, y: n })"
-            :is-character-movable-cell="isMovableArea({ x: l, y: n })"
-            :is-interactable-cell="isInteractiveArea({ x: l, y: n })"
+            :cell-type="cellType({ x: l, y: n })"
             :character="getCharacter({ x: l, y: n })"
             :lat-lng="{ x: l, y: n }"
             @onClick="onClickCell"
@@ -133,6 +131,17 @@ export default class Field extends Vue {
     return this.storeCharacters.find(
       (character) => this.cellCharacterId === character.id
     )
+  }
+
+  cellType(latLng: ILatlng): CellType {
+    if (this.movableArea.length > 0) {
+      return this.isMovableArea(latLng) ? 'move' : null
+    } else if (this.isInteractiveArea.length > 0) {
+      return this.isInteractiveArea(latLng) ? 'interact' : null
+    } else if (this.isDeployableArea.length > 0) {
+      return this.isDeployableArea(latLng) ? 'deploy' : null
+    }
+    return null
   }
 
   isDeployableArea(latLng: ILatlng) {

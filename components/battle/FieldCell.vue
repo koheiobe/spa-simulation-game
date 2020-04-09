@@ -1,20 +1,11 @@
 <template functional>
   <div
-    :class="[
-      $style.cell,
-      props.isCharacterDeployableCell ||
-      props.isCharacterMovableCell ||
-      props.isInteractableCell
-        ? $style.characterPlacableCell
-        : ''
-    ]"
+    :class="[$style.cell, props.cellType ? $style.characterPlacableCell : '']"
     @click="
       (evt) =>
         $options.methods.onClick(
           evt,
-          props.isCharacterDeployableCell,
-          props.isCharacterMovableCell,
-          props.isInteractableCell,
+          props.cellType,
           props.character,
           props.latLng,
           listeners
@@ -38,17 +29,10 @@ export default {
       type: Object,
       require: true
     },
-    isCharacterDeployableCell: {
-      default: false,
-      type: Boolean
-    },
-    isCharacterMovableCell: {
-      default: false,
-      type: Boolean
-    },
-    isInteractableCell: {
-      default: false,
-      type: Boolean
+    cellType: {
+      default: null,
+      type: String,
+      require: true
     },
     character: {
       default: (): ICharacter | undefined => undefined,
@@ -58,29 +42,15 @@ export default {
   methods: {
     onClick(
       evt: Event,
-      isCharacterDeployableCell: Boolean,
-      isCharacterMovableCell: Boolean,
-      isInteractableCell: Boolean,
+      cellType: CellType,
       character: ICharacter,
       latLng: ILatlng,
       listeners: any
     ) {
-      // placableCell以外をクリックした場合、deployModeをfalseにするために使用
-      if (
-        isCharacterDeployableCell ||
-        isCharacterMovableCell ||
-        isInteractableCell
-      ) {
+      if (cellType) {
         evt.stopPropagation()
       }
       const characterId = character === undefined ? '' : character.id
-      const cellType: CellType = isCharacterDeployableCell
-        ? 'deploy'
-        : isCharacterMovableCell
-        ? 'move'
-        : isInteractableCell
-        ? 'interact'
-        : 'selectCharacter'
       listeners.onClick(cellType, latLng, characterId)
     }
   }
