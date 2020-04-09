@@ -3,7 +3,6 @@
     <b-navbar toggleable="lg" :class="$style.header">
       <!-- Right aligned nav items -->
       <b-navbar-nav class="ml-auto">
-        <b-nav-item-dropdown text="Version6" right> </b-nav-item-dropdown>
         <b-nav-item-dropdown text="Lang" right>
           <b-dropdown-item href="#">EN</b-dropdown-item>
           <b-dropdown-item href="#">ES</b-dropdown-item>

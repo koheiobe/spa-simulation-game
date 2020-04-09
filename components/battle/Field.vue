@@ -75,7 +75,7 @@ export default class Field extends Vue {
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]
 
-  // deploy property
+  // デプロイモードプロパティ
   public deployableArea: { [key: string]: Boolean } = {}
   public selectedCharacterId: string = ''
 
@@ -91,7 +91,6 @@ export default class Field extends Vue {
     if (this.storeUser.uid.length > 0) {
       this.onChangeStoreUser()
     }
-    this.$defer.runDisplayPriority()
   }
 
   @Watch('storeUser')
@@ -126,9 +125,9 @@ export default class Field extends Vue {
   cellType(latLng: ILatlng): CellType {
     if (Object.keys(this.movableArea).length > 0) {
       return this.isMovableArea(latLng) ? 'move' : null
-    } else if (this.isInteractiveArea.length > 0) {
+    } else if (this.interactiveArea.length > 0) {
       return this.isInteractiveArea(latLng) ? 'interact' : null
-    } else if (Object.keys(this.isDeployableArea).length > 0) {
+    } else if (Object.keys(this.deployableArea).length > 0) {
       return this.isDeployableArea(latLng) ? 'deploy' : null
     }
     return null
