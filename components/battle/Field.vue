@@ -10,28 +10,18 @@
       <button @click="resetMove">デプロイ完了</button>
       <button @click="changeDeployMode">デプロイ</button>
     </div> -->
-    <template v-if="$defer.defer(3)">
-      <div v-for="n of 30" :key="n" :class="$style.row">
-        <template v-for="l of 30">
-          <FieldCell
-            :key="`${n}-${l}`"
-            :cell-type="cellType({ x: l, y: n })"
-            :character="getCharacter({ x: l, y: n })"
-            :lat-lng="{ x: l, y: n }"
-            @onClick="onClickCell"
-          >
-            <CharacterRenderer
-              v-show="getCharacter({ x: l, y: n })"
-              :id="
-                getCharacter({ x: l, y: n }) === undefined
-                  ? ''
-                  : getCharacter({ x: l, y: n }).id
-              "
-            />
-          </FieldCell>
-        </template>
-      </div>
-    </template>
+    <div v-for="n of 30" :key="n" :class="$style.row">
+      <template v-for="l of 30">
+        <FieldCell
+          :key="`${n}-${l}`"
+          :cell-type="cellType({ x: l, y: n })"
+          :character="getCharacter({ x: l, y: n })"
+          :lat-lng="{ x: l, y: n }"
+          @onClick="onClickCell"
+        >
+        </FieldCell>
+      </template>
+    </div>
     <Modal :is-open="isBattleDialogueOpen" @onClickOuter="onCancelBattleAction">
       <BattleDialogue @onSelect="onSelectBattleAction" />
     </Modal>
@@ -151,6 +141,7 @@ export default class Field extends Vue {
   }
 
   isMovableArea(latLng: ILatlng) {
+    // 配列の値を削除して、徐々にiterationの数を小さくすることで、レンダリング負荷を軽くできないか？
     return this.movableArea.some(
       (movable) => movable.x === latLng.x && movable.y === latLng.y
     )

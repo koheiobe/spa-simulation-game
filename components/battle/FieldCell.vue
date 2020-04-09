@@ -12,7 +12,7 @@
         )
     "
   >
-    <slot />
+    <CharacterRenderer v-if="props.character" :id="props.character.id" />
   </div>
 </template>
 
@@ -20,9 +20,13 @@
 import { ILatlng } from 'types/battle'
 import { ICharacter } from '~/types/store'
 import { CellType } from '~/types/battle'
+import CharacterRenderer from '~/components/CharacterRenderer.vue'
 
 export default {
   name: 'FieldCell',
+  components: {
+    CharacterRenderer
+  },
   props: {
     latLng: {
       default: (): ILatlng => ({ x: 0, y: 0 }),
