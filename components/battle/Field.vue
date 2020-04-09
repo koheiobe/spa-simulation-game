@@ -76,13 +76,13 @@ export default class Field extends Vue {
   deployableAreas!: IDeployableArea[]
 
   // deploy property
-  public deployableArea: ILatlng[] = []
+  public deployableArea: { [key: string]: Boolean } = {}
   public selectedCharacterId: string = ''
 
   // 戦闘モードプロパティ
   // 各characterの移動距離と置き換え
   public moveNum = 8
-  public movableArea: ILatlng[] = []
+  public movableArea: { [key: string]: Boolean } = {}
   public cellCharacterId: string = ''
   public interactiveArea: ILatlng[] = []
   public isBattleDialogueOpen: boolean = false
@@ -124,27 +124,22 @@ export default class Field extends Vue {
   }
 
   cellType(latLng: ILatlng): CellType {
-    if (this.movableArea.length > 0) {
+    if (Object.keys(this.movableArea).length > 0) {
       return this.isMovableArea(latLng) ? 'move' : null
     } else if (this.isInteractiveArea.length > 0) {
       return this.isInteractiveArea(latLng) ? 'interact' : null
-    } else if (this.isDeployableArea.length > 0) {
+    } else if (Object.keys(this.isDeployableArea).length > 0) {
       return this.isDeployableArea(latLng) ? 'deploy' : null
     }
     return null
   }
 
   isDeployableArea(latLng: ILatlng) {
-    return this.deployableArea.some(
-      (movable) => movable.x === latLng.x && movable.y === latLng.y
-    )
+    return this.deployableArea[`${latLng.y}_${latLng.x}`]
   }
 
   isMovableArea(latLng: ILatlng) {
-    // 配列の値を削除して、徐々にiterationの数を小さくすることで、レンダリング負荷を軽くできないか？
-    return this.movableArea.some(
-      (movable) => movable.x === latLng.x && movable.y === latLng.y
-    )
+    return this.movableArea[`${latLng.y}_${latLng.x}`]
   }
 
   isInteractiveArea(latLng: ILatlng) {
@@ -159,7 +154,7 @@ export default class Field extends Vue {
   }
 
   finishDeployMode() {
-    this.deployableArea = []
+    this.deployableArea = {}
     this.selectedCharacterId = ''
     this.$firestore.updateCharacters(
       this.storeUser.battleId,
@@ -223,7 +218,7 @@ export default class Field extends Vue {
       })
       this.setModal(true)
     }
-    this.movableArea = []
+    this.movableArea = {}
   }
 
   interactCharacter() {
@@ -293,7 +288,8 @@ export default class Field extends Vue {
 
   resetMove() {
     this.cellCharacterId = ''
-    this.movableArea = this.interactiveArea = []
+    this.interactiveArea = []
+    this.movableArea = {}
   }
 
   onSelectBattleAction(action: ActionType) {

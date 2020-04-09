@@ -2,8 +2,8 @@ import { IDeployableArea, ILatlng, WeaponType } from '~/types/battle'
 
 export const fillDeployableArea = (
   deployableAreas: IDeployableArea[]
-): ILatlng[] => {
-  const filledDeployableArea: ILatlng[] = []
+): { [key: string]: Boolean } => {
+  const filledDeployableArea: { [key: string]: Boolean } = {}
   deployableAreas.forEach((deployableArea) => {
     for (
       let i = deployableArea.upperLeft.y;
@@ -15,7 +15,7 @@ export const fillDeployableArea = (
         j <= deployableArea.upperRight.x;
         j++
       ) {
-        filledDeployableArea.push({ x: j, y: i })
+        filledDeployableArea[`${i}_${j}`] = true
       }
     }
   })
@@ -25,16 +25,13 @@ export const fillDeployableArea = (
 export const fillMovableArea = (
   latLng: ILatlng,
   movePoint: number
-): ILatlng[] => {
-  const movableRange: ILatlng[] = []
+): { [key: string]: Boolean } => {
+  const movableRange: { [key: string]: Boolean } = {}
   for (let i = -movePoint; i <= movePoint; i++) {
     const upperY = movePoint - Math.abs(i)
     const lowerY = -movePoint + Math.abs(i)
     for (let j = lowerY + 1; j < upperY; j++) {
-      movableRange.push({
-        x: latLng.x + i,
-        y: latLng.y + j
-      })
+      movableRange[`${latLng.y + j}_${latLng.x + i}`] = true
     }
   }
   return movableRange
