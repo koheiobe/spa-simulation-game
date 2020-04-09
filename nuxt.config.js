@@ -34,7 +34,11 @@ export default {
   /*
    ** Plugins to load before mounting the App
    */
-  plugins: ['~/plugins/firebase/auth.ts', '~/plugins/firebase/database.ts'],
+  plugins: [
+    '~/plugins/firebase/auth.ts',
+    '~/plugins/firebase/database.ts',
+    '~/plugins/defer.ts'
+  ],
   /*
    ** Nuxt.js dev-modules
    */
