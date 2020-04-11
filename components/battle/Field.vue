@@ -124,21 +124,13 @@ export default class Field extends Vue {
 
   cellType(latLng: ILatlng): CellType {
     if (Object.keys(this.movableArea).length > 0) {
-      return this.isMovableArea(latLng) ? 'move' : null
+      return this.movableArea[`${latLng.y}_${latLng.x}`] ? 'move' : null
     } else if (this.interactiveArea.length > 0) {
       return this.isInteractiveArea(latLng) ? 'interact' : null
     } else if (Object.keys(this.deployableArea).length > 0) {
-      return this.isDeployableArea(latLng) ? 'deploy' : null
+      return this.deployableArea[`${latLng.y}_${latLng.x}`] ? 'deploy' : null
     }
     return null
-  }
-
-  isDeployableArea(latLng: ILatlng) {
-    return this.deployableArea[`${latLng.y}_${latLng.x}`]
-  }
-
-  isMovableArea(latLng: ILatlng) {
-    return this.movableArea[`${latLng.y}_${latLng.x}`]
   }
 
   isInteractiveArea(latLng: ILatlng) {
