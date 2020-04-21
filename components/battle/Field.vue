@@ -152,6 +152,7 @@ export default class Field extends Vue {
   }
 
   finishDeployMode() {
+    if (Object.keys(this.deployableArea).length === 0) return
     this.deployableArea = {}
     this.selectedCharacterId = ''
     this.$firestore.updateCharacters(
