@@ -14,7 +14,7 @@
       <template v-for="l of 30">
         <FieldCell
           :key="`${n}-${l}`"
-          :cell-type="getCellType({ x: l, y: n })"
+          :cell-type="cellType({ x: l, y: n })"
           :character="getCharacter({ x: l, y: n })"
           :lat-lng="{ x: l, y: n }"
           @onClick="onClickCell"
@@ -39,7 +39,11 @@ import {
   WeaponType,
   CellType
 } from '~/types/battle'
-import CellActivater from '~/utility/helper/field'
+import {
+  fillDeployableArea,
+  fillMovableArea,
+  fillInteractiveArea
+} from '~/utility/helper/field'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -71,15 +75,16 @@ export default class Field extends Vue {
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]
 
-  private cellActivater: CellActivater = new CellActivater()
-
   // デプロイモードプロパティ
+  public deployableArea: { [key: string]: Boolean } = {}
   public selectedCharacterId: string = ''
 
   // 戦闘モードプロパティ
   // 各characterの移動距離と置き換え
   public moveNum = 8
+  public movableArea: { [key: string]: Boolean } = {}
   public cellCharacterId: string = ''
+  public interactiveArea: ILatlng[] = []
   public isBattleDialogueOpen: boolean = false
 
   mounted() {
@@ -117,13 +122,38 @@ export default class Field extends Vue {
     )
   }
 
+  cellType(latLng: ILatlng): CellType {
+    if (Object.keys(this.movableArea).length > 0) {
+      return this.isMovableArea(latLng) ? 'move' : null
+    } else if (this.interactiveArea.length > 0) {
+      return this.isInteractiveArea(latLng) ? 'interact' : null
+    } else if (Object.keys(this.deployableArea).length > 0) {
+      return this.isDeployableArea(latLng) ? 'deploy' : null
+    }
+    return null
+  }
+
+  isDeployableArea(latLng: ILatlng) {
+    return this.deployableArea[`${latLng.y}_${latLng.x}`]
+  }
+
+  isMovableArea(latLng: ILatlng) {
+    return this.movableArea[`${latLng.y}_${latLng.x}`]
+  }
+
+  isInteractiveArea(latLng: ILatlng) {
+    return this.interactiveArea.some(
+      (cell) => cell.x === latLng.x && cell.y === latLng.y
+    )
+  }
+
   startDeployMode(id: string) {
-    this.cellActivater.fillDeployableArea(this.deployableAreas)
+    this.deployableArea = fillDeployableArea(this.deployableAreas)
     this.selectedCharacterId = id
   }
 
   finishDeployMode() {
-    this.cellActivater.initAreas()
+    this.deployableArea = {}
     this.selectedCharacterId = ''
     this.$firestore.updateCharacters(
       this.storeUser.battleId,
@@ -155,7 +185,7 @@ export default class Field extends Vue {
   }
 
   selectCharacter(latLng: ILatlng) {
-    this.cellActivater.fillMovableArea(latLng, this.moveNum)
+    this.movableArea = fillMovableArea(latLng, this.moveNum)
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
@@ -187,7 +217,7 @@ export default class Field extends Vue {
       })
       this.setModal(true)
     }
-    this.cellActivater.initAreas()
+    this.movableArea = {}
   }
 
   interactCharacter() {
@@ -257,7 +287,8 @@ export default class Field extends Vue {
 
   resetMove() {
     this.cellCharacterId = ''
-    this.cellActivater.initAreas()
+    this.interactiveArea = []
+    this.movableArea = {}
   }
 
   onSelectBattleAction(action: ActionType) {
@@ -288,7 +319,7 @@ export default class Field extends Vue {
         itemId
       }
     })
-    this.cellActivater.fillInteractiveArea(
+    this.interactiveArea = fillInteractiveArea(
       interactiveCharacter.latLng,
       interactType
     )
