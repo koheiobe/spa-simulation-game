@@ -249,7 +249,7 @@ export default class Field extends Vue {
     const updatedLatLng = isCancel
       ? interactiveCharacter.lastLatLng
       : interactiveCharacter.latLng
-    await this.$store.dispatch('battle/setCharacterParam', {
+    await this.setCharacterParam({
       id: interactiveCharacter.id,
       value: {
         latLng: updatedLatLng,
