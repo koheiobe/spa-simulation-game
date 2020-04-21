@@ -1,9 +1,16 @@
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter } from '~/types/store'
+import { ILatlng } from '~/types/battle'
 
-export const state = () => ({
-  list: [] as ICharacter[]
+interface state {
+  list: ICharacter[]
+  interactiveCharacter: ICharacter | undefined
+}
+
+export const state = (): state => ({
+  list: [] as ICharacter[],
+  interactiveCharacter: {} as ICharacter
 })
 
 export type RootState = ReturnType<typeof state>
@@ -11,6 +18,13 @@ export type RootState = ReturnType<typeof state>
 export const getters: GetterTree<RootState, RootState> = {
   getCharacters: (state) => {
     return state.list
+  },
+  interactiveCharacter: (state) => {
+    return state.interactiveCharacter === undefined
+      ? undefined
+      : state.list.find(
+          (character) => character.id === state.interactiveCharacter!.id
+        )
   }
 }
 
@@ -21,6 +35,11 @@ export const mutations: MutationTree<RootState> = {
         ? { ...character, ...obj.value }
         : character
     })
+  },
+  setInteractiveCharacter(state, cellCharacterId: string) {
+    state.interactiveCharacter = state.list.find(
+      (character) => cellCharacterId === character.id
+    )
   }
 }
 
