@@ -23,7 +23,10 @@
       </template>
     </div>
     <Modal :is-open="isBattleDialogueOpen" @onClickOuter="onCancelBattleAction">
-      <BattleDialogue @onSelect="onSelectBattleAction" />
+      <BattleDialogue
+        :character-name="characterName"
+        @onSelect="onSelectBattleAction"
+      />
     </Modal>
   </div>
 </template>
@@ -327,6 +330,10 @@ export default class Field extends Vue {
   onSurrender() {
     this.$firestore.setBattleId(this.storeUser.uid, '')
     this.$router.push('/battle/online')
+  }
+
+  get characterName() {
+    return this.interactiveCharacter ? this.interactiveCharacter.id : ''
   }
 }
 </script>

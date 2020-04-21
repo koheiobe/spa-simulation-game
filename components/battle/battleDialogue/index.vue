@@ -1,6 +1,7 @@
 <template>
   <div>
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
+      <li>名前: {{ characterName }}</li>
       <li @click="onSelectAction('attack')">攻撃</li>
       <li @click="onSelectAction('wait')">待機</li>
       <li @click="onSelectAction('item')">アイテム</li>
@@ -33,7 +34,7 @@
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { Vue } from 'vue-property-decorator'
+import { Vue, Prop } from 'vue-property-decorator'
 import { ActionType } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 
@@ -43,6 +44,9 @@ import Modal from '~/components/utility/Modal.vue'
   }
 })
 export default class BattleDialogue extends Vue {
+  @Prop({ default: '' })
+  characterName!: string
+
   public itemList: string[] = ['dd', 'dd', 'dd', 'dd', 'dd', 'dd']
   public selectedAction: ActionType = 'none'
   public isItemModalOpen: boolean = false
