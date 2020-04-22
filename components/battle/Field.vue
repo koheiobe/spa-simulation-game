@@ -68,10 +68,10 @@ const ItemBattleModule = namespace('battle')
 export default class Field extends Vue {
   @ItemUserModule.Getter('getUser') private storeUser!: IUser
 
-  @ItemBattleModule.Getter('interactiveCharacter')
+  @ItemBattleModule.State('interactiveCharacter')
   private interactiveCharacter!: ICharacter | undefined
 
-  @ItemBattleModule.Getter('getCharacters')
+  @ItemBattleModule.State('list')
   private storeCharacters!: ICharacter[]
 
   @ItemBattleModule.Action('setCharacterParam')
@@ -82,6 +82,9 @@ export default class Field extends Vue {
 
   @ItemBattleModule.Mutation('setInteractiveCharacter')
   private setInteractiveCharacter!: (cellCharacterId: string) => void
+
+  @ItemBattleModule.Mutation('updateInteractiveCharacter')
+  private updateInteractiveCharacter!: (param: any) => void
 
   @Prop({ default: () => {} })
   characters!: ICharacter[]
@@ -203,12 +206,7 @@ export default class Field extends Vue {
         this.interactiveCharacter.id === cellCharacterId) ||
       cellCharacterId.length === 0
     if (isMovableCell) {
-      this.setCharacterParam({
-        id: this.interactiveCharacter!.id,
-        value: {
-          latLng
-        }
-      })
+      this.updateInteractiveCharacter({ latLng })
       this.setModal(true)
     }
     this.movableArea = {}
@@ -243,7 +241,7 @@ export default class Field extends Vue {
     this.onFinishBattleAction(true)
   }
 
-  async onFinishBattleAction(isCancel: boolean = false) {
+  onFinishBattleAction(isCancel: boolean = false) {
     const interactiveCharacter = this.interactiveCharacter
     if (interactiveCharacter === undefined) return
     const defaultActionState = {
@@ -253,34 +251,21 @@ export default class Field extends Vue {
     const updatedLatLng = isCancel
       ? interactiveCharacter.lastLatLng
       : interactiveCharacter.latLng
-    await this.setCharacterParam({
-      id: interactiveCharacter.id,
-      value: {
+
+    if (!isCancel) {
+      const movedCharacter = {
+        ...interactiveCharacter,
         latLng: updatedLatLng,
         lastLatLng: updatedLatLng,
         actionState: defaultActionState
       }
-    })
-
-    if (!isCancel) {
-      const updatedInteractiveCharacter = this.interactiveCharacter
-      if (updatedInteractiveCharacter) {
-        const movedCharacter = {
-          ...updatedInteractiveCharacter,
-          latLng: updatedInteractiveCharacter.latLng,
-          actionState: defaultActionState
-        }
-        this.$firestore.updateCharacter(this.storeUser.battleId, movedCharacter)
-      }
+      this.$firestore.updateCharacter(this.storeUser.battleId, movedCharacter)
     }
 
     this.setModal(false)
-    this.resetMove()
-  }
-
-  resetMove() {
     this.interactiveArea = []
     this.movableArea = {}
+    this.setInteractiveCharacter('')
   }
 
   onSelectBattleAction(action: ActionType) {
@@ -322,9 +307,17 @@ export default class Field extends Vue {
   }
 
   getCharacter(latLng: ILatlng) {
-    return this.storeCharacters.find(
-      (character: ICharacter) =>
-        character.latLng.x === latLng.x && character.latLng.y === latLng.y
+    if (
+      this.interactiveCharacter &&
+      this.interactiveCharacter.latLng.x === latLng.x &&
+      this.interactiveCharacter.latLng.y === latLng.y
+    )
+      return this.interactiveCharacter
+
+    return this.storeCharacters.find((character: ICharacter) =>
+      this.interactiveCharacter && this.interactiveCharacter.id === character.id
+        ? false
+        : character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
   }
 

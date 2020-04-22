@@ -10,7 +10,7 @@ interface state {
 
 export const state = (): state => ({
   list: [] as ICharacter[],
-  interactiveCharacter: {} as ICharacter
+  interactiveCharacter: undefined
 })
 
 export type RootState = ReturnType<typeof state>
@@ -40,11 +40,15 @@ export const mutations: MutationTree<RootState> = {
     state.interactiveCharacter = state.list.find(
       (character) => cellCharacterId === character.id
     )
+  },
+  updateInteractiveCharacter(state, param) {
+    state.interactiveCharacter = { ...state.interactiveCharacter, ...param }
   }
 }
 
 export const actions: ActionTree<RootState, RootState> = {
   setCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+    // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
     bindFirestoreRef('list', ref)
   }),
   setCharacterParam(context, obj) {
