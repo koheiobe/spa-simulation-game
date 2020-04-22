@@ -242,6 +242,10 @@ export default class Field extends Vue {
   }
 
   onFinishBattleAction(isCancel: boolean = false) {
+    this.setModal(false)
+    this.interactiveArea = []
+    this.movableArea = {}
+
     const interactiveCharacter = this.interactiveCharacter
     if (interactiveCharacter === undefined) return
     const defaultActionState = {
@@ -261,10 +265,6 @@ export default class Field extends Vue {
       }
       this.$firestore.updateCharacter(this.storeUser.battleId, movedCharacter)
     }
-
-    this.setModal(false)
-    this.interactiveArea = []
-    this.movableArea = {}
     this.setInteractiveCharacter('')
   }
 
