@@ -22,7 +22,7 @@
         </FieldCell>
       </template>
     </div>
-    <Modal :is-open="isBattleDialogueOpen" @onClickOuter="onCancelBattleAction">
+    <Modal :is-open="isBattleDialogueOpen" @onClickOuter="onCancelAction">
       <BattleDialogue
         :character-name="characterName"
         @onSelect="onSelectBattleAction"
@@ -74,10 +74,29 @@ export default class Field extends Vue {
   @ItemBattleModule.State('list')
   private storeCharacters!: ICharacter[]
 
+  @ItemBattleModule.Action('bindCharactersRef')
+  private bindCharactersRef!: (
+    characterRef: firebase.firestore.CollectionReference<
+      firebase.firestore.DocumentData
+    >
+  ) => Promise<null>
+
   @ItemBattleModule.Action('setCharacterParam')
   private setCharacterParam!: (characterObj: {
     id: string
     value: any
+  }) => Promise<null>
+
+  @ItemBattleModule.Action('updateCharacter')
+  private _updateCharacter!: (dbInfo: {
+    battleId: string
+    character: ICharacter
+  }) => Promise<null>
+
+  @ItemBattleModule.Action('updateCharacters')
+  private updateCharacters!: (dbInfo: {
+    battleId: string
+    characters: ICharacter[]
   }) => Promise<null>
 
   @ItemBattleModule.Mutation('setInteractiveCharacter')
@@ -122,14 +141,12 @@ export default class Field extends Vue {
     )
     const dbCharacters = await dbCharactersRef.get()
     if (dbCharacters.empty) {
-      this.$firestore.updateCharacters(this.storeUser.battleId, this.characters)
-      this.$store.dispatch(
-        'battle/setCharactersRef',
-        this.$firestore.getCharactersRef(this.storeUser.battleId)
-      )
-    } else {
-      this.$store.dispatch('battle/setCharactersRef', dbCharactersRef)
+      this.updateCharacters({
+        battleId: this.storeUser.battleId,
+        characters: this.characters
+      })
     }
+    this.bindCharactersRef(dbCharactersRef)
   }
 
   cellType(latLng: ILatlng): CellType {
@@ -146,21 +163,6 @@ export default class Field extends Vue {
   isInteractiveArea(latLng: ILatlng) {
     return this.interactiveArea.some(
       (cell) => cell.x === latLng.x && cell.y === latLng.y
-    )
-  }
-
-  startDeployMode(id: string) {
-    this.deployableArea = fillDeployableArea(this.deployableAreas)
-    this.selectedCharacterId = id
-  }
-
-  finishDeployMode() {
-    if (Object.keys(this.deployableArea).length === 0) return
-    this.deployableArea = {}
-    this.selectedCharacterId = ''
-    this.$firestore.updateCharacters(
-      this.storeUser.battleId,
-      this.storeCharacters
     )
   }
 
@@ -182,9 +184,24 @@ export default class Field extends Vue {
           this.movableArea = fillMovableArea(latLng, this.moveNum)
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
-          this.onCancelBattleAction()
+          this.onCancelAction()
         }
     }
+  }
+
+  startDeployMode(id: string) {
+    this.deployableArea = fillDeployableArea(this.deployableAreas)
+    this.selectedCharacterId = id
+  }
+
+  finishDeployMode() {
+    if (Object.keys(this.deployableArea).length === 0) return
+    this.deployableArea = {}
+    this.selectedCharacterId = ''
+    this.$firestore.updateCharacters(
+      this.storeUser.battleId,
+      this.storeCharacters
+    )
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
@@ -212,83 +229,27 @@ export default class Field extends Vue {
     this.movableArea = {}
   }
 
-  interactCharacter(cellCharacterId: string) {
-    if (this.interactiveCharacter && cellCharacterId.length > 0) {
-      if (this.interactiveCharacter.actionState.name === 'attack') {
-        // アタック処理
-        const targetCharacter = this.storeCharacters.find(
-          (character) => character.id === cellCharacterId
-        )
-        if (!targetCharacter || !this.interactiveCharacter) return
-        const damageTakenCharacter = {
-          ...targetCharacter,
-          hp: targetCharacter.hp - this.interactiveCharacter.attackPoint
-        }
-        this.$firestore.updateCharacter(
-          this.storeUser.battleId,
-          damageTakenCharacter
-        )
-      } else if (this.interactiveCharacter.actionState.name === 'item') {
-        console.log('item', cellCharacterId)
-      }
-      this.onFinishBattleAction()
-    } else {
-      this.onCancelBattleAction()
-    }
-  }
-
-  onCancelBattleAction() {
-    this.onFinishBattleAction(true)
-  }
-
-  onFinishBattleAction(isCancel: boolean = false) {
-    this.setModal(false)
-    this.interactiveArea = []
-    this.movableArea = {}
-
-    const interactiveCharacter = this.interactiveCharacter
-    if (interactiveCharacter === undefined) return
-    const defaultActionState = {
-      name: '',
-      itemId: 0
-    } as const
-    const updatedLatLng = isCancel
-      ? interactiveCharacter.lastLatLng
-      : interactiveCharacter.latLng
-
-    if (!isCancel) {
-      const movedCharacter = {
-        ...interactiveCharacter,
-        latLng: updatedLatLng,
-        lastLatLng: updatedLatLng,
-        actionState: defaultActionState
-      }
-      this.$firestore.updateCharacter(this.storeUser.battleId, movedCharacter)
-    }
-    this.setInteractiveCharacter('')
-  }
-
   onSelectBattleAction(action: ActionType) {
     switch (action) {
       case 'attack':
-        this.changeInteractStage(action, 'closeRange')
+        this.beforeInteractCharacter(action, 'closeRange')
         break
       case 'wait':
-        this.onFinishBattleAction()
+        this.onFinishAction()
         break
       case 'item':
-        this.changeInteractStage(action, 'closeRange', 1)
+        this.beforeInteractCharacter(action, 'closeRange', 1)
         break
     }
   }
 
-  changeInteractStage(
+  beforeInteractCharacter(
     actionType: ActionType,
     interactType: WeaponType,
     itemId: number = 0
   ) {
     if (this.interactiveCharacter === undefined) return
-    this.setCharacterParam({
+    this.updateInteractiveCharacter({
       id: this.interactiveCharacter.id,
       value: {
         name: actionType,
@@ -300,6 +261,74 @@ export default class Field extends Vue {
       interactType
     )
     this.setModal(false)
+  }
+
+  interactCharacter(cellCharacterId: string) {
+    if (this.interactiveCharacter && cellCharacterId.length > 0) {
+      switch (this.interactiveCharacter.actionState.name) {
+        case 'attack':
+          this.attackCharacter(cellCharacterId)
+          break
+        case 'item':
+          this.useItem(cellCharacterId)
+          break
+      }
+      this.onFinishAction()
+    } else {
+      this.onCancelAction()
+    }
+  }
+
+  attackCharacter(cellCharacterId: string) {
+    const targetCharacter = this.storeCharacters.find(
+      (character) => character.id === cellCharacterId
+    )
+    if (!targetCharacter || !this.interactiveCharacter) return
+    const damageTakenCharacter = {
+      ...targetCharacter,
+      hp: targetCharacter.hp - this.interactiveCharacter.attackPoint
+    }
+    this.$firestore.updateCharacter(
+      this.storeUser.battleId,
+      damageTakenCharacter
+    )
+  }
+
+  useItem(cellCharacterId: string) {
+    console.log('item', cellCharacterId)
+  }
+
+  onCancelAction() {
+    this.onFinishAction(true)
+  }
+
+  onFinishAction(isCancel: boolean = false) {
+    this.setModal(false)
+    this.interactiveArea = []
+    this.movableArea = {}
+
+    if (!isCancel) {
+      this.updateCharacter()
+    }
+    this.setInteractiveCharacter('')
+  }
+
+  updateCharacter() {
+    if (this.interactiveCharacter === undefined) return
+    const defaultActionState = {
+      name: '',
+      itemId: 0
+    } as const
+    const movedCharacter = {
+      ...this.interactiveCharacter,
+      latLng: this.interactiveCharacter.latLng,
+      lastLatLng: this.interactiveCharacter.latLng,
+      actionState: defaultActionState
+    }
+    this._updateCharacter({
+      battleId: this.storeUser.battleId,
+      character: movedCharacter
+    })
   }
 
   setModal(bool: boolean) {
@@ -334,7 +363,6 @@ export default class Field extends Vue {
 
 <style lang="scss" module>
 .field {
-  // overflow: scroll;
   .debugArea {
     position: fixed;
     left: 300px;

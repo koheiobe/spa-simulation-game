@@ -1,7 +1,6 @@
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter } from '~/types/store'
-import { ILatlng } from '~/types/battle'
 
 interface state {
   list: ICharacter[]
@@ -47,10 +46,16 @@ export const mutations: MutationTree<RootState> = {
 }
 
 export const actions: ActionTree<RootState, RootState> = {
-  setCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+  bindCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
     bindFirestoreRef('list', ref)
   }),
+  updateCharacter(_, dbInfo: { battleId: string; character: ICharacter }) {
+    this.$firestore.updateCharacter(dbInfo.battleId, dbInfo.character)
+  },
+  updateCharacters(_, dbInfo: { battleId: string; characters: ICharacter[] }) {
+    this.$firestore.updateCharacters(dbInfo.battleId, dbInfo.characters)
+  },
   setCharacterParam(context, obj) {
     return new Promise((resolve) => {
       context.commit('setCharacterParam', {
