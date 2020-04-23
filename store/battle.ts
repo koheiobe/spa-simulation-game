@@ -3,40 +3,25 @@ import { firestoreAction } from 'vuexfire'
 import { ICharacter } from '~/types/store'
 
 interface state {
-  list: ICharacter[]
+  characters: ICharacter[]
   interactiveCharacter: ICharacter | undefined
 }
 
 export const state = (): state => ({
-  list: [] as ICharacter[],
+  characters: [] as ICharacter[],
   interactiveCharacter: undefined
 })
 
 export type RootState = ReturnType<typeof state>
 
-export const getters: GetterTree<RootState, RootState> = {
-  getCharacters: (state) => {
-    return state.list
-  },
-  interactiveCharacter: (state) => {
-    return state.interactiveCharacter === undefined
-      ? undefined
-      : state.list.find(
-          (character) => character.id === state.interactiveCharacter!.id
-        )
-  }
-}
-
 export const mutations: MutationTree<RootState> = {
   setCharacterParam(state, obj) {
-    state.list = state.list.map((character) => {
-      return character.id === obj.id
-        ? { ...character, ...obj.value }
-        : character
-    })
+    state.characters = state.characters.map((character) =>
+      character.id === obj.id ? { ...character, ...obj.value } : character
+    )
   },
   setInteractiveCharacter(state, cellCharacterId: string) {
-    state.interactiveCharacter = state.list.find(
+    state.interactiveCharacter = state.characters.find(
       (character) => cellCharacterId === character.id
     )
   },
@@ -48,7 +33,7 @@ export const mutations: MutationTree<RootState> = {
 export const actions: ActionTree<RootState, RootState> = {
   bindCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
-    bindFirestoreRef('list', ref)
+    bindFirestoreRef('characters', ref)
   }),
   updateCharacter(_, dbInfo: { battleId: string; character: ICharacter }) {
     this.$firestore.updateCharacter(dbInfo.battleId, dbInfo.character)

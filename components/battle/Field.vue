@@ -2,7 +2,7 @@
   <div :class="$style.field" @click="finishDeployMode">
     <SideMenu
       :characters="storeCharacters"
-      :selected-character-id="selectedCharacterId"
+      :selected-character-id="deployCharacterId"
       @onClickCharacter="startDeployMode"
       @onSurrender="onSurrender"
     />
@@ -14,7 +14,7 @@
       <template v-for="l of 30">
         <FieldCell
           :key="`${n}-${l}`"
-          :cell-type="cellType({ x: l, y: n })"
+          :cell-type="decideCellType({ x: l, y: n })"
           :character="getCharacter({ x: l, y: n })"
           :lat-lng="{ x: l, y: n }"
           @onClick="onClickCell"
@@ -22,7 +22,7 @@
         </FieldCell>
       </template>
     </div>
-    <Modal :is-open="isBattleDialogueOpen" @onClickOuter="onCancelAction">
+    <Modal :is-open="isBattleModalOpen" @onClickOuter="onCancelAction">
       <BattleDialogue
         :character-name="characterName"
         @onSelect="onSelectBattleAction"
@@ -71,7 +71,7 @@ export default class Field extends Vue {
   @ItemBattleModule.State('interactiveCharacter')
   private interactiveCharacter!: ICharacter | undefined
 
-  @ItemBattleModule.State('list')
+  @ItemBattleModule.State('characters')
   private storeCharacters!: ICharacter[]
 
   @ItemBattleModule.Action('bindCharactersRef')
@@ -88,7 +88,7 @@ export default class Field extends Vue {
   }) => Promise<null>
 
   @ItemBattleModule.Action('updateCharacter')
-  private _updateCharacter!: (dbInfo: {
+  private updateCharacter!: (dbInfo: {
     battleId: string
     character: ICharacter
   }) => Promise<null>
@@ -111,16 +111,14 @@ export default class Field extends Vue {
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]
 
-  // デプロイモードプロパティ
+  public deployCharacterId: string = ''
+  // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
   public deployableArea: { [key: string]: Boolean } = {}
-  public selectedCharacterId: string = ''
-
-  // 戦闘モードプロパティ
-  // 各characterの移動距離と置き換え
-  public moveNum = 8
   public movableArea: { [key: string]: Boolean } = {}
   public interactiveArea: ILatlng[] = []
-  public isBattleDialogueOpen: boolean = false
+  // TODO 各characterの移動距離と置き換える
+  public moveNum = 8
+  public isBattleModalOpen: boolean = false
 
   mounted() {
     if (this.storeUser.uid.length > 0) {
@@ -149,7 +147,7 @@ export default class Field extends Vue {
     this.bindCharactersRef(dbCharactersRef)
   }
 
-  cellType(latLng: ILatlng): CellType {
+  decideCellType(latLng: ILatlng): CellType {
     if (Object.keys(this.movableArea).length > 0) {
       return this.movableArea[`${latLng.y}_${latLng.x}`] ? 'move' : null
     } else if (this.interactiveArea.length > 0) {
@@ -191,13 +189,14 @@ export default class Field extends Vue {
 
   startDeployMode(id: string) {
     this.deployableArea = fillDeployableArea(this.deployableAreas)
-    this.selectedCharacterId = id
+    this.deployCharacterId = id
   }
 
+  // HACK デプロイ画面と戦闘画面、違う画面に分けた方がいいかもしれない
   finishDeployMode() {
     if (Object.keys(this.deployableArea).length === 0) return
     this.deployableArea = {}
-    this.selectedCharacterId = ''
+    this.deployCharacterId = ''
     this.$firestore.updateCharacters(
       this.storeUser.battleId,
       this.storeCharacters
@@ -205,11 +204,21 @@ export default class Field extends Vue {
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
-    const updatedLatLng = cellCharacterId.length > 0 ? { x: -1, y: -1 } : latLng
-    const characterId =
-      cellCharacterId.length > 0 ? cellCharacterId : this.selectedCharacterId
+    const isDeployedCell = cellCharacterId.length > 0
+    // クリックしたセルにキャラクターが存在したら、キャラクターを除外
+    // 存在しないならクリックしたセルにキャラクターを配置
+    const updatedLatLng = isDeployedCell ? { x: -1, y: -1 } : latLng
+    const targetCharacterId = isDeployedCell
+      ? cellCharacterId
+      : this.deployCharacterId
+    // TODO setCharacterParamはfirestoreのrefが外れてしまうため使えない
+    // ただ、キャラクターを配置するたびに、firestoreを使いたくない(使用回数に制限あり)
+    // どうすべきか
+    // const targetCharacter = this.storeCharacters.find(
+    //   (character) => character.id === targetCharacterId
+    // )
     this.setCharacterParam({
-      id: characterId,
+      id: targetCharacterId,
       value: {
         latLng: updatedLatLng,
         lastLatLng: updatedLatLng
@@ -288,10 +297,10 @@ export default class Field extends Vue {
       ...targetCharacter,
       hp: targetCharacter.hp - this.interactiveCharacter.attackPoint
     }
-    this.$firestore.updateCharacter(
-      this.storeUser.battleId,
-      damageTakenCharacter
-    )
+    this.updateCharacter({
+      battleId: this.storeUser.battleId,
+      character: damageTakenCharacter
+    })
   }
 
   useItem(cellCharacterId: string) {
@@ -308,33 +317,34 @@ export default class Field extends Vue {
     this.movableArea = {}
 
     if (!isCancel) {
-      this.updateCharacter()
+      this.applyInteractiveCharacterStore()
     }
     this.setInteractiveCharacter('')
   }
 
-  updateCharacter() {
+  applyInteractiveCharacterStore() {
     if (this.interactiveCharacter === undefined) return
     const defaultActionState = {
       name: '',
       itemId: 0
     } as const
-    const movedCharacter = {
+    const actedCharacter = {
       ...this.interactiveCharacter,
       latLng: this.interactiveCharacter.latLng,
       lastLatLng: this.interactiveCharacter.latLng,
       actionState: defaultActionState
     }
-    this._updateCharacter({
+    this.updateCharacter({
       battleId: this.storeUser.battleId,
-      character: movedCharacter
+      character: actedCharacter
     })
   }
 
   setModal(bool: boolean) {
-    this.isBattleDialogueOpen = bool
+    this.isBattleModalOpen = bool
   }
 
+  // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
   getCharacter(latLng: ILatlng) {
     if (
       this.interactiveCharacter &&
@@ -344,6 +354,7 @@ export default class Field extends Vue {
       return this.interactiveCharacter
 
     return this.storeCharacters.find((character: ICharacter) =>
+      // インタラクティブなキャラクターがいる場合、同じIDのキャラクターは表示しない
       this.interactiveCharacter && this.interactiveCharacter.id === character.id
         ? false
         : character.latLng.x === latLng.x && character.latLng.y === latLng.y
