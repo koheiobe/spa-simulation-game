@@ -31,8 +31,8 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
-import SideMenuLeftIcon from '~/assets/leftArrow.svg'
-import SideMenuRightIcon from '~/assets/rightArrow.svg'
+import SideMenuLeftIcon from '~/assets/img/leftArrow.svg'
+import SideMenuRightIcon from '~/assets/img/rightArrow.svg'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import Character from '~/class/character/playableCharacter'
 import { ICharacter } from '~/types/store'
