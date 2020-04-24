@@ -44,7 +44,7 @@ class Firestore {
   createBattleRoom(uid: string, name: string) {
     return db
       .collection('battles')
-      .add({ creater: { uid, name }, opponent: { uid: '', name: '' } })
+      .add({ host: { uid, name }, guest: { uid: '', name: '' } })
   }
 
   deleteBattleRoom(battleId: string): Promise<void> {

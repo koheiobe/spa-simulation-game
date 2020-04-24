@@ -17,11 +17,9 @@ export const getters: GetterTree<RootState, RootState> = {
 export const mutations: MutationTree<RootState> = {}
 
 export const actions: ActionTree<RootState, RootState> = {
-  setBattleRoomsRef() {
-    firestoreAction(({ bindFirestoreRef }) => {
-      bindFirestoreRef('list', this.$firestore.getBattleRoomsRef())
-    })
-  },
+  setBattleRoomsRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+    bindFirestoreRef('list', ref)
+  }),
   createBattleRoom(
     _,
     userInfo: { uid: string; name: string }

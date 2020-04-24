@@ -9,7 +9,7 @@
         :key="battleRoom.id"
         :class="$style.listItem"
         @click="goToBattleRoom(battleRoom.id)"
-        >{{ battleRoom.creater && battleRoom.creater.name }}</b-list-group-item
+        >{{ battleRoom.host && battleRoom.host.name }}</b-list-group-item
       >
     </b-list-group>
   </div>
@@ -32,7 +32,7 @@ export default class OnlineBattle extends Vue {
   private storeBattleRooms!: IBattleRoom[]
 
   @BattleRoomsModule.Action('setBattleRoomsRef')
-  private setBattleRoomsRef!: () => void
+  private setBattleRoomsRef!: (ref: any) => void
 
   @BattleRoomsModule.Action('createBattleRoom')
   private createBattleRoom!: (userInfo: {
@@ -54,7 +54,6 @@ export default class OnlineBattle extends Vue {
     if (this.storeUser.battleId) {
       this.$router.push(`/battle/online/${this.storeUser.battleId}`)
     }
-
     this.syncFirestoreVuexBattleRooms()
   }
 
@@ -73,7 +72,7 @@ export default class OnlineBattle extends Vue {
   }
 
   syncFirestoreVuexBattleRooms() {
-    this.setBattleRoomsRef()
+    this.setBattleRoomsRef(this.$firestore.getBattleRoomsRef())
   }
 }
 </script>
