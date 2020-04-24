@@ -1,15 +1,16 @@
 import { Plugin } from '@nuxt/types'
 import firebase from './firebase'
-import { ICharacter } from '~/types/store'
+import { ICharacter, IBattleRoom } from '~/types/store'
 
 const db = firebase.firestore()
 
 class Firestore {
+  // #region user
+
   getUser(uid: string) {
     return db.collection('users').doc(uid)
   }
 
-  // #region Login
   async isLoginUserExists(uid: string) {
     const user = await db
       .collection('users')
@@ -34,21 +35,30 @@ class Firestore {
       .set(user)
   }
 
-  // #endregion Login
+  // #endregion user
 
-  // #region online battle
+  // #region online battle room
   getBattleRoomsRef() {
     return db.collection('battles')
   }
 
+  getBattleRoomRef(id: string) {
+    return db.collection('battles').doc(id)
+  }
+
   createBattleRoom(uid: string, name: string) {
-    return db
-      .collection('battles')
-      .add({ host: { uid, name }, guest: { uid: '', name: '' } })
+    const battleRoom: IBattleRoom = {
+      host: { uid, name },
+      guest: { uid: '', name: '' },
+      winnerUid: ''
+    }
+    return db.collection('battles').add(battleRoom)
   }
 
   deleteBattleRoom(battleId: string): Promise<void> {
-    console.log(battleId)
+    // TODO battleRoom内のcharacters collectionが削除できない！
+    // collection内のdocを１つずつ削除するか、cloudFunctionを使って
+    // まとめて削除する
     return db
       .collection('battles')
       .doc(battleId)
@@ -60,6 +70,30 @@ class Firestore {
       .doc(uid)
       .update({ battleId })
   }
+
+  setBattleRoomGuest(userInfo: {
+    uid: string
+    name: string
+    battleId: string
+  }) {
+    db.collection('battles')
+      .doc(userInfo.battleId)
+      .update({
+        guest: {
+          name: userInfo.name,
+          uid: userInfo.uid
+        }
+      })
+  }
+
+  setBattleRoomWinner(battleRoomInfo: { id: string; winnerUid: string }) {
+    db.collection('battles')
+      .doc(battleRoomInfo.id)
+      .update({ winnerUid: battleRoomInfo.winnerUid })
+  }
+  // #endregion online battle room
+
+  // #region online battle
 
   updateCharacters(battleId: string, characters: ICharacter[]) {
     const batch = db.batch()

@@ -31,8 +31,18 @@ export default class OnlineBattle extends Vue {
   @BattleRoomsModule.Getter('getBattles')
   private storeBattleRooms!: IBattleRoom[]
 
-  @BattleRoomsModule.Action('setBattleRoomsRef')
-  private setBattleRoomsRef!: (ref: any) => void
+  @BattleRoomsModule.Action('bindBattleRoomsRef')
+  private bindBattleRoomsRef!: (ref: any) => void
+
+  @BattleRoomsModule.Action('setBattleRoomRef')
+  private setBattleRoomRef!: (ref: any) => void
+
+  @BattleRoomsModule.Action('setBattleRoomGuest')
+  private setBattleRoomGuest!: (userInfo: {
+    uid: string
+    name: string
+    battleId: string
+  }) => void
 
   @BattleRoomsModule.Action('createBattleRoom')
   private createBattleRoom!: (userInfo: {
@@ -68,11 +78,16 @@ export default class OnlineBattle extends Vue {
 
   goToBattleRoom(battleId: string) {
     this.setBattleId({ uid: this.storeUser.uid, battleId })
+    this.setBattleRoomGuest({
+      uid: this.storeUser.uid,
+      name: this.storeUser.name,
+      battleId
+    })
     this.$router.push(`/battle/online/${battleId}`)
   }
 
   syncFirestoreVuexBattleRooms() {
-    this.setBattleRoomsRef(this.$firestore.getBattleRoomsRef())
+    this.bindBattleRoomsRef(this.$firestore.getBattleRoomsRef())
   }
 }
 </script>

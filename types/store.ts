@@ -32,6 +32,7 @@ export interface ICharacter {
 }
 
 export interface IBattleRoom {
-  creater: { uid: IUser['uid']; name: IUser['name'] }
-  opponent: { uid: IUser['uid']; name: IUser['name'] }
+  host: { uid: IUser['uid']; name: IUser['name'] }
+  guest: { uid: IUser['uid']; name: IUser['name'] }
+  winnerUid: string
 }

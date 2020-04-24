@@ -28,6 +28,9 @@
         @onSelect="onSelectBattleAction"
       />
     </Modal>
+    <Modal :is-open="isBattleFinishModalOpen">
+      <EndBattleDialogue :winner-name="winnerName" />
+    </Modal>
   </div>
 </template>
 
@@ -50,9 +53,10 @@ import {
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
-import BattleDialogue from '~/components/battle/battleDialogue/index.vue'
+import BattleDialogue from '~/components/battle/ModalContent/battleDialogue.vue'
+import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
-import { IUser, ICharacter } from '~/types/store'
+import { IUser, ICharacter, IBattleRoom } from '~/types/store'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
 const ItemBattleRoomsModule = namespace('battleRooms')
@@ -63,6 +67,7 @@ const ItemBattleRoomsModule = namespace('battleRooms')
     SideMenu,
     Modal,
     BattleDialogue,
+    EndBattleDialogue,
     CharacterRenderer
   }
 })
@@ -106,11 +111,23 @@ export default class Field extends Vue {
   @ItemBattleModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (param: any) => void
 
+  @ItemBattleRoomsModule.State('battleRoom')
+  private battleRoom!: IBattleRoom
+
+  @ItemBattleRoomsModule.Action('bindBattleRoomRef')
+  private bindBattleRoomRef!: (ref: any) => void
+
   @ItemBattleRoomsModule.Action('setBattleId')
   private setBattleId!: (userInfo: {
     uid: string
     battleId: string
   }) => Promise<null>
+
+  @ItemBattleRoomsModule.Action('setBattleRoomWinner')
+  private setBattleRoomWinner!: (battleRoomInfo: {
+    id: string
+    winnerUid: string
+  }) => void
 
   @ItemBattleRoomsModule.Action('deleteBattleRoom')
   private deleteBattleRoom!: (battleId: string) => Promise<null>
@@ -129,20 +146,26 @@ export default class Field extends Vue {
   // TODO 各characterの移動距離と置き換える
   public moveNum = 8
   public isBattleModalOpen: boolean = false
+  public isBattleFinishModalOpen: boolean = false
+  public winnerName: string = ''
 
   mounted() {
     if (this.storeUser.uid.length > 0) {
       this.onChangeStoreUser()
     }
+    this.$store.subscribe((_, state) => {
+      const battleRoom = state.battleRooms.battleRoom
+      if (battleRoom && battleRoom.winnerUid.length > 0) {
+        this.onDecideWinner(battleRoom.winnerUid)
+      }
+    })
   }
 
   @Watch('storeUser')
   async onChangeStoreUser() {
     // TODO エラーハンドリングはあとで考える
     if (Object.keys(this.characters).length === 0) {
-      console.error(
-        'charactersが空なので、オンライン対戦選択ルームから遷移してもらう'
-      )
+      console.error('charactersが空')
       return
     }
     if (this.storeUser.battleId.length === 0) {
@@ -161,6 +184,9 @@ export default class Field extends Vue {
       })
     }
     this.bindCharactersRef(dbCharactersRef)
+    this.bindBattleRoomRef(
+      this.$firestore.getBattleRoomRef(this.storeUser.battleId)
+    )
   }
 
   decideCellType(latLng: ILatlng): CellType {
@@ -370,18 +396,40 @@ export default class Field extends Vue {
       return this.interactiveCharacter
 
     return this.storeCharacters.find((character: ICharacter) =>
-      // インタラクティブなキャラクターがいる場合、同じIDのキャラクターは表示しない
+      // インタラクティブなキャラクターがいる場合、同じIDのキャラクターはフィールドに表示しない
       this.interactiveCharacter && this.interactiveCharacter.id === character.id
         ? false
         : character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
   }
 
-  async onSurrender() {
-    this.setBattleId({ uid: this.storeUser.uid, battleId: '' })
+  onSurrender() {
+    const opponentUid =
+      this.battleRoom.host.uid === this.storeUser.uid
+        ? this.battleRoom.guest.uid
+        : this.battleRoom.host.uid
+    this.setBattleRoomWinner({
+      id: this.storeUser.battleId,
+      winnerUid: opponentUid
+    })
+  }
+
+  onDecideWinner(winnerUid: string) {
+    this.winnerName =
+      this.battleRoom.host.uid === winnerUid
+        ? this.battleRoom.host.name
+        : this.battleRoom.guest.name
+    this.isBattleFinishModalOpen = true
+
+    window.setInterval(this.onEndBattle, 5000)
+  }
+
+  async onEndBattle() {
     await this.deleteBattleRoom(this.storeUser.battleId).catch((e) =>
-      console.log(e)
+      // TODO エラーハンドリングはあとで考える
+      console.error('battleRoomの削除に失敗しました。', e)
     )
+    this.setBattleId({ uid: this.storeUser.uid, battleId: '' })
     this.$router.push('/battle/online')
   }
 
