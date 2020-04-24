@@ -1,4 +1,4 @@
-import { ActionTree, MutationTree, GetterTree } from 'vuex'
+import { ActionTree, MutationTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter } from '~/types/store'
 

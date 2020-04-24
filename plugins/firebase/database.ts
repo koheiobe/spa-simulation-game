@@ -9,7 +9,7 @@ class Firestore {
     return db.collection('users').doc(uid)
   }
 
-  // Login
+  // #region Login
   async isLoginUserExists(uid: string) {
     const user = await db
       .collection('users')
@@ -34,8 +34,10 @@ class Firestore {
       .set(user)
   }
 
-  // online battle
-  getBattleRooms() {
+  // #endregion Login
+
+  // #region online battle
+  getBattleRoomsRef() {
     return db.collection('battles')
   }
 
@@ -43,6 +45,14 @@ class Firestore {
     return db
       .collection('battles')
       .add({ creater: { uid, name }, opponent: { uid: '', name: '' } })
+  }
+
+  deleteBattleRoom(battleId: string): Promise<void> {
+    console.log(battleId)
+    return db
+      .collection('battles')
+      .doc(battleId)
+      .delete()
   }
 
   setBattleId(uid: string, battleId: string) {
@@ -89,6 +99,8 @@ class Firestore {
       .doc(character.id)
       .set(character, { merge: true })
   }
+
+  // #endregion online battle
 }
 
 declare module 'vuex/types/index' {

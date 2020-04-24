@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.createButtonContainer">
-      <b-button @click="createBattleRoom">create room</b-button>
+      <b-button @click="onCreateBattleRoom">create room</b-button>
     </div>
     <b-list-group :class="$style.listContainer">
       <b-list-group-item
@@ -31,6 +31,20 @@ export default class OnlineBattle extends Vue {
   @BattleRoomsModule.Getter('getBattles')
   private storeBattleRooms!: IBattleRoom[]
 
+  @BattleRoomsModule.Action('setBattleRoomsRef')
+  private setBattleRoomsRef!: () => void
+
+  @BattleRoomsModule.Action('createBattleRoom')
+  private createBattleRoom!: (userInfo: {
+    uid: string
+    name: string
+  }) => Promise<
+    firebase.firestore.DocumentReference<firebase.firestore.DocumentData>
+  >
+
+  @BattleRoomsModule.Action('setBattleId')
+  private setBattleId!: (userInfo: { uid: string; battleId: string }) => void
+
   get battleRooms() {
     return this.storeBattleRooms
   }
@@ -44,25 +58,22 @@ export default class OnlineBattle extends Vue {
     this.syncFirestoreVuexBattleRooms()
   }
 
-  async createBattleRoom() {
-    const battleRoomRef = await this.$firestore.createBattleRoom(
-      this.storeUser.uid,
-      this.storeUser.name
-    )
-    this.$firestore.setBattleId(this.storeUser.uid, battleRoomRef.id)
+  async onCreateBattleRoom() {
+    const battleRoomRef = await this.createBattleRoom({
+      uid: this.storeUser.uid,
+      name: this.storeUser.name
+    })
+    this.setBattleId({ uid: this.storeUser.uid, battleId: battleRoomRef.id })
     this.$router.push(`/battle/online/${battleRoomRef.id}`)
   }
 
   goToBattleRoom(battleId: string) {
-    this.$firestore.setBattleId(this.storeUser.uid, battleId)
+    this.setBattleId({ uid: this.storeUser.uid, battleId })
     this.$router.push(`/battle/online/${battleId}`)
   }
 
   syncFirestoreVuexBattleRooms() {
-    this.$store.dispatch(
-      'battleRooms/setBattleRoomsRef',
-      this.$firestore.getBattleRooms()
-    )
+    this.setBattleRoomsRef()
   }
 }
 </script>

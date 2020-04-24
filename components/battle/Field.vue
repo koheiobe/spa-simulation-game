@@ -55,6 +55,7 @@ import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter } from '~/types/store'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
+const ItemBattleRoomsModule = namespace('battleRooms')
 
 @Component({
   components: {
@@ -105,6 +106,15 @@ export default class Field extends Vue {
   @ItemBattleModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (param: any) => void
 
+  @ItemBattleRoomsModule.Action('setBattleId')
+  private setBattleId!: (userInfo: {
+    uid: string
+    battleId: string
+  }) => Promise<null>
+
+  @ItemBattleRoomsModule.Action('deleteBattleRoom')
+  private deleteBattleRoom!: (battleId: string) => Promise<null>
+
   @Prop({ default: () => {} })
   characters!: ICharacter[]
 
@@ -128,12 +138,18 @@ export default class Field extends Vue {
 
   @Watch('storeUser')
   async onChangeStoreUser() {
+    // TODO エラーハンドリングはあとで考える
     if (Object.keys(this.characters).length === 0) {
       console.error(
         'charactersが空なので、オンライン対戦選択ルームから遷移してもらう'
       )
       return
     }
+    if (this.storeUser.battleId.length === 0) {
+      console.error('battleIdが空')
+      return
+    }
+
     const dbCharactersRef = this.$firestore.getCharactersRef(
       this.storeUser.battleId
     )
@@ -361,8 +377,11 @@ export default class Field extends Vue {
     )
   }
 
-  onSurrender() {
-    this.$firestore.setBattleId(this.storeUser.uid, '')
+  async onSurrender() {
+    this.setBattleId({ uid: this.storeUser.uid, battleId: '' })
+    await this.deleteBattleRoom(this.storeUser.battleId).catch((e) =>
+      console.log(e)
+    )
     this.$router.push('/battle/online')
   }
 
