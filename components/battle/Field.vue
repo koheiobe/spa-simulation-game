@@ -70,6 +70,7 @@ const ItemBattleRoomsModule = namespace('battleRooms')
 export default class Field extends Vue {
   @ItemUserModule.Getter('getUser') private storeUser!: IUser
 
+  // キャラクターが移動するときに一時的に使用する。行動が完了したらdbに反映
   @ItemBattleModule.State('interactiveCharacter')
   private interactiveCharacter!: ICharacter | undefined
 
@@ -243,10 +244,10 @@ export default class Field extends Vue {
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
-    const isDeployedCell = cellCharacterId.length > 0
+    const isCharacterDeployedCell = cellCharacterId.length > 0
     // クリックしたセルにキャラクターが存在したら、キャラクターを除外
-    const updatedLatLng = isDeployedCell ? { x: -1, y: -1 } : latLng
-    const targetCharacterId = isDeployedCell
+    const updatedLatLng = isCharacterDeployedCell ? { x: -1, y: -1 } : latLng
+    const targetCharacterId = isCharacterDeployedCell
       ? cellCharacterId
       : this.deployCharacterId
     // TODO: setCharacterParamはfirestoreのrefが外れてしまうため使えないが
@@ -430,7 +431,7 @@ export default class Field extends Vue {
 
   async onEndBattle() {
     await this.deleteBattleRoom(this.storeUser.battleId).catch((e) =>
-      // TODO エラーハンドリングはあとで考える
+      // TODO: エラーハンドリングはあとで考える
       console.error('battleRoomの削除に失敗しました。', e)
     )
     this.setBattleId({ uid: this.storeUser.uid, battleId: '' })
