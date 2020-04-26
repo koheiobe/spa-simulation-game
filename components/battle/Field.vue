@@ -11,7 +11,7 @@
         <FieldCell
           :key="`${n}-${l}`"
           :cell-type="decideCellType({ x: l, y: n })"
-          :character="isCharacterExistAtCell({ x: l, y: n })"
+          :character="getCharacterAtCell({ x: l, y: n })"
           :lat-lng="{ x: l, y: n }"
           @onClick="onClickCell"
         >
@@ -384,20 +384,27 @@ export default class Field extends Vue {
   }
 
   // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
-  isCharacterExistAtCell(latLng: ILatlng) {
-    if (
-      this.interactiveCharacter &&
-      this.interactiveCharacter.latLng.x === latLng.x &&
-      this.interactiveCharacter.latLng.y === latLng.y
+  getCharacterAtCell(latLng: ILatlng) {
+    const existCharacter = this.storeCharacters.find(
+      (character: ICharacter) =>
+        character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
-      return this.interactiveCharacter
-
-    return this.storeCharacters.find((character: ICharacter) =>
-      // インタラクティブなキャラクターがいる場合、同じIDのキャラクターはフィールドに表示しない
-      this.interactiveCharacter && this.interactiveCharacter.id === character.id
-        ? false
-        : character.latLng.x === latLng.x && character.latLng.y === latLng.y
-    )
+    if (this.interactiveCharacter) {
+      const isSameId =
+        existCharacter && this.interactiveCharacter.id === existCharacter.id
+      if (
+        this.interactiveCharacter.latLng.x === latLng.x &&
+        this.interactiveCharacter.latLng.y === latLng.y
+      ) {
+        return this.interactiveCharacter
+      } else if (isSameId) {
+        return undefined
+      } else {
+        return existCharacter
+      }
+    } else {
+      return existCharacter
+    }
   }
 
   onSurrender() {

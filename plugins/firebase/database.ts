@@ -118,13 +118,6 @@ class Firestore {
     }
   }
 
-  getCharactersRef = (battleId: string) => {
-    return db
-      .collection('battles')
-      .doc(battleId)
-      .collection('characters')
-  }
-
   updateCharacter(battleId: string, character: ICharacter) {
     return db
       .collection('battles')
@@ -132,6 +125,13 @@ class Firestore {
       .collection('characters')
       .doc(character.id)
       .set(character, { merge: true })
+  }
+
+  getCharactersRef = (battleId: string) => {
+    return db
+      .collection('battles')
+      .doc(battleId)
+      .collection('characters')
   }
 
   // #endregion online battle
