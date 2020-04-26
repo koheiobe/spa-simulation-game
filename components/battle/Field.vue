@@ -6,16 +6,12 @@
       @onClickCharacter="startDeployMode"
       @onSurrender="onSurrender"
     />
-    <!-- <div :class="$style.debugArea">
-      <button @click="resetMove">デプロイ完了</button>
-      <button @click="changeDeployMode">デプロイ</button>
-    </div> -->
     <div v-for="n of 30" :key="n" :class="$style.row">
       <template v-for="l of 30">
         <FieldCell
           :key="`${n}-${l}`"
           :cell-type="decideCellType({ x: l, y: n })"
-          :character="getCharacter({ x: l, y: n })"
+          :character="isCharacterExistAtCell({ x: l, y: n })"
           :lat-lng="{ x: l, y: n }"
           @onClick="onClickCell"
         >
@@ -143,13 +139,14 @@ export default class Field extends Vue {
   public deployableArea: { [key: string]: Boolean } = {}
   public movableArea: { [key: string]: Boolean } = {}
   public interactiveArea: ILatlng[] = []
-  // TODO 各characterの移動距離と置き換える
+  // TODO: 各characterの移動距離と置き換える
   public moveNum = 8
   public isBattleModalOpen: boolean = false
   public isBattleFinishModalOpen: boolean = false
   public winnerName: string = ''
 
   mounted() {
+    // FIXME: 初回レンダリング時、onChangeStoreUserが走らないのでmountで呼び出す
     if (this.storeUser.uid.length > 0) {
       this.onChangeStoreUser()
     }
@@ -163,7 +160,7 @@ export default class Field extends Vue {
 
   @Watch('storeUser')
   async onChangeStoreUser() {
-    // TODO エラーハンドリングはあとで考える
+    // TODO: エラーハンドリングはあとで考える
     if (Object.keys(this.characters).length === 0) {
       console.error('charactersが空')
       return
@@ -248,17 +245,12 @@ export default class Field extends Vue {
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
     const isDeployedCell = cellCharacterId.length > 0
     // クリックしたセルにキャラクターが存在したら、キャラクターを除外
-    // 存在しないならクリックしたセルにキャラクターを配置
     const updatedLatLng = isDeployedCell ? { x: -1, y: -1 } : latLng
     const targetCharacterId = isDeployedCell
       ? cellCharacterId
       : this.deployCharacterId
-    // TODO setCharacterParamはfirestoreのrefが外れてしまうため使えない
-    // ただ、キャラクターを配置するたびに、firestoreを使いたくない(使用回数に制限あり)
-    // どうすべきか
-    // const targetCharacter = this.storeCharacters.find(
-    //   (character) => character.id === targetCharacterId
-    // )
+    // TODO: setCharacterParamはfirestoreのrefが外れてしまうため使えないが
+    // キャラクターを配置するたびに、firestoreを使いたくない(使用回数に制限あり)
     this.setCharacterParam({
       id: targetCharacterId,
       value: {
@@ -354,14 +346,19 @@ export default class Field extends Vue {
   }
 
   onFinishAction(isCancel: boolean = false) {
+    if (isCancel) {
+      this.resetCharacterState()
+      return
+    }
+    this.applyInteractiveCharacterStore()
+    this.resetCharacterState()
+  }
+
+  resetCharacterState() {
+    this.setInteractiveCharacter('')
     this.setModal(false)
     this.interactiveArea = []
     this.movableArea = {}
-
-    if (!isCancel) {
-      this.applyInteractiveCharacterStore()
-    }
-    this.setInteractiveCharacter('')
   }
 
   applyInteractiveCharacterStore() {
@@ -387,7 +384,7 @@ export default class Field extends Vue {
   }
 
   // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
-  getCharacter(latLng: ILatlng) {
+  isCharacterExistAtCell(latLng: ILatlng) {
     if (
       this.interactiveCharacter &&
       this.interactiveCharacter.latLng.x === latLng.x &&
