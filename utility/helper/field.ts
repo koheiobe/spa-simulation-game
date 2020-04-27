@@ -1,4 +1,6 @@
 import { IDeployableArea, ILatlng, WeaponType } from '~/types/battle'
+import field from '~/constants/field'
+import fieldType from '~/constants/fieldType'
 
 export const fillDeployableArea = (
   deployableAreas: IDeployableArea[]
@@ -26,15 +28,66 @@ export const fillMovableArea = (
   latLng: ILatlng,
   movePoint: number
 ): { [key: string]: Boolean } => {
-  const movableRange: { [key: string]: Boolean } = {}
-  for (let i = -movePoint; i <= movePoint; i++) {
-    const upperY = movePoint - Math.abs(i)
-    const lowerY = -movePoint + Math.abs(i)
-    for (let j = lowerY + 1; j < upperY; j++) {
-      movableRange[`${latLng.y + j}_${latLng.x + i}`] = true
-    }
+  const movableArea: { [key: string]: Boolean } = {}
+  movableArea[`${latLng.y}_${latLng.x}`] = true
+  // const latLng1 = { x: latLng.x + 1, y: latLng.y }
+  // const latLng2 = { x: latLng.x - 1, y: latLng.y }
+  // const latLng3 = { x: latLng.x, y: latLng.y + 1 }
+  // const latLng4 = { x: latLng.x, y: latLng.y - 1 }
+  computeMovableCell(latLng, movePoint, movableArea, { x: 1, y: 0 })
+  computeMovableCell(latLng, movePoint, movableArea, { x: -1, y: 0 })
+  computeMovableCell(latLng, movePoint, movableArea, { x: 0, y: 1 })
+  computeMovableCell(latLng, movePoint, movableArea, { x: 0, y: -1 })
+
+  return movableArea
+}
+
+const computeMovableCell = (
+  latLng: ILatlng,
+  movePoint: number,
+  movableArea: { [key: string]: Boolean },
+  direction: ILatlng
+) => {
+  const updatedLatLng = {
+    x: latLng.x + direction.x,
+    y: latLng.y + direction.y
   }
-  return movableRange
+  let updatedMovepoint = movePoint
+  const cell = field[`${updatedLatLng.y}_${updatedLatLng.x}`]
+  if (cell) {
+    switch (cell.type) {
+      case 'mountain':
+        return
+      default:
+        updatedMovepoint = movePoint - 1
+    }
+  } else {
+    updatedMovepoint = movePoint - 1
+  }
+
+  movableArea[`${updatedLatLng.y}_${updatedLatLng.x}`] = true
+  if (updatedMovepoint === 0) return
+
+  if (direction.x !== 1)
+    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
+      x: -1,
+      y: 0
+    })
+  if (direction.x !== -1)
+    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
+      x: 1,
+      y: 0
+    })
+  if (direction.y !== 1)
+    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
+      x: 0,
+      y: -1
+    })
+  if (direction.y !== -1)
+    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
+      x: 0,
+      y: 1
+    })
 }
 
 export const fillInteractiveArea = (
