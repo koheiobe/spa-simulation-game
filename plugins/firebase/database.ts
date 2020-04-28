@@ -24,7 +24,6 @@ class Firestore {
     uid: string,
     user: {
       name: string
-      battleId: string
       roomId: string
       uid: string
     }
@@ -65,10 +64,18 @@ class Firestore {
       .delete()
   }
 
-  setBattleId(uid: string, battleId: string) {
+  setUserBattleId(uid: string, battleId: string) {
     db.collection('users')
       .doc(uid)
-      .update({ battleId })
+      .set({ battleId }, { merge: true })
+  }
+
+  deleteUserBattleId(uid: string) {
+    db.collection('users')
+      .doc(uid)
+      .update({
+        battleId: firebase.firestore.FieldValue.delete()
+      })
   }
 
   setBattleRoomGuest(userInfo: {
@@ -90,6 +97,14 @@ class Firestore {
     db.collection('battles')
       .doc(battleRoomInfo.id)
       .update({ winnerUid: battleRoomInfo.winnerUid })
+  }
+
+  async isBattleRoomExist(battleId: string): Promise<boolean> {
+    const battleRoom = await db
+      .collection('battles')
+      .doc(battleId)
+      .get()
+    return battleRoom.exists
   }
   // #endregion online battle room
 

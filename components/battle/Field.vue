@@ -4,7 +4,7 @@
       :characters="storeCharacters"
       :selected-character-id="deployCharacterId"
       @onClickCharacter="startDeployMode"
-      @onSurrender="onSurrender"
+      @surrender="surrender"
     />
     <div v-for="n of 30" :key="n" :class="$style.row">
       <template v-for="l of 30">
@@ -24,15 +24,12 @@
         @onSelect="onSelectBattleAction"
       />
     </Modal>
-    <Modal :is-open="isBattleFinishModalOpen">
-      <EndBattleDialogue :winner-name="winnerName" />
-    </Modal>
   </div>
 </template>
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { Vue, Prop, Watch } from 'vue-property-decorator'
+import { Vue, Prop } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import {
   ILatlng,
@@ -50,7 +47,6 @@ import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/ModalContent/battleDialogue.vue'
-import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter, IBattleRoom } from '~/types/store'
 const ItemUserModule = namespace('user')
@@ -63,7 +59,6 @@ const ItemBattleRoomsModule = namespace('battleRooms')
     SideMenu,
     Modal,
     BattleDialogue,
-    EndBattleDialogue,
     CharacterRenderer
   }
 })
@@ -76,13 +71,6 @@ export default class Field extends Vue {
 
   @ItemBattleModule.State('characters')
   private storeCharacters!: ICharacter[]
-
-  @ItemBattleModule.Action('bindCharactersRef')
-  private bindCharactersRef!: (
-    characterRef: firebase.firestore.CollectionReference<
-      firebase.firestore.DocumentData
-    >
-  ) => Promise<null>
 
   @ItemBattleModule.Action('setCharacterParam')
   private setCharacterParam!: (characterObj: {
@@ -111,27 +99,6 @@ export default class Field extends Vue {
   @ItemBattleRoomsModule.State('battleRoom')
   private battleRoom!: IBattleRoom
 
-  @ItemBattleRoomsModule.Action('bindBattleRoomRef')
-  private bindBattleRoomRef!: (ref: any) => void
-
-  @ItemBattleRoomsModule.Action('setBattleId')
-  private setBattleId!: (userInfo: {
-    uid: string
-    battleId: string
-  }) => Promise<null>
-
-  @ItemBattleRoomsModule.Action('setBattleRoomWinner')
-  private setBattleRoomWinner!: (battleRoomInfo: {
-    id: string
-    winnerUid: string
-  }) => void
-
-  @ItemBattleRoomsModule.Action('deleteBattleRoom')
-  private deleteBattleRoom!: (battleId: string) => Promise<null>
-
-  @Prop({ default: () => {} })
-  characters!: ICharacter[]
-
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]
 
@@ -143,48 +110,10 @@ export default class Field extends Vue {
   // TODO: 各characterの移動距離と置き換える
   public moveNum = 8
   public isBattleModalOpen: boolean = false
-  public isBattleFinishModalOpen: boolean = false
-  public winnerName: string = ''
+  private battleId: string = ''
 
   mounted() {
-    // FIXME: 初回レンダリング時、onChangeStoreUserが走らないのでmountで呼び出す
-    if (this.storeUser.uid.length > 0) {
-      this.onChangeStoreUser()
-    }
-    this.$store.subscribe((_, state) => {
-      const battleRoom = state.battleRooms.battleRoom
-      if (battleRoom && battleRoom.winnerUid.length > 0) {
-        this.onDecideWinner(battleRoom.winnerUid)
-      }
-    })
-  }
-
-  @Watch('storeUser')
-  async onChangeStoreUser() {
-    // TODO: エラーハンドリングはあとで考える
-    if (Object.keys(this.characters).length === 0) {
-      console.error('charactersが空')
-      return
-    }
-    if (this.storeUser.battleId.length === 0) {
-      console.error('battleIdが空')
-      return
-    }
-
-    const dbCharactersRef = this.$firestore.getCharactersRef(
-      this.storeUser.battleId
-    )
-    const dbCharacters = await dbCharactersRef.get()
-    if (dbCharacters.empty) {
-      this.updateCharacters({
-        battleId: this.storeUser.battleId,
-        characters: this.characters
-      })
-    }
-    this.bindCharactersRef(dbCharactersRef)
-    this.bindBattleRoomRef(
-      this.$firestore.getBattleRoomRef(this.storeUser.battleId)
-    )
+    this.battleId = this.$route.params.id
   }
 
   decideCellType(latLng: ILatlng): CellType {
@@ -219,7 +148,11 @@ export default class Field extends Vue {
         // 通常戦闘モード キャラクターを選択するステージ
         if (cellCharacterId.length > 0) {
           this.setInteractiveCharacter(cellCharacterId)
-          this.movableArea = fillMovableArea(latLng, this.moveNum)
+          if (!this.interactiveCharacter) return
+          this.movableArea = fillMovableArea(
+            latLng,
+            this.interactiveCharacter.moveDistance
+          )
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
           this.onCancelAction()
@@ -237,10 +170,7 @@ export default class Field extends Vue {
     if (Object.keys(this.deployableArea).length === 0) return
     this.deployableArea = {}
     this.deployCharacterId = ''
-    this.$firestore.updateCharacters(
-      this.storeUser.battleId,
-      this.storeCharacters
-    )
+    this.$firestore.updateCharacters(this.battleId, this.storeCharacters)
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
@@ -333,7 +263,7 @@ export default class Field extends Vue {
       hp: targetCharacter.hp - this.interactiveCharacter.attackPoint
     }
     this.updateCharacter({
-      battleId: this.storeUser.battleId,
+      battleId: this.battleId,
       character: damageTakenCharacter
     })
   }
@@ -375,7 +305,7 @@ export default class Field extends Vue {
       actionState: defaultActionState
     }
     this.updateCharacter({
-      battleId: this.storeUser.battleId,
+      battleId: this.battleId,
       character: actedCharacter
     })
   }
@@ -408,34 +338,8 @@ export default class Field extends Vue {
     }
   }
 
-  onSurrender() {
-    const opponentUid =
-      this.battleRoom.host.uid === this.storeUser.uid
-        ? this.battleRoom.guest.uid
-        : this.battleRoom.host.uid
-    this.setBattleRoomWinner({
-      id: this.storeUser.battleId,
-      winnerUid: opponentUid
-    })
-  }
-
-  onDecideWinner(winnerUid: string) {
-    this.winnerName =
-      this.battleRoom.host.uid === winnerUid
-        ? this.battleRoom.host.name
-        : this.battleRoom.guest.name
-    this.isBattleFinishModalOpen = true
-
-    window.setInterval(this.onEndBattle, 5000)
-  }
-
-  async onEndBattle() {
-    await this.deleteBattleRoom(this.storeUser.battleId).catch((e) =>
-      // TODO: エラーハンドリングはあとで考える
-      console.error('battleRoomの削除に失敗しました。', e)
-    )
-    this.setBattleId({ uid: this.storeUser.uid, battleId: '' })
-    this.$router.push('/battle/online')
+  surrender() {
+    this.$emit('surrender')
   }
 
   get characterName() {

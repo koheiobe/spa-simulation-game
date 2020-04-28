@@ -15,8 +15,8 @@ import Curupira from '~/assets/img/character/curupira.svg'
 import Cyclops from '~/assets/img/character/cyclops.svg'
 import Devil from '~/assets/img/character/devil.svg'
 import Dinosaur from '~/assets/img/character/dinosaur.svg'
-import Dragon1 from '~/assets/img/character/dragon1.svg'
-import Dragon2 from '~/assets/img/character/dragon2.svg'
+import BabyDragon from '~/assets/img/character/baby-dragon.svg'
+import Dragon from '~/assets/img/character/dragon.svg'
 import Echidna from '~/assets/img/character/echidna.svg'
 import Elf from '~/assets/img/character/elf.svg'
 import Fairy from '~/assets/img/character/fairy.svg'
@@ -67,8 +67,8 @@ import Zombie from '~/assets/img/character/zombie.svg'
     Cyclops,
     Devil,
     Dinosaur,
-    Dragon1,
-    Dragon2,
+    BabyDragon,
+    Dragon,
     Echidna,
     Elf,
     Fairy,
@@ -122,7 +122,7 @@ export default class CharacterRenderer extends Vue {
   }
 
   get characterName() {
-    return this.id.replace(/[0-9]+$/, '')
+    return this.id.replace(/-.+$/, '')
   }
 }
 </script>

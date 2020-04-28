@@ -24,10 +24,10 @@ export const mutations: MutationTree<RootState> = {}
 
 export const actions: ActionTree<RootState, RootState> = {
   bindBattleRoomsRef: firestoreAction(({ bindFirestoreRef }, ref) => {
-    bindFirestoreRef('list', ref)
+    return bindFirestoreRef('list', ref)
   }),
   bindBattleRoomRef: firestoreAction(({ bindFirestoreRef }, ref) => {
-    bindFirestoreRef('battleRoom', ref)
+    return bindFirestoreRef('battleRoom', ref)
   }),
   createBattleRoom(
     _,
@@ -37,8 +37,12 @@ export const actions: ActionTree<RootState, RootState> = {
   > {
     return this.$firestore.createBattleRoom(userInfo.uid, userInfo.name)
   },
-  setBattleId(_, userInfo: { uid: string; battleId: string }) {
-    this.$firestore.setBattleId(userInfo.uid, userInfo.battleId)
+  setUserBattleId(_, userInfo: { uid: string; battleId: string }) {
+    this.$firestore.setUserBattleId(userInfo.uid, userInfo.battleId)
+  },
+  deleteUserBattleId(_, userUid: string | undefined) {
+    if (!userUid) return
+    this.$firestore.deleteUserBattleId(userUid)
   },
   setBattleRoomGuest(
     _,
@@ -51,5 +55,8 @@ export const actions: ActionTree<RootState, RootState> = {
   },
   deleteBattleRoom(_, battleId: string): Promise<void> {
     return this.$firestore.deleteBattleRoom(battleId)
+  },
+  isBattleRoomExist(_, battleId: string): Promise<boolean> {
+    return this.$firestore.isBattleRoomExist(battleId)
   }
 }

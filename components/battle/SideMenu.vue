@@ -20,7 +20,7 @@
               @click.native.stop="onClickCharacter(character.id)"
             />
           </div>
-          <button @click="$emit('onSurrender')">降参する</button>
+          <button @click="$emit('surrender')">降参する</button>
         </div>
         <SideMenuLeftIcon @click="toggleSideMenu()" />
       </div>

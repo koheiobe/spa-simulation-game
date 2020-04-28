@@ -52,19 +52,34 @@ export default class OnlineBattle extends Vue {
     firebase.firestore.DocumentReference<firebase.firestore.DocumentData>
   >
 
-  @BattleRoomsModule.Action('setBattleId')
-  private setBattleId!: (userInfo: { uid: string; battleId: string }) => void
+  @BattleRoomsModule.Action('isBattleRoomExist')
+  private isBattleRoomExist!: (battleId: string) => Promise<boolean>
+
+  @BattleRoomsModule.Action('setUserBattleId')
+  private setUserBattleId!: (userInfo: {
+    uid: string
+    battleId: string
+  }) => void
+
+  @BattleRoomsModule.Action('deleteUserBattleId')
+  private deleteUserBattleId!: (uid: string) => void
 
   get battleRooms() {
     return this.storeBattleRooms
   }
 
-  mounted() {
-    // すでにbattleRoomが存在した場合、その部屋に遷移させる
-    if (this.storeUser.battleId) {
+  async mounted() {
+    await this.syncFirestoreVuexBattleRooms()
+
+    const battleId = this.storeUser.battleId
+    if (!battleId) return
+    if (await this.isBattleRoomExist(battleId)) {
       this.$router.push(`/battle/online/${this.storeUser.battleId}`)
+    } else {
+      // HACK 前回の戦闘終了前にページ離脱していた場合、battleIdが残っているため削除
+      // もしIDが残ることが気持ち悪いならCloudFunctionなどを使って強制的に削除する
+      this.deleteUserBattleId(this.storeUser.uid)
     }
-    this.syncFirestoreVuexBattleRooms()
   }
 
   async onCreateBattleRoom() {
@@ -72,12 +87,15 @@ export default class OnlineBattle extends Vue {
       uid: this.storeUser.uid,
       name: this.storeUser.name
     })
-    this.setBattleId({ uid: this.storeUser.uid, battleId: battleRoomRef.id })
+    this.setUserBattleId({
+      uid: this.storeUser.uid,
+      battleId: battleRoomRef.id
+    })
     this.$router.push(`/battle/online/${battleRoomRef.id}`)
   }
 
   goToBattleRoom(battleId: string) {
-    this.setBattleId({ uid: this.storeUser.uid, battleId })
+    this.setUserBattleId({ uid: this.storeUser.uid, battleId })
     this.setBattleRoomGuest({
       uid: this.storeUser.uid,
       name: this.storeUser.name,
@@ -87,7 +105,7 @@ export default class OnlineBattle extends Vue {
   }
 
   syncFirestoreVuexBattleRooms() {
-    this.bindBattleRoomsRef(this.$firestore.getBattleRoomsRef())
+    return this.bindBattleRoomsRef(this.$firestore.getBattleRoomsRef())
   }
 }
 </script>
