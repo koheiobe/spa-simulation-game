@@ -5,6 +5,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://spa-simulation-game.firebaseio.com'
 })
+const db = admin.firestore()
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
@@ -51,10 +52,27 @@ admin.initializeApp({
 //   })
 
 // uppercase version of the message to /messages/:pushId/uppercase
-export const sampleFirestoreTrigger = functions.firestore
-  .document('/battles/{battleID}/{userId}/{characterId}')
-  .onCreate((snapshot, context) => {
-    const db = admin.firestore()
-    const userRef = db.collection('sample').doc('ddd')
-    return userRef.set({ sample: 5 })
+export const deleteCharactersCollectionOnDeleteBattleRoom = functions.firestore
+  .document('/battles/{battleID}')
+  .onDelete(async (_, context) => {
+    const batch = db.batch()
+    const charactersRef = db
+      .collection('battles')
+      .doc(context.params.battleID)
+      .collection('characters')
+
+    const characters = await charactersRef.get()
+    characters.docs.forEach((doc) => {
+      const characterRef = charactersRef.doc(doc.id)
+      batch.delete(characterRef)
+    })
+
+    try {
+      return batch.commit()
+    } catch (e) {
+      console.error('charactersの削除に失敗しました。', e)
+      return new Promise((resolve) => {
+        resolve(null)
+      })
+    }
   })
