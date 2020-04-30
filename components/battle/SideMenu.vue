@@ -20,9 +20,12 @@
               @click.native.stop="onClickCharacter(character.id)"
             />
           </div>
-          <button @click="$emit('surrender')">降参する</button>
         </div>
-        <SideMenuLeftIcon @click="toggleSideMenu()" />
+        <div :class="$style.closeButtonContainer">
+          <b-button variant="primary" @click="toggleSideMenu()"
+            >閉じる</b-button
+          >
+        </div>
       </div>
     </transition>
   </div>
@@ -77,10 +80,12 @@ export default class SideMenu extends Vue {
 }
 .sideMenu {
   position: fixed;
-  width: 250px;
+  max-width: 250px;
+  width: 30%;
   height: 100vh;
-  background-color: blue;
+  background-color: gray;
   display: flex;
+  flex-direction: column;
   transition: 0.5s;
   align-items: center;
   .sideMenuContent {
@@ -91,11 +96,16 @@ export default class SideMenu extends Vue {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
+    align-content: flex-start;
     .iconContainer {
-      margin-right: 8px;
-      width: 50px;
-      height: 50px;
+      margin: 4px;
+      max-width: 50px;
+      width: 35%;
+      max-height: 50px;
     }
+  }
+  .closeButtonContainer {
+    margin: 8px;
   }
   .sideMenuCloser {
   }

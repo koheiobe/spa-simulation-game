@@ -22,7 +22,8 @@ const ItemBattleRoomsModule = namespace('battleRooms')
 const ItemBattleModule = namespace('battle')
 
 @Component({
-  components: { Field, Modal, EndBattleDialogue }
+  components: { Field, Modal, EndBattleDialogue },
+  layout: 'battle'
 })
 export default class OnlineBattleRoom extends Vue {
   @ItemUserModule.Getter('getUser') private storeUser!: IUser
