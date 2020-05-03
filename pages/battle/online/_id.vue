@@ -1,6 +1,7 @@
 <template>
-  <div>
-    <Field :deployable-areas="deployableAreas" @surrender="onSurrender" />
+  <div :class="$style.container">
+    <Header :class="$style.header" @surrender="onSurrender" />
+    <Field :deployable-areas="deployableAreas" />
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :winner-name="winnerName" />
     </Modal>
@@ -17,12 +18,13 @@ import { IUser, ICharacter, IBattleRoom } from '~/types/store'
 import { IDeployableArea } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
+import Header from '~/components/battle/Header.vue'
 const ItemUserModule = namespace('user')
 const ItemBattleRoomsModule = namespace('battleRooms')
 const ItemBattleModule = namespace('battle')
 
 @Component({
-  components: { Field, Modal, EndBattleDialogue },
+  components: { Field, Modal, EndBattleDialogue, Header },
   layout: 'battle'
 })
 export default class OnlineBattleRoom extends Vue {
@@ -175,4 +177,14 @@ export default class OnlineBattleRoom extends Vue {
 }
 </script>
 
-<style lang="scss" module></style>
+<style lang="scss" module>
+.container {
+  position: relative;
+
+  .header {
+    position: fixed;
+    right: 0;
+    top: 0;
+  }
+}
+</style>
