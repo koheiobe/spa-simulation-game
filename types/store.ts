@@ -45,6 +45,7 @@ export interface IBattleRoom {
   winnerUid: string
   turn: {
     uid: string
+    number: number
     updatedAt: firebase.firestore.Timestamp
   }
   createdAt: firebase.firestore.Timestamp

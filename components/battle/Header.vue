@@ -1,5 +1,6 @@
 <template>
   <div :class="$style.container">
+    <div>{{ turnNumber }}ターン目</div>
     <div>
       {{ turnPlayer }}
     </div>
@@ -158,6 +159,10 @@ export default class BattleHeader extends Vue {
 
   get turnUid() {
     return this.battleRoom ? this.battleRoom.turn.uid : undefined
+  }
+
+  get turnNumber() {
+    return this.battleRoom ? String(this.battleRoom.turn.number) : ''
   }
 
   get limitedTimer() {

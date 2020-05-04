@@ -52,6 +52,7 @@ class Firestore {
       winnerUid: '',
       turn: {
         uid: '',
+        number: 0,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       },
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -151,10 +152,15 @@ class Firestore {
       .collection('characters')
   }
 
-  setTurnUid = (battleRoomInfo: { id: string; uid: string }) => {
+  setTurnInfo = (battleRoomInfo: {
+    id: string
+    uid: string
+    turnNumber: number
+  }) => {
     const battleRoomParam = {
       turn: {
         uid: battleRoomInfo.uid,
+        number: battleRoomInfo.turnNumber,
         updatedAt: new Date()
       }
     }

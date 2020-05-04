@@ -77,8 +77,12 @@ export default class OnlineBattleRoom extends Vue {
   @ItemBattleRoomsModule.Action('deleteUserBattleId')
   private deleteUserBattleId!: (uid: string) => void
 
-  @ItemBattleRoomsModule.Action('setTurnUid')
-  private setTurnUid!: (battleRoomInfo: { id: string; uid: string }) => void
+  @ItemBattleRoomsModule.Action('setTurnInfo')
+  private setTurnInfo!: (battleRoomInfo: {
+    id: string
+    uid: string
+    turnNumber: number
+  }) => void
 
   @ItemBattleRoomsModule.Action('setOpponentOfflineTimes')
   public setOpponentOfflineTimes!: (battleRoomInfo: {
@@ -133,7 +137,12 @@ export default class OnlineBattleRoom extends Vue {
     // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
     this.initCharacters()
     // TODO: どっちが先行なのか、どうやって決めるかは未定
-    this.setTurnUid({ id: this.storeUser.battleId, uid: this.storeUser.uid })
+    const turnNumber = this.battleRoom.turn.number
+    this.setTurnInfo({
+      id: this.storeUser.battleId,
+      uid: this.storeUser.uid,
+      turnNumber: turnNumber === 0 ? 1 : turnNumber
+    })
   }
 
   async initCharacters() {
@@ -169,8 +178,12 @@ export default class OnlineBattleRoom extends Vue {
       this.battleRoom.turn.uid === this.battleRoom.host.uid
         ? this.battleRoom.guest.uid
         : this.battleRoom.host.uid
-
-    this.setTurnUid({ id: this.storeUser.battleId, uid: nextTurnUid })
+    const nextTurnNumber = this.battleRoom.turn.number + 1
+    this.setTurnInfo({
+      id: this.storeUser.battleId,
+      uid: nextTurnUid,
+      turnNumber: nextTurnNumber
+    })
   }
 
   onSurrender() {
