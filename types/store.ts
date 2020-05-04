@@ -32,7 +32,20 @@ export interface ICharacter {
 }
 
 export interface IBattleRoom {
-  host: { uid: IUser['uid']; name: IUser['name'] }
-  guest: { uid: IUser['uid']; name: IUser['name'] }
+  host: {
+    uid: IUser['uid']
+    name: IUser['name']
+    opponentOfflineTimes: number
+  }
+  guest: {
+    uid: IUser['uid']
+    name: IUser['name']
+    opponentOfflineTimes: number
+  }
   winnerUid: string
+  turn: {
+    uid: string
+    updatedAt: firebase.firestore.Timestamp
+  }
+  createdAt: firebase.firestore.Timestamp
 }

@@ -53,6 +53,19 @@ export const actions: ActionTree<RootState, RootState> = {
   setBattleRoomWinner(_, battleRoomInfo: { id: string; winnerUid: string }) {
     this.$firestore.setBattleRoomWinner(battleRoomInfo)
   },
+  setTurnUid(_, battleRoomInfo: { id: string; uid: string }) {
+    this.$firestore.setTurnUid(battleRoomInfo)
+  },
+  setOpponentOfflineTimes(
+    _,
+    battleRoomInfo: {
+      id: string
+      hostOrGuest: 'host' | 'guest'
+      offlineTimes: number
+    }
+  ) {
+    this.$firestore.setOpponentOfflineTimes(battleRoomInfo)
+  },
   deleteBattleRoom(_, battleId: string): Promise<void> {
     return this.$firestore.deleteBattleRoom(battleId)
   },

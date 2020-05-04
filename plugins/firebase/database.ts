@@ -46,18 +46,20 @@ class Firestore {
   }
 
   createBattleRoom(uid: string, name: string) {
-    const battleRoom: IBattleRoom = {
-      host: { uid, name },
-      guest: { uid: '', name: '' },
-      winnerUid: ''
+    const battleRoom = {
+      host: { uid, name, opponentOfflineTimes: 0 },
+      guest: { uid: '', name: '', opponentOfflineTimes: 0 },
+      winnerUid: '',
+      turn: {
+        uid: '',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }
     return db.collection('battles').add(battleRoom)
   }
 
   deleteBattleRoom(battleId: string): Promise<void> {
-    // TODO battleRoom内のcharacters collectionが削除できない！
-    // collection内のdocを１つずつ削除するか、cloudFunctionを使って
-    // まとめて削除する
     return db
       .collection('battles')
       .doc(battleId)
@@ -147,6 +149,31 @@ class Firestore {
       .collection('battles')
       .doc(battleId)
       .collection('characters')
+  }
+
+  setTurnUid = (battleRoomInfo: { id: string; uid: string }) => {
+    const battleRoomParam = {
+      turn: {
+        uid: battleRoomInfo.uid,
+        updatedAt: new Date()
+      }
+    }
+    db.collection('battles')
+      .doc(battleRoomInfo.id)
+      .update(battleRoomParam)
+  }
+
+  setOpponentOfflineTimes(battleRoomInfo: {
+    id: string
+    hostOrGuest: 'host' | 'guest'
+    offlineTimes: number
+  }) {
+    const battleRoomParam: Partial<IBattleRoom> = {
+      [`${battleRoomInfo.hostOrGuest}.opponentOfflineTimes`]: battleRoomInfo.offlineTimes
+    }
+    db.collection('battles')
+      .doc(battleRoomInfo.id)
+      .update(battleRoomParam)
   }
 
   // #endregion online battle

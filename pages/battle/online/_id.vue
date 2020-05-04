@@ -1,6 +1,16 @@
 <template>
   <div :class="$style.container">
-    <Header :class="$style.header" @surrender="onSurrender" />
+    <Header
+      :class="$style.header"
+      :store-user="storeUser"
+      :time-limit="TIME_LIMIT"
+      :nearly-time-out="NEARLY_TIME_OUT"
+      :battle-room="battleRoom"
+      :set-opponent-offline-times="setOpponentOfflineTimes"
+      :set-battle-room-winner="setBattleRoomWinner"
+      @surrender="onSurrender"
+      @turnEnd="onTurnEnd"
+    />
     <Field :deployable-areas="deployableAreas" />
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :winner-name="winnerName" />
@@ -66,6 +76,19 @@ export default class OnlineBattleRoom extends Vue {
   @ItemBattleRoomsModule.Action('deleteUserBattleId')
   private deleteUserBattleId!: (uid: string) => void
 
+  @ItemBattleRoomsModule.Action('setTurnUid')
+  private setTurnUid!: (battleRoomInfo: { id: string; uid: string }) => void
+
+  @ItemBattleRoomsModule.Action('setOpponentOfflineTimes')
+  public setOpponentOfflineTimes!: (battleRoomInfo: {
+    id: string
+    hostOrGuest: 'host' | 'guest'
+    offlineTimes: number
+  }) => void
+
+  private TIME_LIMIT = 45
+  private NEARLY_TIME_OUT = 35
+
   public deployableAreas: IDeployableArea[] = [
     {
       upperLeft: {
@@ -106,7 +129,7 @@ export default class OnlineBattleRoom extends Vue {
       this.$router.push('/battle/online')
       return
     }
-    // TODO キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
+    // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
     this.initCharacters()
     this.$store.subscribe((_, state) => {
       const battleRoom = state.battleRooms.battleRoom
@@ -114,6 +137,8 @@ export default class OnlineBattleRoom extends Vue {
         this.onDecideWinner(battleRoom.winnerUid)
       }
     })
+    // TODO: どっちが先行なのか、どうやって決めるかは未定
+    this.setTurnUid({ id: this.storeUser.battleId, uid: this.storeUser.uid })
   }
 
   async initCharacters() {
@@ -141,6 +166,16 @@ export default class OnlineBattleRoom extends Vue {
       })
     }
     this.bindCharactersRef(dbCharactersRef)
+  }
+
+  onTurnEnd() {
+    if (!this.storeUser.battleId) return
+    const nextTurnUid =
+      this.battleRoom.turn.uid === this.battleRoom.host.uid
+        ? this.battleRoom.guest.uid
+        : this.battleRoom.host.uid
+
+    this.setTurnUid({ id: this.storeUser.battleId, uid: nextTurnUid })
   }
 
   onDecideWinner(winnerUid: string) {
