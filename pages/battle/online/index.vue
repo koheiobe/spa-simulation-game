@@ -70,10 +70,8 @@ export default class OnlineBattle extends Vue {
 
   async mounted() {
     await this.syncFirestoreVuexBattleRooms()
-
-    const battleId = this.storeUser.battleId
-    if (!battleId) return
-    if (await this.isBattleRoomExist(battleId)) {
+    if (!this.storeUser || !this.storeUser.battleId) return
+    if (await this.isBattleRoomExist(this.storeUser.battleId)) {
       this.$router.push(`/battle/online/${this.storeUser.battleId}`)
     } else {
       // HACK 前回の戦闘終了前にページ離脱していた場合、battleIdが残っているため削除

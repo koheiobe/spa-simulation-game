@@ -10,6 +10,7 @@
       :set-battle-room-winner="setBattleRoomWinner"
       @surrender="onSurrender"
       @turnEnd="onTurnEnd"
+      @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
     <Field :deployable-areas="deployableAreas" />
     <Modal :is-open="isBattleFinishModalOpen">
@@ -20,7 +21,7 @@
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { Vue } from 'vue-property-decorator'
+import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import CharacterList from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
@@ -131,12 +132,6 @@ export default class OnlineBattleRoom extends Vue {
     }
     // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
     this.initCharacters()
-    this.$store.subscribe((_, state) => {
-      const battleRoom = state.battleRooms.battleRoom
-      if (battleRoom && battleRoom.winnerUid.length > 0) {
-        this.onDecideWinner(battleRoom.winnerUid)
-      }
-    })
     // TODO: どっちが先行なのか、どうやって決めるかは未定
     this.setTurnUid({ id: this.storeUser.battleId, uid: this.storeUser.uid })
   }
@@ -178,9 +173,23 @@ export default class OnlineBattleRoom extends Vue {
     this.setTurnUid({ id: this.storeUser.battleId, uid: nextTurnUid })
   }
 
-  onDecideWinner(winnerUid: string) {
+  onSurrender() {
+    if (!this.storeUser.battleId) return
+
+    const opponentUid =
+      this.battleRoom.host.uid === this.storeUser.uid
+        ? this.battleRoom.guest.uid
+        : this.battleRoom.host.uid
+    this.setBattleRoomWinner({
+      id: this.storeUser.battleId,
+      winnerUid: opponentUid
+    })
+  }
+
+  onDecideWinner() {
+    if (this.isBattleFinishModalOpen) return
     this.winnerName =
-      this.battleRoom.host.uid === winnerUid
+      this.battleRoom.host.uid === this.battleRoom.winnerUid
         ? this.battleRoom.host.name
         : this.battleRoom.guest.name
     this.isBattleFinishModalOpen = true
@@ -197,17 +206,14 @@ export default class OnlineBattleRoom extends Vue {
     this.$router.push('/battle/online')
   }
 
-  onSurrender() {
-    if (!this.storeUser.battleId) return
+  @Watch('winnerUid')
+  onChangeWinnerUid() {
+    this.onDecideWinner()
+  }
 
-    const opponentUid =
-      this.battleRoom.host.uid === this.storeUser.uid
-        ? this.battleRoom.guest.uid
-        : this.battleRoom.host.uid
-    this.setBattleRoomWinner({
-      id: this.storeUser.battleId,
-      winnerUid: opponentUid
-    })
+  get winnerUid() {
+    if (!this.battleRoom) return ''
+    return this.battleRoom.winnerUid
   }
 }
 </script>

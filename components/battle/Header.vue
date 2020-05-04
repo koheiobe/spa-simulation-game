@@ -68,6 +68,12 @@ export default class BattleHeader extends Vue {
 
   mounted() {}
 
+  destroyed() {
+    if (this.lastIntervalId) {
+      clearInterval(this.lastIntervalId)
+    }
+  }
+
   // TODO: 開発に邪魔な機能なので、一時的にコメントアウト
   // @Watch('turnUid', {
   //   immediate: true
@@ -132,7 +138,7 @@ export default class BattleHeader extends Vue {
         offlineTimes: updatedOfflineTimes
       })
       this.$emit('turnEnd')
-    }, 50000)
+    }, 5000)
   }
 
   openOptionModal() {
