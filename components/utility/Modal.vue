@@ -49,6 +49,10 @@ export default class Modal extends Vue {
   top: 0;
   left: 0;
   .container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     background-color: white;
     border-radius: 4px;
     padding: 16px 32px;

@@ -49,4 +49,6 @@ export interface IBattleRoom {
     updatedAt: firebase.firestore.Timestamp
   }
   createdAt: firebase.firestore.Timestamp
+  // firestoreによって付与されるId
+  id: string
 }

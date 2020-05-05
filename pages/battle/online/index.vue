@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.createButtonContainer">
-      <b-button @click="onCreateBattleRoom">create room</b-button>
+      <b-button @click="onCreateBattleRoom">クリエイト ルーム</b-button>
     </div>
     <b-list-group :class="$style.listContainer">
       <b-list-group-item
@@ -12,18 +12,34 @@
         >{{ battleRoom.host && battleRoom.host.name }}</b-list-group-item
       >
     </b-list-group>
+    <Modal :is-open="isOpneWaitingMatchModal" :width="400" :height="200">
+      {{
+        isBattleMatched
+          ? 'マッチングしましたので戦闘を開始します。'
+          : 'マッチングしています...'
+      }}
+      <div class="text-center" :class="$style.spinnerContainer">
+        <b-spinner variant="primary" type="grow" label="Spinning"></b-spinner>
+      </div>
+      <b-button @click="cancelHosting">キャンセル</b-button>
+    </Modal>
   </div>
 </template>
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { Vue } from 'vue-property-decorator'
+import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
+import Modal from '~/components/utility/Modal.vue'
 import { IUser, IBattleRoom } from '~/types/store'
 const UserModule = namespace('user')
 const BattleRoomsModule = namespace('battleRooms')
 
-@Component({})
+@Component({
+  components: {
+    Modal
+  }
+})
 export default class OnlineBattle extends Vue {
   @UserModule.Getter('getUser')
   private storeUser!: IUser
@@ -52,9 +68,6 @@ export default class OnlineBattle extends Vue {
     firebase.firestore.DocumentReference<firebase.firestore.DocumentData>
   >
 
-  @BattleRoomsModule.Action('isBattleRoomExist')
-  private isBattleRoomExist!: (battleId: string) => Promise<boolean>
-
   @BattleRoomsModule.Action('setUserBattleId')
   private setUserBattleId!: (userInfo: {
     uid: string
@@ -64,19 +77,20 @@ export default class OnlineBattle extends Vue {
   @BattleRoomsModule.Action('deleteUserBattleId')
   private deleteUserBattleId!: (uid: string) => void
 
-  get battleRooms() {
-    return this.storeBattleRooms
-  }
+  @BattleRoomsModule.Action('deleteBattleRoom')
+  private deleteBattleRoom!: (battleId: string) => Promise<null>
+
+  private isOpneWaitingMatchModal: boolean = false
 
   async mounted() {
     await this.syncFirestoreVuexBattleRooms()
-    if (!this.storeUser || !this.storeUser.battleId) return
-    if (await this.isBattleRoomExist(this.storeUser.battleId)) {
+    this.deleteBattleIdIfNeeded()
+
+    if (!this.isBattleRoomExist) return
+    if (this.isBattleMatched) {
       this.$router.push(`/battle/online/${this.storeUser.battleId}`)
     } else {
-      // HACK 前回の戦闘終了前にページ離脱していた場合、battleIdが残っているため削除
-      // もしIDが残ることが気持ち悪いならCloudFunctionなどを使って強制的に削除する
-      this.deleteUserBattleId(this.storeUser.uid)
+      this.isOpneWaitingMatchModal = true
     }
   }
 
@@ -89,7 +103,7 @@ export default class OnlineBattle extends Vue {
       uid: this.storeUser.uid,
       battleId: battleRoomRef.id
     })
-    this.$router.push(`/battle/online/${battleRoomRef.id}`)
+    this.isOpneWaitingMatchModal = true
   }
 
   goToBattleRoom(battleId: string) {
@@ -102,8 +116,54 @@ export default class OnlineBattle extends Vue {
     this.$router.push(`/battle/online/${battleId}`)
   }
 
+  async cancelHosting() {
+    if (this.storeUser.battleId) {
+      await this.deleteBattleRoom(this.storeUser.battleId)
+      this.deleteUserBattleId(this.storeUser.uid)
+    }
+    this.isOpneWaitingMatchModal = false
+  }
+
   syncFirestoreVuexBattleRooms() {
     return this.bindBattleRoomsRef(this.$firestore.getBattleRoomsRef())
+  }
+
+  deleteBattleIdIfNeeded() {
+    if (this.storeUser.battleId && !this.isBattleRoomExist) {
+      // HACK 前回の戦闘終了前にページ離脱していた場合、battleIdが残っているため削除
+      // もしIDが残ることが気持ち悪いならCloudFunctionなどを使って強制的に削除する
+      this.deleteUserBattleId(this.storeUser.uid)
+    }
+  }
+
+  @Watch('isBattleMatched')
+  onMatched() {
+    setTimeout(() => {
+      this.$router.push(`/battle/online/${this.storeUser.battleId}`)
+    }, 5000)
+  }
+
+  get battleRooms() {
+    return this.storeBattleRooms
+  }
+
+  get isBattleRoomExist() {
+    return Boolean(
+      this.battleRooms.find(
+        (battleRoom) => battleRoom.id === this.storeUser.battleId
+      )
+    )
+  }
+
+  get isBattleMatched() {
+    const battleRoom = this.battleRooms.find(
+      (battleRoom) => battleRoom.id === this.storeUser.battleId
+    )
+    if (!battleRoom) {
+      return false
+    } else {
+      return battleRoom.host.uid.length > 0 && battleRoom.guest.uid.length > 0
+    }
   }
 }
 </script>
@@ -117,6 +177,10 @@ export default class OnlineBattle extends Vue {
   justify-content: center;
   align-items: center;
   text-align: center;
+
+  .spinnerContainer {
+    margin: 16px 0;
+  }
 
   .createButtonContainer {
     margin-bottom: 16px;

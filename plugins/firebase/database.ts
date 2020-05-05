@@ -102,13 +102,6 @@ class Firestore {
       .update({ winnerUid: battleRoomInfo.winnerUid })
   }
 
-  async isBattleRoomExist(battleId: string): Promise<boolean> {
-    const battleRoom = await db
-      .collection('battles')
-      .doc(battleId)
-      .get()
-    return battleRoom.exists
-  }
   // #endregion online battle room
 
   // #region online battle

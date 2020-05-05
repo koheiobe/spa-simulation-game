@@ -71,8 +71,5 @@ export const actions: ActionTree<RootState, RootState> = {
   },
   deleteBattleRoom(_, battleId: string): Promise<void> {
     return this.$firestore.deleteBattleRoom(battleId)
-  },
-  isBattleRoomExist(_, battleId: string): Promise<boolean> {
-    return this.$firestore.isBattleRoomExist(battleId)
   }
 }
