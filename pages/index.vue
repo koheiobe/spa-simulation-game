@@ -19,7 +19,7 @@ export default class index extends Vue {
   private storeUser!: IUser
 
   tryGoToOnlineBattle() {
-    if (this.storeUser.uid.length <= 0) {
+    if (!this.storeUser.uid || this.storeUser.uid.length <= 0) {
       this.$bvToast.toast('オンライン対戦を行うにはログインしてください。', {
         title: 'エラー',
         variant: 'danger',
