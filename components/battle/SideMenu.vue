@@ -15,7 +15,7 @@
             :style="selectedBorderStyle(character.id)"
           >
             <CharacterRenderer
-              :id="character.id"
+              :character-id="character.id"
               :is-deployed="isDeployed(character)"
               @click.native.stop="onClickCharacter(character.id)"
             />
