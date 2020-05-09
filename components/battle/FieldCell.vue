@@ -12,7 +12,21 @@
         )
     "
   >
-    <CharacterRenderer v-if="props.character" :id="props.character.id" />
+    <div v-if="props.character">
+      <CharacterRenderer
+        :id="props.character.id"
+        :character-id="props.character.id"
+      />
+      <b-tooltip
+        triggers="hover"
+        variant="primary"
+        :target="props.character.id"
+        :class="$style.characterToolTip"
+      >
+        Name: {{ props.character.name }} <br />
+        HP: {{ props.character.hp }}
+      </b-tooltip>
+    </div>
   </div>
 </template>
 
@@ -51,6 +65,8 @@ export default {
       latLng: ILatlng,
       listeners: any
     ) {
+      // TODO: functional componentではrefが効かないので回避方法を探す
+      // this.$refs.tooltip.$emit('close')
       if (cellType) {
         evt.stopPropagation()
       }

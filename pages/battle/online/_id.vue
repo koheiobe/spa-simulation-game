@@ -201,11 +201,11 @@ export default class OnlineBattleRoom extends Vue {
 
   onDecideWinner() {
     if (this.isBattleFinishModalOpen) return
+    this.isBattleFinishModalOpen = true
     this.winnerName =
       this.battleRoom.host.uid === this.battleRoom.winnerUid
         ? this.battleRoom.host.name
         : this.battleRoom.guest.name
-    this.isBattleFinishModalOpen = true
     window.setTimeout(this.onEndBattle, 5000)
   }
 

@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <div :is="characterName" v-if="characterName.length > 0"></div>
-  </div>
+  <div :is="characterName" v-if="characterName.length > 0"></div>
 </template>
 
 <script lang="ts">
@@ -112,17 +110,13 @@ import Zombie from '~/assets/img/character/zombie.svg'
 })
 export default class CharacterRenderer extends Vue {
   @Prop({ default: '' })
-  id!: string
+  characterId!: string
 
   @Prop({ default: false })
   isDeployed?: boolean
 
-  mounted() {
-    console.log(Centaur)
-  }
-
   get characterName() {
-    return this.id.replace(/-.+$/, '')
+    return this.characterId.replace(/-.+$/, '')
   }
 }
 </script>
