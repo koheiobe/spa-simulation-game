@@ -1,3 +1,4 @@
+// id は違う画面で初期値 + guest か host の文字列を追加され初期化される
 export default {
   centaur: {
     name: 'Centaur',

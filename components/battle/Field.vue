@@ -20,7 +20,8 @@
     </div>
     <Modal :is-open="isBattleModalOpen" @onClickOuter="onCancelAction">
       <BattleDialogue
-        :character-name="characterName"
+        :character="interactiveCharacter"
+        :is-my-turn="isMyTurn"
         @onSelect="onSelectBattleAction"
       />
     </Modal>
@@ -46,7 +47,7 @@ import {
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
-import BattleDialogue from '~/components/battle/ModalContent/battleDialogue.vue'
+import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter, IBattleRoom } from '~/types/store'
 const ItemUserModule = namespace('user')
@@ -101,6 +102,9 @@ export default class Field extends Vue {
 
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]
+
+  @Prop({ default: false })
+  isMyTurn!: boolean
 
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
@@ -192,14 +196,23 @@ export default class Field extends Vue {
   }
 
   moveCharacter(latLng: ILatlng, cellCharacterId: string) {
+    if (!this.interactiveCharacter) return
     const isMovableCell =
-      (this.interactiveCharacter &&
-        this.interactiveCharacter.id === cellCharacterId) ||
+      this.interactiveCharacter.id === cellCharacterId ||
       cellCharacterId.length === 0
-    if (isMovableCell) {
+    if (isMovableCell && this.isMyTurn) {
       this.updateInteractiveCharacter({ latLng })
       this.setModal(true)
     }
+
+    if (
+      !this.isMyTurn &&
+      latLng.x === this.interactiveCharacter.latLng.x &&
+      latLng.y === this.interactiveCharacter.latLng.y
+    ) {
+      this.setModal(true)
+    }
+
     this.movableArea = {}
   }
 

@@ -6,13 +6,14 @@
       :time-limit="TIME_LIMIT"
       :nearly-time-out="NEARLY_TIME_OUT"
       :battle-room="battleRoom"
+      :is-my-turn="isMyTurn"
       :set-opponent-offline-times="setOpponentOfflineTimes"
       :set-battle-room-winner="setBattleRoomWinner"
       @surrender="onSurrender"
       @turnEnd="onTurnEnd"
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
-    <Field :deployable-areas="deployableAreas" />
+    <Field :deployable-areas="deployableAreas" :is-my-turn="isMyTurn" />
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :winner-name="winnerName" />
     </Modal>
@@ -28,7 +29,7 @@ import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoom } from '~/types/store'
 import { IDeployableArea } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
-import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
+import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
 const ItemUserModule = namespace('user')
 const ItemBattleRoomsModule = namespace('battleRooms')
@@ -222,6 +223,10 @@ export default class OnlineBattleRoom extends Vue {
   @Watch('winnerUid')
   onChangeWinnerUid() {
     this.onDecideWinner()
+  }
+
+  get isMyTurn() {
+    return this.battleRoom && this.battleRoom.turn.uid === this.storeUser.uid
   }
 
   get winnerUid() {

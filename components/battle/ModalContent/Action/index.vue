@@ -1,14 +1,16 @@
 <template>
   <div>
+    <div :class="$style.characterNameContainer">Name: {{ characterName }}</div>
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
-      <li>名前: {{ characterName }}</li>
-      <li @click="onSelectAction('attack')">攻撃</li>
-      <li @click="onSelectAction('wait')">待機</li>
-      <li @click="onSelectAction('item')">アイテム</li>
+      <li v-if="isMyTurn" @click="$emit('onSelect', 'attack')">攻撃</li>
+      <li v-if="isMyTurn" @click="$emit('onSelect', 'wait')">待機</li>
+      <!-- TODO ミニマムリリースを目指すためアイテムは落とす -->
+      <!-- <li v-if="isMyTurn" @click="selectedAction = 'item'">アイテム</li> -->
+      <li @click="selectedAction = 'detail'">能力</li>
     </ul>
     <div v-if="selectedAction === 'item'">
       <ul :class="$style.itemOptions">
-        <template v-for="(item, idx) in ['dd', 'dd', 'dd', 'dd', 'dd', 'dd']">
+        <template v-for="(item, idx) in itemList">
           <li
             :id="`popover-target-${idx}`"
             :key="item + idx"
@@ -27,7 +29,10 @@
           </b-popover>
         </template>
       </ul>
-      <b-button @click="backToTop">戻る</b-button>
+      <b-button @click="backToTop">もどる</b-button>
+    </div>
+    <div v-if="selectedAction === 'detail'">
+      <Detail :character="character" />
     </div>
   </div>
 </template>
@@ -35,35 +40,26 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
-import { ActionType } from '~/types/battle'
+import Detail from './CharacterDetail.vue'
+import { ICharacter } from '~/types/store'
 import Modal from '~/components/utility/Modal.vue'
 
 @Component({
   components: {
-    Modal
+    Modal,
+    Detail
   }
 })
 export default class BattleDialogue extends Vue {
-  @Prop({ default: '' })
-  characterName!: string
+  @Prop({ default: () => {} })
+  character!: ICharacter
+
+  @Prop({ default: false })
+  isMyTurn!: boolean
 
   public itemList: string[] = ['dd', 'dd', 'dd', 'dd', 'dd', 'dd']
-  public selectedAction: ActionType = 'none'
+  public selectedAction: 'item' | 'detail' | 'none' = 'none'
   public isItemModalOpen: boolean = false
-
-  onSelectAction(action: ActionType) {
-    switch (action) {
-      case 'attack':
-        this.$emit('onSelect', 'attack')
-        break
-      case 'wait':
-        this.$emit('onSelect', 'wait')
-        break
-      case 'item':
-        this.selectedAction = 'item'
-        break
-    }
-  }
 
   onSelectItem() {
     this.$emit('onSelect', 'item')
@@ -72,15 +68,27 @@ export default class BattleDialogue extends Vue {
   backToTop() {
     this.selectedAction = 'none'
   }
+
+  get characterName() {
+    return this.character ? this.character.name : ''
+  }
 }
 </script>
 
 <style lang="scss" module>
+.characterNameContainer {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
 .baseOptions {
   padding: 0;
   list-style: none;
   li {
     cursor: pointer;
+    &:hover {
+      background-color: #e4e4e4;
+    }
   }
 }
 .actionOptions {

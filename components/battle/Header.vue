@@ -2,7 +2,7 @@
   <div :class="$style.container">
     <div>{{ turnNumber }}ターン目</div>
     <div>
-      {{ turnPlayer }}
+      {{ isMyTurn ? 'あなたのターンです' : '相手のターンです' }}
     </div>
     <div :class="$style.timerContainer">
       <span :class="[isNearlyTimeOut ? $style.nearlyTimeOut : '']">{{
@@ -10,6 +10,20 @@
       }}</span>
       /
       {{ timeLimit }}
+    </div>
+    <div>
+      <b-button
+        variant="primary"
+        :disabled="!isMyTurn"
+        @click="$emit('turnEnd')"
+      >
+        ターン終了
+      </b-button>
+    </div>
+    <div>
+      <b-button variant="primary" @click="$emit('turnEnd')">
+        ターン交代(開発)
+      </b-button>
     </div>
     <div>
       <BIconGearFill :class="$style.gearIcon" @click="openOptionModal" />
@@ -25,7 +39,7 @@ import Component from 'vue-class-component'
 import { BIconGearFill } from 'bootstrap-vue'
 import { Vue, Prop } from 'vue-property-decorator'
 import { IBattleRoom, IUser } from '../../types/store'
-import Option from './ModalContent/option.vue'
+import Option from './ModalContent/Option.vue'
 import Modal from '~/components/utility/Modal.vue'
 
 @Component({
@@ -47,6 +61,9 @@ export default class BattleHeader extends Vue {
 
   @Prop({ default: undefined })
   storeUser?: IUser
+
+  @Prop({ default: false })
+  isMyTurn!: boolean
 
   @Prop({ default: Function })
   setOpponentOfflineTimes!: (battleRoomInfo: {
@@ -148,13 +165,6 @@ export default class BattleHeader extends Vue {
 
   closeOptionModal() {
     this.isOptionModalOpen = false
-  }
-
-  get turnPlayer() {
-    if (!this.battleRoom || !this.storeUser) return ''
-    return this.battleRoom.turn.uid === this.storeUser.uid
-      ? 'あなたのターンです'
-      : '相手のターンです'
   }
 
   get turnUid() {
