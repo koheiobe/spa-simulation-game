@@ -343,7 +343,7 @@ export default class Field extends Vue {
   }
 
   get characterName() {
-    return this.interactiveCharacter ? this.interactiveCharacter.id : ''
+    return this.interactiveCharacter ? this.interactiveCharacter.name : ''
   }
 }
 </script>

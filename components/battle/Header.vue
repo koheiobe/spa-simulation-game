@@ -23,7 +23,7 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { BIconGearFill } from 'bootstrap-vue'
-import { Vue, Prop, Watch } from 'vue-property-decorator'
+import { Vue, Prop } from 'vue-property-decorator'
 import { IBattleRoom, IUser } from '../../types/store'
 import Option from './ModalContent/option.vue'
 import Modal from '~/components/utility/Modal.vue'
