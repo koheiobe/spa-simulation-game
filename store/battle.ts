@@ -36,7 +36,7 @@ export const actions: ActionTree<RootState, RootState> = {
     bindFirestoreRef('characters', ref)
   }),
   updateCharacter(_, dbInfo: { battleId: string; character: ICharacter }) {
-    this.$firestore.updateCharacter(dbInfo.battleId, dbInfo.character)
+    return this.$firestore.updateCharacter(dbInfo.battleId, dbInfo.character)
   },
   updateCharacters(_, dbInfo: { battleId: string; characters: ICharacter[] }) {
     this.$firestore.updateCharacters(dbInfo.battleId, dbInfo.characters)

@@ -18,7 +18,7 @@
         </FieldCell>
       </template>
     </div>
-    <Modal :is-open="isBattleModalOpen" @onClickOuter="onCancelAction">
+    <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
         :character="interactiveCharacter"
         :is-my-turn="isMyTurn"
@@ -83,7 +83,7 @@ export default class Field extends Vue {
   private updateCharacter!: (dbInfo: {
     battleId: string
     character: ICharacter
-  }) => Promise<null>
+  }) => Promise<void>
 
   @ItemBattleModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
@@ -159,7 +159,7 @@ export default class Field extends Vue {
           )
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
-          this.onCancelAction()
+          this.resetCharacterState()
         }
     }
   }
@@ -217,16 +217,24 @@ export default class Field extends Vue {
   }
 
   onSelectBattleAction(action: ActionType) {
-    switch (action) {
-      case 'attack':
-        this.beforeInteractCharacter(action, 'closeRange')
-        break
-      case 'wait':
-        this.onFinishAction()
-        break
-      case 'item':
-        this.beforeInteractCharacter(action, 'closeRange', 1)
-        break
+    try {
+      if (!this.interactiveCharacter) {
+        throw new Error('interactiveCharacter が 存在しません')
+      }
+      switch (action) {
+        case 'attack':
+          this.beforeInteractCharacter(action, 'closeRange')
+          break
+        case 'wait':
+          this.onFinishAction(this.interactiveCharacter)
+          break
+        case 'item':
+          this.beforeInteractCharacter(action, 'closeRange', 1)
+          break
+      }
+    } catch (e) {
+      console.error(e)
+      this.resetCharacterState()
     }
   }
 
@@ -251,18 +259,26 @@ export default class Field extends Vue {
   }
 
   interactCharacter(cellCharacterId: string) {
-    if (this.interactiveCharacter && cellCharacterId.length > 0) {
-      switch (this.interactiveCharacter.actionState.name) {
-        case 'attack':
-          this.attackCharacter(cellCharacterId)
-          break
-        case 'item':
-          this.useItem(cellCharacterId)
-          break
+    try {
+      if (!this.interactiveCharacter) {
+        throw new Error('interactiveCharacter が 存在しません')
       }
-      this.onFinishAction()
-    } else {
-      this.onCancelAction()
+      if (cellCharacterId.length > 0) {
+        switch (this.interactiveCharacter.actionState.name) {
+          case 'attack':
+            this.attackCharacter(cellCharacterId)
+            break
+          case 'item':
+            this.useItem(cellCharacterId)
+            break
+        }
+        this.onFinishAction(this.interactiveCharacter)
+      } else {
+        this.resetCharacterState()
+      }
+    } catch (e) {
+      console.error(e)
+      this.resetCharacterState()
     }
   }
 
@@ -285,16 +301,8 @@ export default class Field extends Vue {
     console.log('item', cellCharacterId)
   }
 
-  onCancelAction() {
-    this.onFinishAction(true)
-  }
-
-  onFinishAction(isCancel: boolean = false) {
-    if (isCancel) {
-      this.resetCharacterState()
-      return
-    }
-    this.applyInteractiveCharacterStore()
+  async onFinishAction(interactiveCharacter: ICharacter) {
+    await this.applyInteractiveCharacterStore(interactiveCharacter)
     this.resetCharacterState()
   }
 
@@ -305,19 +313,20 @@ export default class Field extends Vue {
     this.movableArea = {}
   }
 
-  applyInteractiveCharacterStore() {
-    if (this.interactiveCharacter === undefined) return
+  applyInteractiveCharacterStore(
+    interactiveCharacter: ICharacter
+  ): Promise<void> {
     const defaultActionState = {
       name: '',
       itemId: 0
     } as const
     const actedCharacter = {
-      ...this.interactiveCharacter,
-      latLng: this.interactiveCharacter.latLng,
-      lastLatLng: this.interactiveCharacter.latLng,
+      ...interactiveCharacter,
+      latLng: interactiveCharacter.latLng,
+      lastLatLng: interactiveCharacter.latLng,
       actionState: defaultActionState
     }
-    this.updateCharacter({
+    return this.updateCharacter({
       battleId: this.battleId,
       character: actedCharacter
     })
