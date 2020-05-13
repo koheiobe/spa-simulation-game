@@ -81,6 +81,7 @@ export default {
 .cell {
   min-width: 30px;
   height: 30px;
+  background-image: url('../../assets/img/field/grass.png');
   &:hover {
     background-color: #e6e6e6;
   }
