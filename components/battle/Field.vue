@@ -13,6 +13,7 @@
           :cell-type="decideCellType({ x: l, y: n })"
           :character="getCharacterAtCell({ x: l, y: n })"
           :lat-lng="{ x: l, y: n }"
+          :field="field"
           @onClick="onClickCell"
         >
         </FieldCell>
@@ -50,6 +51,7 @@ import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter, IBattleRoom } from '~/types/store'
+import { IField } from '~/constants/field'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
 const ItemBattleRoomsModule = namespace('battleRooms')
@@ -105,6 +107,9 @@ export default class Field extends Vue {
 
   @Prop({ default: false })
   isMyTurn!: boolean
+
+  @Prop({ default: () => null })
+  field!: IField
 
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成

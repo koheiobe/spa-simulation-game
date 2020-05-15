@@ -1,6 +1,5 @@
 import { IDeployableArea, ILatlng, WeaponType } from '~/types/battle'
 import field from '~/constants/field'
-import fieldType from '~/constants/fieldType'
 
 export const fillDeployableArea = (
   deployableAreas: IDeployableArea[]

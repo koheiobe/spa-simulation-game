@@ -1,6 +1,13 @@
 <template functional>
   <div
     :class="[$style.cell, props.cellType ? $style.characterPlacableCell : '']"
+    :style="{
+      backgroundImage: $options.methods.getFieldBackgroundUrl(
+        props.field
+          ? $options.methods.getFieldBackgroundType(props.field, props.latLng)
+          : ''
+      )
+    }"
     @click="
       (evt) =>
         $options.methods.onClick(
@@ -35,6 +42,12 @@ import { ILatlng } from 'types/battle'
 import { ICharacter } from '~/types/store'
 import { CellType } from '~/types/battle'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
+import { IField } from '~/constants/field'
+const Grass = require('~/assets/img/field/grass.png')
+const Grass2 = require('~/assets/img/field/grass2.png')
+const Castle = require('~/assets/img/field/castle.png')
+const Mountain = require('~/assets/img/field/mountain.png')
+const Forest = require('~/assets/img/field/forest.png')
 
 export default {
   name: 'FieldCell',
@@ -55,6 +68,11 @@ export default {
     character: {
       default: (): ICharacter | undefined => undefined,
       type: Object
+    },
+    field: {
+      default: (): IField | null => null,
+      type: Object,
+      require: true
     }
   },
   methods: {
@@ -72,6 +90,25 @@ export default {
       }
       const characterId = character === undefined ? '' : character.id
       listeners.onClick(cellType, latLng, characterId)
+    },
+    getFieldBackgroundUrl(fieldType: string) {
+      switch (fieldType) {
+        case 'mountain':
+          return `url(${Mountain})`
+        case 'forest':
+          return `url(${Forest})`
+        case 'castle':
+          return `url(${Castle})`
+        default:
+          return Math.round(Math.random() * 100) % 2 === 0
+            ? `url(${Grass})`
+            : `url(${Grass2})`
+      }
+    },
+    getFieldBackgroundType(field: IField, latLng: ILatlng) {
+      return field[`${latLng.y}_${latLng.x}`]
+        ? field[`${latLng.y}_${latLng.x}`].type
+        : ''
     }
   }
 }
@@ -81,16 +118,17 @@ export default {
 .cell {
   min-width: 30px;
   height: 30px;
-  background-image: url('../../assets/img/field/grass.png');
   &:hover {
-    background-color: #e6e6e6;
+    background-color: rgba(230, 230, 230, 0.8);
+    background-blend-mode: lighten;
   }
   img {
     width: 30px;
   }
 }
 .characterPlacableCell {
-  background-color: #e6e6e6;
+  background-color: rgba(230, 230, 230, 0.8);
+  background-blend-mode: lighten;
   &:hover {
     background-color: blue;
   }

@@ -13,7 +13,11 @@
       @turnEnd="onTurnEnd"
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
-    <Field :deployable-areas="deployableAreas" :is-my-turn="isMyTurn" />
+    <Field
+      :deployable-areas="deployableAreas"
+      :is-my-turn="isMyTurn"
+      :field="field"
+    />
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :winner-name="winnerName" />
     </Modal>
@@ -31,6 +35,8 @@ import { IDeployableArea } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
+import field from '~/constants/field'
+
 const ItemUserModule = namespace('user')
 const ItemBattleRoomsModule = namespace('battleRooms')
 const ItemBattleModule = namespace('battle')
@@ -118,6 +124,8 @@ export default class OnlineBattleRoom extends Vue {
 
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
+  // TODO: プレイヤーが変更 or ランダムで選択できるようにする
+  public field = field
 
   async mounted() {
     if (!this.storeUser.battleId) {

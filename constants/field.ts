@@ -1,4 +1,4 @@
-interface IField {
+export interface IField {
   [latLng: string]: {
     type: string
   }
@@ -94,6 +94,12 @@ const field: IField = {
   },
   '15_30': {
     type: 'mountain'
+  },
+  '10_10': {
+    type: 'forest'
+  },
+  '5_5': {
+    type: 'castle'
   }
 }
 
