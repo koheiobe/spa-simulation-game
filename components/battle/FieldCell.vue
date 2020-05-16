@@ -5,7 +5,8 @@
       backgroundImage: $options.methods.getFieldBackgroundUrl(
         props.field
           ? $options.methods.getFieldBackgroundType(props.field, props.latLng)
-          : ''
+          : '',
+        props.latLng
       )
     }"
     @click="
@@ -91,7 +92,7 @@ export default {
       const characterId = character === undefined ? '' : character.id
       listeners.onClick(cellType, latLng, characterId)
     },
-    getFieldBackgroundUrl(fieldType: string) {
+    getFieldBackgroundUrl(fieldType: string, latLng: ILatlng) {
       switch (fieldType) {
         case 'mountain':
           return `url(${Mountain})`
@@ -99,10 +100,11 @@ export default {
           return `url(${Forest})`
         case 'castle':
           return `url(${Castle})`
-        default:
-          return Math.round(Math.random() * 100) % 2 === 0
-            ? `url(${Grass})`
-            : `url(${Grass2})`
+      }
+      if (latLng.y % 2 !== 0) {
+        return latLng.x % 2 === 0 ? `url(${Grass2})` : `url(${Grass})`
+      } else {
+        return latLng.x % 2 !== 0 ? `url(${Grass2})` : `url(${Grass})`
       }
     },
     getFieldBackgroundType(field: IField, latLng: ILatlng) {
