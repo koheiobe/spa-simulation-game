@@ -145,7 +145,7 @@ export default class OnlineBattle extends Vue {
     if (cur) {
       this.setTimeId = setTimeout(() => {
         this.$router.push(`/battle/online/${this.storeUser.battleId}`)
-      }, 5000)
+      }, 1000)
     }
   }
 

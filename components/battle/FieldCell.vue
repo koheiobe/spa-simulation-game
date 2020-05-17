@@ -35,6 +35,10 @@
         HP: {{ props.character.hp }}
       </b-tooltip>
     </div>
+    <!-- 開発用 -->
+    <div v-else :class="$style.latLngCell">
+      {{ `${props.latLng.y}_${props.latLng.x}` }}
+    </div>
   </div>
 </template>
 
@@ -134,5 +138,9 @@ export default {
   &:hover {
     background-color: blue;
   }
+}
+// 開発用
+.latLngCell {
+  font-size: 8px;
 }
 </style>
