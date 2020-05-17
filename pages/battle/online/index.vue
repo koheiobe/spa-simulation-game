@@ -81,16 +81,20 @@ export default class OnlineBattle extends Vue {
   private deleteBattleRoom!: (battleId: string) => Promise<null>
 
   private isOpneWaitingMatchModal: boolean = false
+  private setTimeId: NodeJS.Timeout | null = null
 
   async mounted() {
     await this.syncFirestoreVuexBattleRooms()
     this.deleteBattleIdIfNeeded()
 
-    if (!this.isBattleRoomExist) return
-    if (this.isBattleMatched) {
-      this.$router.push(`/battle/online/${this.storeUser.battleId}`)
-    } else {
+    if (this.isBattleRoomExist) {
       this.isOpneWaitingMatchModal = true
+    }
+  }
+
+  destroyed() {
+    if (this.setTimeId) {
+      clearTimeout(this.setTimeId)
     }
   }
 
@@ -137,10 +141,12 @@ export default class OnlineBattle extends Vue {
   }
 
   @Watch('isBattleMatched')
-  onMatched() {
-    setTimeout(() => {
-      this.$router.push(`/battle/online/${this.storeUser.battleId}`)
-    }, 5000)
+  onMatched(cur: boolean) {
+    if (cur) {
+      this.setTimeId = setTimeout(() => {
+        this.$router.push(`/battle/online/${this.storeUser.battleId}`)
+      }, 5000)
+    }
   }
 
   get battleRooms() {

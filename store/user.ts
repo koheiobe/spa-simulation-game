@@ -3,7 +3,13 @@ import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { IUser } from '~/types/store'
 
 export const state = () => ({
-  loginUser: {} as IUser
+  loginUser: {
+    name: '',
+    uid: '',
+    battleId: '',
+    roomId: '',
+    isLogin: false
+  } as IUser
 })
 
 export type RootState = ReturnType<typeof state>
@@ -22,7 +28,7 @@ export const mutations: MutationTree<RootState> = {
 
 export const actions: ActionTree<RootState, RootState> = {
   setUserRef: firestoreAction(({ bindFirestoreRef }, ref) => {
-    bindFirestoreRef('loginUser', ref)
+    bindFirestoreRef('loginUser', ref, { reset: false })
   }),
   setUserAsGuest(context) {
     context.commit('setUser', {
