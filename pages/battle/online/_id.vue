@@ -17,6 +17,7 @@
       :deployable-areas="deployableAreas"
       :is-my-turn="isMyTurn"
       :field="field"
+      :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
     />
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :winner-name="winnerName" />
@@ -156,10 +157,10 @@ export default class OnlineBattleRoom extends Vue {
     window.addEventListener('beforeunload', function(e) {
       e.preventDefault()
     })
-    // this.preventHistoryBack()
+    this.preventHistoryBack()
   }
 
-  async initCharacters() {
+  initCharacters() {
     if (!this.storeUser.battleId) return
 
     const characterList = CharacterList as any
@@ -172,14 +173,19 @@ export default class OnlineBattleRoom extends Vue {
         id: characterList[key].id + '-' + hostOrGuest
       })
     })
-    const dbCharactersRef = this.$firestore.getCharactersRef(
-      this.storeUser.battleId
-    )
+    this.syncVuexFirestoreCharacters(characters, this.storeUser.battleId)
+  }
+
+  async syncVuexFirestoreCharacters(
+    characters: ICharacter[],
+    battleId: string
+  ) {
+    const dbCharactersRef = this.$firestore.getCharactersRef(battleId)
 
     const dbCharacters = await dbCharactersRef.get()
     if (dbCharacters.empty) {
       this.updateCharacters({
-        battleId: this.storeUser.battleId,
+        battleId,
         characters
       })
     }

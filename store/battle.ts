@@ -39,7 +39,7 @@ export const actions: ActionTree<RootState, RootState> = {
     return this.$firestore.updateCharacter(dbInfo.battleId, dbInfo.character)
   },
   updateCharacters(_, dbInfo: { battleId: string; characters: ICharacter[] }) {
-    this.$firestore.updateCharacters(dbInfo.battleId, dbInfo.characters)
+    return this.$firestore.updateCharacters(dbInfo.battleId, dbInfo.characters)
   },
   setCharacterParam(context, obj) {
     return new Promise((resolve) => {

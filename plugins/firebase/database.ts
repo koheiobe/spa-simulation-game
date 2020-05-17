@@ -122,11 +122,9 @@ class Firestore {
         { merge: true }
       )
     })
-    try {
-      batch.commit()
-    } catch (e) {
-      console.error('firestoreの初期化に失敗しました', e)
-    }
+    return batch
+      .commit()
+      .catch((e) => console.error('firestoreの初期化に失敗しました', e))
   }
 
   updateCharacter(battleId: string, character: ICharacter) {

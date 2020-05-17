@@ -111,6 +111,12 @@ export default class Field extends Vue {
   @Prop({ default: () => null })
   field!: IField
 
+  @Prop({ default: () => () => {} })
+  syncVuexFirestoreCharacters!: (
+    characters: ICharacter[],
+    battleId: string
+  ) => void
+
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
   public deployableArea: { [key: string]: Boolean } = {}
@@ -175,11 +181,17 @@ export default class Field extends Vue {
   }
 
   // HACK デプロイ画面と戦闘画面、違う画面に分けた方がいいかもしれない
-  finishDeployMode() {
+  async finishDeployMode() {
     if (Object.keys(this.deployableArea).length === 0) return
     this.deployableArea = {}
     this.deployCharacterId = ''
-    this.$firestore.updateCharacters(this.battleId, this.storeCharacters)
+    await this.updateCharacters({
+      battleId: this.battleId,
+      characters: this.storeCharacters
+    })
+    // deployCharacterのthis.setCharacterParamをすると
+    // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
+    this.syncVuexFirestoreCharacters(this.storeCharacters, this.battleId)
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
@@ -189,8 +201,6 @@ export default class Field extends Vue {
     const targetCharacterId = isCharacterDeployedCell
       ? cellCharacterId
       : this.deployCharacterId
-    // TODO: setCharacterParamはfirestoreのrefが外れてしまうため使えないが
-    // キャラクターを配置するたびに、firestoreを使いたくない(使用回数に制限あり)
     this.setCharacterParam({
       id: targetCharacterId,
       value: {
