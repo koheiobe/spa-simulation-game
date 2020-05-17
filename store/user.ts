@@ -28,6 +28,8 @@ export const mutations: MutationTree<RootState> = {
 
 export const actions: ActionTree<RootState, RootState> = {
   setUserRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+    // 戦闘画面からhistorybackすることで一時的にstoreUserにnullが
+    // 入ってしまうのを防ぐため { reset: false } を設定
     bindFirestoreRef('loginUser', ref, { reset: false })
   }),
   setUserAsGuest(context) {
