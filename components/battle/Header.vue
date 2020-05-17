@@ -84,8 +84,6 @@ export default class BattleHeader extends Vue {
   public timer: number = 0
   public isNearlyTimeOut: boolean = false
 
-  mounted() {}
-
   destroyed() {
     if (this.lastIntervalId) {
       clearInterval(this.lastIntervalId)

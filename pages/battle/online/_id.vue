@@ -152,6 +152,11 @@ export default class OnlineBattleRoom extends Vue {
       uid: this.storeUser.uid,
       turnNumber: turnNumber === 0 ? 1 : turnNumber
     })
+    // ウィンドウを閉じる時に注意を表示
+    window.addEventListener('beforeunload', function(e) {
+      e.preventDefault()
+    })
+    // this.preventHistoryBack()
   }
 
   async initCharacters() {
@@ -226,6 +231,13 @@ export default class OnlineBattleRoom extends Vue {
     )
     this.deleteUserBattleId(this.storeUser.uid)
     this.$router.push('/battle/online')
+  }
+
+  preventHistoryBack() {
+    history.pushState(null, '', location.href)
+    window.addEventListener('popstate', (_) => {
+      history.go(1)
+    })
   }
 
   @Watch('winnerUid')
