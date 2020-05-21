@@ -36,7 +36,7 @@ import { IDeployableArea } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
-import field from '~/constants/field'
+import field from '~/assets/field.json'
 
 const ItemUserModule = namespace('user')
 const ItemBattleRoomsModule = namespace('battleRooms')

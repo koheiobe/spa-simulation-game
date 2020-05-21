@@ -1,5 +1,5 @@
-import { IDeployableArea, ILatlng, WeaponType } from '~/types/battle'
-import field from '~/constants/field'
+import { IDeployableArea, ILatlng, WeaponType, IField } from '~/types/battle'
+import fieldJson from '~/assets/field.json'
 
 export const fillDeployableArea = (
   deployableAreas: IDeployableArea[]
@@ -51,6 +51,7 @@ const computeMovableCell = (
     x: latLng.x + direction.x,
     y: latLng.y + direction.y
   }
+  const field: IField = fieldJson
   let updatedMovepoint = movePoint
   const cell = field[`${updatedLatLng.y}_${updatedLatLng.x}`]
   if (cell) {

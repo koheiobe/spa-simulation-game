@@ -1,3 +1,9 @@
+export interface IField {
+  [latLng: string]: {
+    type: string
+  }
+}
+
 export interface ILatlng {
   x: number
   y: number

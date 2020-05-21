@@ -19,6 +19,14 @@
         </FieldCell>
       </template>
     </div>
+    <!-- 開発用 -->
+    <DevFieldUi
+      :is-dev-mode="isDevMode"
+      @onChangeDevMode="() => (isDevMode = !isDevMode)"
+      @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
+      @saveFieldJson="saveFieldJson"
+    />
+    <!-- !開発用 -->
     <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
         :character="interactiveCharacter"
@@ -33,7 +41,9 @@
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
+import DevFieldUi from './devFieldUi.vue'
 import {
+  IField,
   ILatlng,
   IDeployableArea,
   ActionType,
@@ -51,7 +61,7 @@ import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter, IBattleRoom } from '~/types/store'
-import { IField } from '~/constants/field'
+import { downloadFile } from '~/utility/download'
 const ItemUserModule = namespace('user')
 const ItemBattleModule = namespace('battle')
 const ItemBattleRoomsModule = namespace('battleRooms')
@@ -62,7 +72,8 @@ const ItemBattleRoomsModule = namespace('battleRooms')
     SideMenu,
     Modal,
     BattleDialogue,
-    CharacterRenderer
+    CharacterRenderer,
+    DevFieldUi
   }
 })
 export default class Field extends Vue {
@@ -126,6 +137,9 @@ export default class Field extends Vue {
   public moveNum = 8
   public isBattleModalOpen: boolean = false
   private battleId: string = ''
+  // 開発用
+  private isDevMode = false
+  private selectedFieldIcon = ''
 
   mounted() {
     this.battleId = this.$route.params.id
@@ -149,6 +163,9 @@ export default class Field extends Vue {
   }
 
   onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
+    if (this.isDevMode) {
+      this.mergeField(latLng, this.selectedFieldIcon)
+    }
     switch (cellType) {
       case 'deploy':
         this.deployCharacter(latLng, cellCharacterId)
@@ -377,6 +394,21 @@ export default class Field extends Vue {
 
   surrender() {
     this.$emit('surrender')
+  }
+
+  // 開発用
+  mergeField(latLng: ILatlng, selectedFieldIcon: string) {
+    if (!selectedFieldIcon) {
+      delete this.field[`${latLng.y}_${latLng.x}`]
+      return
+    }
+    Vue.set(this.field, `${latLng.y}_${latLng.x}`, { type: selectedFieldIcon })
+  }
+
+  // 開発用
+  saveFieldJson() {
+    const text = JSON.stringify(this.field)
+    downloadFile(text, 'json', 'field')
   }
 
   get characterName() {
