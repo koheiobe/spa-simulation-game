@@ -1,10 +1,15 @@
 <template>
-  <div :is="characterName" v-if="characterName.length > 0"></div>
+  <div
+    :is="characterName"
+    v-if="characterName.length > 0"
+    :class="[isMyCharacter ? '' : $style.enemy]"
+  ></div>
 </template>
 
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
+import { namespace } from 'vuex-class'
 import Alien from '~/assets/img/character/alien.svg'
 import Centaur from '~/assets/img/character/centaur.svg'
 import Ceberus from '~/assets/img/character/cerberus.svg'
@@ -54,6 +59,9 @@ import Wizard from '~/assets/img/character/wizard.svg'
 import WoodCutter from '~/assets/img/character/woodcutter.svg'
 import Yeti from '~/assets/img/character/yeti.svg'
 import Zombie from '~/assets/img/character/zombie.svg'
+import { IBattleRoom } from '~/types/store'
+
+const BattleRoomsModule = namespace('battleRooms')
 
 @Component({
   components: {
@@ -109,11 +117,20 @@ import Zombie from '~/assets/img/character/zombie.svg'
   }
 })
 export default class CharacterRenderer extends Vue {
+  @BattleRoomsModule.State('battleRoom')
+  private battleRoom!: IBattleRoom
+
+  @BattleRoomsModule.Getter('isHostOrGuest')
+  private isHostOrGuest!: 'host' | 'guest' | ''
+
   @Prop({ default: '' })
   characterId!: string
 
-  @Prop({ default: false })
-  isDeployed?: boolean
+  get isMyCharacter() {
+    const matchedSuffix = this.characterId.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
+  }
 
   get characterName() {
     return this.characterId.replace(/-.+$/, '')
@@ -124,5 +141,11 @@ export default class CharacterRenderer extends Vue {
 <style lang="scss" module>
 .deployed {
   opacity: 0.5;
+}
+
+.enemy {
+  path {
+    fill: red;
+  }
 }
 </style>

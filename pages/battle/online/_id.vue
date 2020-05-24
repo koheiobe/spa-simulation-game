@@ -17,6 +17,7 @@
       :deployable-areas="deployableAreas"
       :is-my-turn="isMyTurn"
       :field="field"
+      :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
     />
     <Modal :is-open="isBattleFinishModalOpen">
@@ -99,6 +100,9 @@ export default class OnlineBattleRoom extends Vue {
     offlineTimes: number
   }) => void
 
+  @ItemBattleRoomsModule.Getter('isHostOrGuest')
+  public isHostOrGuest!: 'host' | 'guest' | ''
+
   private TIME_LIMIT = 45
   private NEARLY_TIME_OUT = 35
 
@@ -165,8 +169,7 @@ export default class OnlineBattleRoom extends Vue {
 
     const characterList = CharacterList as any
     const characters = [] as ICharacter[]
-    const hostOrGuest: 'host' | 'guest' =
-      this.battleRoom.host.uid === this.storeUser.uid ? 'host' : 'guest'
+    const hostOrGuest = this.isHostOrGuest
     Object.keys(characterList).forEach((key) => {
       characters.push({
         ...characterList[key],
@@ -176,19 +179,13 @@ export default class OnlineBattleRoom extends Vue {
     this.syncVuexFirestoreCharacters(characters, this.storeUser.battleId)
   }
 
-  async syncVuexFirestoreCharacters(
-    characters: ICharacter[],
-    battleId: string
-  ) {
+  syncVuexFirestoreCharacters(characters: ICharacter[], battleId: string) {
     const dbCharactersRef = this.$firestore.getCharactersRef(battleId)
 
-    const dbCharacters = await dbCharactersRef.get()
-    if (dbCharacters.empty) {
-      this.updateCharacters({
-        battleId,
-        characters
-      })
-    }
+    this.updateCharacters({
+      battleId,
+      characters
+    })
     this.bindCharactersRef(dbCharactersRef)
   }
 

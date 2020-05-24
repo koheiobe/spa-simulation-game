@@ -7,3 +7,5 @@ export const state = () => ({
 export const mutations = {
   ...vuexfireMutations
 }
+
+export type RootState = ReturnType<typeof state>

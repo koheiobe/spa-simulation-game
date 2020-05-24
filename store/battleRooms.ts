@@ -1,28 +1,25 @@
-import { ActionTree, MutationTree, GetterTree } from 'vuex'
+import { ActionTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
-import { IBattleRoom } from '~/types/store'
+import { IBattleRoomsState, IRootState } from '~/types/store'
 
-interface state {
-  list: IBattleRoom[]
-  battleRoom?: IBattleRoom
-}
-
-export const state = (): state => ({
+export const state = (): IBattleRoomsState => ({
   list: [],
   battleRoom: undefined
 })
 
-export type RootState = ReturnType<typeof state>
-
-export const getters: GetterTree<RootState, RootState> = {
+export const getters: GetterTree<IBattleRoomsState, IRootState> = {
   getBattles: (state) => {
     return state.list
+  },
+  isHostOrGuest: (state, _, RootState) => {
+    if (!state.battleRoom) return ''
+    return state.battleRoom.host.uid === RootState.user.loginUser.uid
+      ? 'host'
+      : 'guest'
   }
 }
 
-export const mutations: MutationTree<RootState> = {}
-
-export const actions: ActionTree<RootState, RootState> = {
+export const actions: ActionTree<IRootState, IRootState> = {
   bindBattleRoomsRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     return bindFirestoreRef('list', ref)
   }),

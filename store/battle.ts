@@ -1,20 +1,13 @@
 import { ActionTree, MutationTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
-import { ICharacter } from '~/types/store'
+import { ICharacter, IBattleState, IRootState } from '~/types/store'
 
-interface state {
-  characters: ICharacter[]
-  interactiveCharacter: ICharacter | undefined
-}
-
-export const state = (): state => ({
+export const state = (): IBattleState => ({
   characters: [] as ICharacter[],
   interactiveCharacter: undefined
 })
 
-export type RootState = ReturnType<typeof state>
-
-export const mutations: MutationTree<RootState> = {
+export const mutations: MutationTree<IBattleState> = {
   setCharacterParam(state, obj) {
     state.characters = state.characters.map((character) =>
       character.id === obj.id ? { ...character, ...obj.value } : character
@@ -30,7 +23,7 @@ export const mutations: MutationTree<RootState> = {
   }
 }
 
-export const actions: ActionTree<RootState, RootState> = {
+export const actions: ActionTree<IBattleState, IRootState> = {
   bindCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
     bindFirestoreRef('characters', ref)

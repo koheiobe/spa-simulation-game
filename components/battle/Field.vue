@@ -3,6 +3,7 @@
     <SideMenu
       :characters="storeCharacters"
       :selected-character-id="deployCharacterId"
+      :is-host-or-guest="isHostOrGuest"
       @onClickCharacter="startDeployMode"
       @surrender="surrender"
     />
@@ -122,6 +123,9 @@ export default class Field extends Vue {
   @Prop({ default: () => null })
   field!: IField
 
+  @Prop({ default: '' })
+  isHostOrGuest!: 'host' | 'guest' | ''
+
   @Prop({ default: () => () => {} })
   syncVuexFirestoreCharacters!: (
     characters: ICharacter[],
@@ -165,6 +169,7 @@ export default class Field extends Vue {
   onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
     if (this.isDevMode) {
       this.mergeField(latLng, this.selectedFieldIcon)
+      return
     }
     switch (cellType) {
       case 'deploy':

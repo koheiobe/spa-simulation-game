@@ -1,7 +1,24 @@
 import { ILatlng, ActionType } from '~/types/battle'
 
-export interface RootState {
+export interface IRootState {
   version: string
+  battle: IBattleRoomsState
+  battleRooms: IBattleRoomsState
+  user: IUserState
+}
+
+export interface IBattleRoomsState {
+  list: IBattleRoom[]
+  battleRoom?: IBattleRoom
+}
+
+export interface IBattleState {
+  characters: ICharacter[]
+  interactiveCharacter: ICharacter | undefined
+}
+
+export interface IUserState {
+  loginUser: IUser
 }
 
 export interface IUser {

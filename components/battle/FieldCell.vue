@@ -36,9 +36,9 @@
       </b-tooltip>
     </div>
     <!-- 開発用 -->
-    <div v-else :class="$style.latLngCell">
+    <!-- <div v-else :class="$style.latLngCell">
       {{ `${props.latLng.y}_${props.latLng.x}` }}
-    </div>
+    </div> -->
   </div>
 </template>
 

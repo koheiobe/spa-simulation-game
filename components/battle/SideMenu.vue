@@ -8,18 +8,20 @@
     <transition name="sideMenuAnim">
       <div v-if="isOpenSideMenu" :class="$style.sideMenu">
         <div :class="$style.sideMenuContent">
-          <div
-            v-for="character in characters"
-            :key="character.id"
-            :class="$style.iconContainer"
-            :style="selectedBorderStyle(character.id)"
-          >
-            <CharacterRenderer
-              :character-id="character.id"
-              :is-deployed="isDeployed(character)"
-              @click.native.stop="onClickCharacter(character.id)"
-            />
-          </div>
+          <template v-for="character in characters">
+            <div
+              v-if="isMyCharacter(character.id)"
+              :key="character.id"
+              :class="$style.iconContainer"
+              :style="selectedBorderStyle(character.id)"
+            >
+              <CharacterRenderer
+                :character-id="character.id"
+                :is-deployed="isDeployed(character)"
+                @click.native.stop="onClickCharacter(character.id)"
+              />
+            </div>
+          </template>
         </div>
         <div :class="$style.closeButtonContainer">
           <b-button variant="primary" @click="toggleSideMenu()"
@@ -54,6 +56,9 @@ export default class SideMenu extends Vue {
   @Prop({ default: () => [] })
   selectedCharacterId!: number
 
+  @Prop({ default: '' })
+  isHostOrGuest!: 'host' | 'guest' | ''
+
   public isOpenSideMenu: boolean = false
 
   selectedBorderStyle(id: number) {
@@ -66,6 +71,12 @@ export default class SideMenu extends Vue {
 
   isDeployed(character: Character) {
     return character.latLng.x >= 0 && character.latLng.y >= 0
+  }
+
+  isMyCharacter(characterId: string) {
+    const matchedSuffix = characterId.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
   }
 
   onClickCharacter(id: string) {
@@ -106,8 +117,6 @@ export default class SideMenu extends Vue {
   }
   .closeButtonContainer {
     margin: 8px;
-  }
-  .sideMenuCloser {
   }
 }
 </style>
