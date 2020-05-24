@@ -3,7 +3,7 @@
     <SideMenu
       :characters="storeCharacters"
       :selected-character-id="deployCharacterId"
-      :is-host-or-guest="isHostOrGuest"
+      :is-my-character="isMyCharacter"
       @onClickCharacter="startDeployMode"
       @surrender="surrender"
     />
@@ -32,6 +32,7 @@
       <BattleDialogue
         :character="interactiveCharacter"
         :is-my-turn="isMyTurn"
+        :is-my-character="isMyCharacter(interactiveCharacter)"
         @onSelect="onSelectBattleAction"
       />
     </Modal>
@@ -237,13 +238,16 @@ export default class Field extends Vue {
     const isMovableCell =
       this.interactiveCharacter.id === cellCharacterId ||
       cellCharacterId.length === 0
-    if (isMovableCell && this.isMyTurn) {
+    if (
+      isMovableCell &&
+      this.isMyTurn &&
+      this.isMyCharacter(this.interactiveCharacter)
+    ) {
       this.updateInteractiveCharacter({ latLng })
       this.setModal(true)
     }
 
     if (
-      !this.isMyTurn &&
       latLng.x === this.interactiveCharacter.latLng.x &&
       latLng.y === this.interactiveCharacter.latLng.y
     ) {
@@ -399,6 +403,13 @@ export default class Field extends Vue {
 
   surrender() {
     this.$emit('surrender')
+  }
+
+  isMyCharacter(character: ICharacter) {
+    if (!character) return false
+    const matchedSuffix = character.id.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
   }
 
   // 開発用

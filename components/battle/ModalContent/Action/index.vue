@@ -2,8 +2,12 @@
   <div>
     <div :class="$style.characterNameContainer">Name: {{ characterName }}</div>
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
-      <li v-if="isMyTurn" @click="$emit('onSelect', 'attack')">攻撃</li>
-      <li v-if="isMyTurn" @click="$emit('onSelect', 'wait')">待機</li>
+      <li v-if="isMyTurn && isMyCharacter" @click="$emit('onSelect', 'attack')">
+        攻撃
+      </li>
+      <li v-if="isMyTurn && isMyCharacter" @click="$emit('onSelect', 'wait')">
+        待機
+      </li>
       <!-- TODO ミニマムリリースを目指すためアイテムは落とす -->
       <!-- <li v-if="isMyTurn" @click="selectedAction = 'item'">アイテム</li> -->
       <li @click="selectedAction = 'detail'">能力</li>
@@ -56,6 +60,9 @@ export default class BattleDialogue extends Vue {
 
   @Prop({ default: false })
   isMyTurn!: boolean
+
+  @Prop({ default: () => {} })
+  isMyCharacter!: boolean
 
   public itemList: string[] = ['dd', 'dd', 'dd', 'dd', 'dd', 'dd']
   public selectedAction: 'item' | 'detail' | 'none' = 'none'

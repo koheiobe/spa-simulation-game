@@ -10,7 +10,7 @@
         <div :class="$style.sideMenuContent">
           <template v-for="character in characters">
             <div
-              v-if="isMyCharacter(character.id)"
+              v-if="isMyCharacter(character)"
               :key="character.id"
               :class="$style.iconContainer"
               :style="selectedBorderStyle(character.id)"
@@ -56,8 +56,8 @@ export default class SideMenu extends Vue {
   @Prop({ default: () => [] })
   selectedCharacterId!: number
 
-  @Prop({ default: '' })
-  isHostOrGuest!: 'host' | 'guest' | ''
+  @Prop({ default: () => {} })
+  isMyCharacter!: (character: ICharacter) => boolean
 
   public isOpenSideMenu: boolean = false
 
@@ -71,12 +71,6 @@ export default class SideMenu extends Vue {
 
   isDeployed(character: Character) {
     return character.latLng.x >= 0 && character.latLng.y >= 0
-  }
-
-  isMyCharacter(characterId: string) {
-    const matchedSuffix = characterId.match(/-.+()$/)
-    if (!matchedSuffix) return false
-    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
   }
 
   onClickCharacter(id: string) {
