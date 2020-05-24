@@ -21,7 +21,9 @@
       <div class="text-center" :class="$style.spinnerContainer">
         <b-spinner variant="primary" type="grow" label="Spinning"></b-spinner>
       </div>
-      <b-button @click="cancelHosting">キャンセル</b-button>
+      <b-button v-if="!isBattleMatched" @click="cancelHosting"
+        >キャンセル</b-button
+      >
     </Modal>
   </div>
 </template>
