@@ -47,8 +47,8 @@ class Firestore {
 
   createBattleRoom(uid: string, name: string) {
     const battleRoom = {
-      host: { uid, name, opponentOfflineTimes: 0 },
-      guest: { uid: '', name: '', opponentOfflineTimes: 0 },
+      host: { uid, name, opponentOfflineTimes: 0, deployed: false },
+      guest: { uid: '', name: '', opponentOfflineTimes: 0, deployed: false },
       winnerUid: '',
       turn: {
         uid: '',
