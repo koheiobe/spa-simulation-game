@@ -70,6 +70,7 @@ export default class SideMenu extends Vue {
   }
 
   isDeployed(character: Character) {
+    console.log(character)
     return character.latLng.x >= 0 && character.latLng.y >= 0
   }
 

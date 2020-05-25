@@ -2,7 +2,10 @@
   <div
     :is="characterName"
     v-if="characterName.length > 0"
-    :class="[isMyCharacter ? '' : $style.enemy]"
+    :class="[
+      isMyCharacter ? '' : $style.enemy,
+      isDeployed ? $style.deployed : ''
+    ]"
   ></div>
 </template>
 
@@ -126,6 +129,9 @@ export default class CharacterRenderer extends Vue {
   @Prop({ default: '' })
   characterId!: string
 
+  @Prop({ default: false })
+  isDeployed?: boolean
+
   get isMyCharacter() {
     const matchedSuffix = this.characterId.match(/-.+()$/)
     if (!matchedSuffix) return false
@@ -140,7 +146,7 @@ export default class CharacterRenderer extends Vue {
 
 <style lang="scss" module>
 .deployed {
-  opacity: 0.5;
+  opacity: 0;
 }
 
 .enemy {
