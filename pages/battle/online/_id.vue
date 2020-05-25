@@ -41,7 +41,7 @@ import field from '~/assets/field.json'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
-const BattleModule = namespace('battle')
+const CharacterModule = namespace('character')
 
 @Component({
   components: { Field, Modal, EndBattleDialogue, Header },
@@ -52,13 +52,13 @@ export default class OnlineBattleRoom extends Vue {
   @BattleRoomModule.State('battleRoom')
   private battleRoom!: IBattleRoomRes
 
-  @BattleModule.Action('updateCharacters')
+  @CharacterModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
     battleId: string
     characters: ICharacter[]
   }) => Promise<null>
 
-  @BattleModule.Action('bindCharactersRef')
+  @CharacterModule.Action('bindCharactersRef')
   private bindCharactersRef!: (
     characterRef: firebase.firestore.CollectionReference<
       firebase.firestore.DocumentData

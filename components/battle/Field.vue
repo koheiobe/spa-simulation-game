@@ -65,7 +65,7 @@ import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { downloadFile } from '~/utility/download'
 const UserModule = namespace('user')
-const BattleModule = namespace('battle')
+const CharacterModule = namespace('character')
 const BattleRoomModule = namespace('battleRoom')
 
 @Component({
@@ -82,34 +82,34 @@ export default class Field extends Vue {
   @UserModule.Getter('getUser') private storeUser!: IUser
 
   // キャラクターが移動するときに一時的に使用する。行動が完了したらdbに反映
-  @BattleModule.State('interactiveCharacter')
+  @CharacterModule.State('interactiveCharacter')
   private interactiveCharacter!: ICharacter | undefined
 
-  @BattleModule.State('characters')
+  @CharacterModule.State('characters')
   private storeCharacters!: ICharacter[]
 
-  @BattleModule.Action('setCharacterParam')
+  @CharacterModule.Action('setCharacterParam')
   private setCharacterParam!: (characterObj: {
     id: string
     value: any
   }) => Promise<null>
 
-  @BattleModule.Action('updateCharacter')
+  @CharacterModule.Action('updateCharacter')
   private updateCharacter!: (dbInfo: {
     battleId: string
     character: ICharacter
   }) => Promise<void>
 
-  @BattleModule.Action('updateCharacters')
+  @CharacterModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
     battleId: string
     characters: ICharacter[]
   }) => Promise<null>
 
-  @BattleModule.Mutation('setInteractiveCharacter')
+  @CharacterModule.Mutation('setInteractiveCharacter')
   private setInteractiveCharacter!: (cellCharacterId: string) => void
 
-  @BattleModule.Mutation('updateInteractiveCharacter')
+  @CharacterModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (param: any) => void
 
   @BattleRoomModule.State('battleRoom')

@@ -2,7 +2,7 @@ import { ILatlng, ActionType } from '~/types/battle'
 
 export interface IRootState {
   version: string
-  battle: IBattleRoomState
+  battle: ICharacterState
   battleRoom: IBattleRoomState
   user: IUserState
 }
@@ -12,7 +12,7 @@ export interface IBattleRoomState {
   battleRoom?: IBattleRoomRes
 }
 
-export interface IBattleState {
+export interface ICharacterState {
   characters: ICharacter[]
   interactiveCharacter: ICharacter | undefined
 }
