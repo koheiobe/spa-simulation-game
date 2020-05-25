@@ -178,6 +178,18 @@ class Firestore {
       .update(battleRoomParam)
   }
 
+  setDeployModeEnd(battleRoomInfo: {
+    id: string
+    hostOrGuest: 'host' | 'guest'
+    bool: boolean
+  }) {
+    db.collection('battles')
+      .doc(battleRoomInfo.id)
+      .update({
+        [`${battleRoomInfo.hostOrGuest}.isDeployModeEnd`]: battleRoomInfo.bool
+      })
+  }
+
   // #endregion online battle
 }
 

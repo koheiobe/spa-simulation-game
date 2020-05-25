@@ -16,6 +16,12 @@ export const getters: GetterTree<IBattleRoomState, IRootState> = {
     return state.battleRoom.host.uid === RootState.user.loginUser.uid
       ? 'host'
       : 'guest'
+  },
+  isDeployModeEnd: (state, getters) => {
+    if (!state.battleRoom) return ''
+    return getters.isHostOrGuest === 'host'
+      ? state.battleRoom.host.isDeployModeEnd
+      : state.battleRoom.guest.isDeployModeEnd
   }
 }
 
@@ -46,6 +52,16 @@ export const actions: ActionTree<IRootState, IRootState> = {
     userInfo: { uid: string; name: string; battleId: string }
   ) {
     this.$firestore.setBattleRoomGuest(userInfo)
+  },
+  setDeployModeEnd(
+    _,
+    battleRoomInfo: {
+      id: string
+      hostOrGuest: 'host' | 'guest'
+      bool: boolean
+    }
+  ) {
+    this.$firestore.setDeployModeEnd(battleRoomInfo)
   },
   setBattleRoomWinner(_, battleRoomInfo: { id: string; winnerUid: string }) {
     this.$firestore.setBattleRoomWinner(battleRoomInfo)

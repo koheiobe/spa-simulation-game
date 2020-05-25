@@ -1,10 +1,11 @@
 <template>
-  <div :class="$style.field" @click="finishDeployMode">
+  <div :class="$style.field">
     <SideMenu
+      v-if="!isDeployModeEnd"
       :characters="storeCharacters"
       :selected-character-id="deployCharacterId"
       :is-my-character="isMyCharacter"
-      @onClickCharacter="startDeployMode"
+      @onClickCharacter="selectDeployCharacter"
       @surrender="surrender"
     />
     <div v-for="n of 30" :key="n" :class="$style.row">
@@ -47,16 +48,11 @@ import DevFieldUi from './devFieldUi.vue'
 import {
   IField,
   ILatlng,
-  IDeployableArea,
   ActionType,
   WeaponType,
   CellType
 } from '~/types/battle'
-import {
-  fillDeployableArea,
-  fillMovableArea,
-  fillInteractiveArea
-} from '~/utility/helper/field'
+import { fillMovableArea, fillInteractiveArea } from '~/utility/helper/field'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -116,7 +112,10 @@ export default class Field extends Vue {
   private battleRoom!: IBattleRoomRes
 
   @Prop({ default: () => [] })
-  deployableAreas!: IDeployableArea[]
+  deployableArea!: { [key: string]: Boolean }
+
+  @Prop({ default: false })
+  isDeployModeEnd!: boolean
 
   @Prop({ default: false })
   isMyTurn!: boolean
@@ -127,15 +126,9 @@ export default class Field extends Vue {
   @Prop({ default: '' })
   isHostOrGuest!: 'host' | 'guest' | ''
 
-  @Prop({ default: () => () => {} })
-  syncVuexFirestoreCharacters!: (
-    characters: ICharacter[],
-    battleId: string
-  ) => void
-
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
-  public deployableArea: { [key: string]: Boolean } = {}
+  // public deployableArea: { [key: string]: Boolean } = {}
   public movableArea: { [key: string]: Boolean } = {}
   public interactiveArea: ILatlng[] = []
   // TODO: 各characterの移動距離と置き換える
@@ -198,23 +191,8 @@ export default class Field extends Vue {
     }
   }
 
-  startDeployMode(id: string) {
-    this.deployableArea = fillDeployableArea(this.deployableAreas)
+  selectDeployCharacter(id: string) {
     this.deployCharacterId = id
-  }
-
-  // HACK デプロイ画面と戦闘画面、違う画面に分けた方がいいかもしれない
-  async finishDeployMode() {
-    if (Object.keys(this.deployableArea).length === 0) return
-    this.deployableArea = {}
-    this.deployCharacterId = ''
-    await this.updateCharacters({
-      battleId: this.battleId,
-      characters: this.storeCharacters
-    })
-    // deployCharacterのthis.setCharacterParamをすると
-    // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
-    this.syncVuexFirestoreCharacters(this.storeCharacters, this.battleId)
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
@@ -224,6 +202,8 @@ export default class Field extends Vue {
     const targetCharacterId = isCharacterDeployedCell
       ? cellCharacterId
       : this.deployCharacterId
+    // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
+    // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
     this.setCharacterParam({
       id: targetCharacterId,
       value: {
@@ -231,6 +211,7 @@ export default class Field extends Vue {
         lastLatLng: updatedLatLng
       }
     })
+    this.deployCharacterId = ''
   }
 
   moveCharacter(latLng: ILatlng, cellCharacterId: string) {

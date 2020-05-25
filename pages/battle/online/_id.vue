@@ -14,12 +14,17 @@
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
     <Field
-      :deployable-areas="deployableAreas"
+      :deployable-area="deployableArea"
+      :is-deploy-mode-end="isDeployModeEnd"
       :is-my-turn="isMyTurn"
       :field="field"
       :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
     />
+    <!-- 開発用 -->
+    <b-button @click="toggleDeployMode"
+      >deployモード: {{ isDeployModeEnd ? 'オフ' : 'オン' }}</b-button
+    >
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :winner-name="winnerName" />
     </Modal>
@@ -38,6 +43,7 @@ import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
 import field from '~/assets/field.json'
+import { fillDeployableArea } from '~/utility/helper/field'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
@@ -49,8 +55,9 @@ const CharacterModule = namespace('character')
 })
 export default class OnlineBattleRoom extends Vue {
   @UserModule.Getter('getUser') private storeUser!: IUser
-  @BattleRoomModule.State('battleRoom')
-  private battleRoom!: IBattleRoomRes
+
+  @CharacterModule.State('characters')
+  private storeCharacters!: ICharacter[]
 
   @CharacterModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
@@ -64,6 +71,15 @@ export default class OnlineBattleRoom extends Vue {
       firebase.firestore.DocumentData
     >
   ) => Promise<null>
+
+  @BattleRoomModule.State('battleRoom')
+  private battleRoom!: IBattleRoomRes
+
+  @BattleRoomModule.Getter('isHostOrGuest')
+  public isHostOrGuest!: 'host' | 'guest' | ''
+
+  @BattleRoomModule.Getter('isDeployModeEnd')
+  public isDeployModeEnd!: boolean
 
   @BattleRoomModule.Action('bindBattleRoomRef')
   private bindBattleRoomRef!: (ref: any) => void
@@ -100,12 +116,17 @@ export default class OnlineBattleRoom extends Vue {
     offlineTimes: number
   }) => void
 
-  @BattleRoomModule.Getter('isHostOrGuest')
-  public isHostOrGuest!: 'host' | 'guest' | ''
+  @BattleRoomModule.Action('setDeployModeEnd')
+  public setDeployModeEnd!: (battleRoomInfo: {
+    id: string
+    hostOrGuest: 'host' | 'guest'
+    bool: boolean
+  }) => void
 
   private TIME_LIMIT = 45
   private NEARLY_TIME_OUT = 35
 
+  // TODO: フィールドによって可変
   public deployableAreas: IDeployableArea[] = [
     {
       upperLeft: {
@@ -129,6 +150,7 @@ export default class OnlineBattleRoom extends Vue {
 
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
+  public deployableArea: { [key: string]: Boolean } = {}
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
 
@@ -148,15 +170,21 @@ export default class OnlineBattleRoom extends Vue {
       this.$router.push('/battle/online')
       return
     }
-    // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
-    this.initCharacters()
-    // TODO: どっちが先行なのか、どうやって決めるかは未定
-    const turnNumber = this.battleRoom.turn.number
-    this.setTurnInfo({
-      id: this.storeUser.battleId,
-      uid: this.storeUser.uid,
-      turnNumber: turnNumber === 0 ? 1 : turnNumber
-    })
+    if (!this.isDeployModeEnd) {
+      // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
+      this.initCharacters()
+      this.startDeployMode()
+      // TODO: どっちが先行なのか、どうやって決めるかは未定
+      const turnNumber = this.battleRoom.turn.number
+      this.setTurnInfo({
+        id: this.storeUser.battleId,
+        uid: this.storeUser.uid,
+        turnNumber: turnNumber === 0 ? 1 : turnNumber
+      })
+    } else {
+      this.syncVuexFirestoreCharacters(this.battleRoom.id)
+    }
+
     // ウィンドウを閉じる時に注意を表示
     window.addEventListener('beforeunload', function(e) {
       e.preventDefault()
@@ -176,17 +204,52 @@ export default class OnlineBattleRoom extends Vue {
         id: characterList[key].id + '-' + hostOrGuest
       })
     })
-    this.syncVuexFirestoreCharacters(characters, this.storeUser.battleId)
-  }
-
-  syncVuexFirestoreCharacters(characters: ICharacter[], battleId: string) {
-    const dbCharactersRef = this.$firestore.getCharactersRef(battleId)
-
     this.updateCharacters({
-      battleId,
+      battleId: this.storeUser.battleId,
       characters
     })
+    this.syncVuexFirestoreCharacters(this.storeUser.battleId)
+  }
+
+  syncVuexFirestoreCharacters(battleId: string) {
+    const dbCharactersRef = this.$firestore.getCharactersRef(battleId)
     this.bindCharactersRef(dbCharactersRef)
+  }
+
+  startDeployMode() {
+    this.deployableArea = fillDeployableArea(this.deployableAreas)
+    // 開発用
+    if (this.isHostOrGuest !== '') {
+      this.setDeployModeEnd({
+        id: this.battleRoom.id,
+        hostOrGuest: this.isHostOrGuest,
+        bool: false
+      })
+    }
+  }
+
+  async finishDeployMode() {
+    if (
+      Object.keys(this.deployableArea).length === 0 ||
+      !this.storeUser.battleId
+    )
+      return
+    this.deployableArea = {}
+
+    await this.updateCharacters({
+      battleId: this.storeUser.battleId,
+      characters: this.storeCharacters
+    })
+    // Field.vueのdeployCharacterのthis.setCharacterParamをすると
+    // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
+    this.syncVuexFirestoreCharacters(this.storeUser.battleId)
+    if (this.isHostOrGuest !== '') {
+      this.setDeployModeEnd({
+        id: this.storeUser.battleId,
+        hostOrGuest: this.isHostOrGuest,
+        bool: true
+      })
+    }
   }
 
   onTurnEnd() {
@@ -246,6 +309,15 @@ export default class OnlineBattleRoom extends Vue {
   @Watch('winnerUid')
   onChangeWinnerUid() {
     this.onDecideWinner()
+  }
+
+  // 開発用
+  toggleDeployMode() {
+    if (this.isDeployModeEnd) {
+      this.startDeployMode()
+    } else {
+      this.finishDeployMode()
+    }
   }
 
   get isMyTurn() {
