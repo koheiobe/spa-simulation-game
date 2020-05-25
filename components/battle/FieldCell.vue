@@ -23,7 +23,7 @@
     <div v-if="props.character">
       <CharacterRenderer
         :id="props.character.id"
-        :character-id="props.character.id"
+        :character="props.character"
       />
       <b-tooltip
         triggers="hover"

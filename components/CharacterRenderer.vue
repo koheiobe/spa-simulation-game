@@ -1,7 +1,7 @@
 <template>
   <div
     :is="characterName"
-    v-if="characterName.length > 0"
+    v-if="characterName.length > 0 && !isDead"
     :class="[
       isMyCharacter ? '' : $style.enemy,
       isDeployed ? $style.deployed : ''
@@ -62,7 +62,7 @@ import Wizard from '~/assets/img/character/wizard.svg'
 import WoodCutter from '~/assets/img/character/woodcutter.svg'
 import Yeti from '~/assets/img/character/yeti.svg'
 import Zombie from '~/assets/img/character/zombie.svg'
-import { IBattleRoomRes } from '~/types/store'
+import { IBattleRoomRes, ICharacter } from '~/types/store'
 
 const BattleRoomModule = namespace('battleRoom')
 
@@ -126,20 +126,24 @@ export default class CharacterRenderer extends Vue {
   @BattleRoomModule.Getter('isHostOrGuest')
   private isHostOrGuest!: 'host' | 'guest' | ''
 
-  @Prop({ default: '' })
-  characterId!: string
+  @Prop({ default: () => {} })
+  character!: ICharacter
 
   @Prop({ default: false })
   isDeployed?: boolean
 
   get isMyCharacter() {
-    const matchedSuffix = this.characterId.match(/-.+()$/)
+    const matchedSuffix = this.character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
     return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
   }
 
   get characterName() {
-    return this.characterId.replace(/-.+$/, '')
+    return this.character.id.replace(/-.+$/, '')
+  }
+
+  get isDead() {
+    return this.character.hp <= 0
   }
 }
 </script>

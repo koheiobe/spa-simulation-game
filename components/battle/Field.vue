@@ -161,10 +161,12 @@ export default class Field extends Vue {
   }
 
   onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
+    // 開発用
     if (this.isDevMode) {
       this.mergeField(latLng, this.selectedFieldIcon)
       return
     }
+
     switch (cellType) {
       case 'deploy':
         this.deployCharacter(latLng, cellCharacterId)
@@ -268,7 +270,7 @@ export default class Field extends Vue {
     if (this.interactiveCharacter === undefined) return
     this.updateInteractiveCharacter({
       id: this.interactiveCharacter.id,
-      value: {
+      actionState: {
         name: actionType,
         itemId
       }
@@ -313,6 +315,9 @@ export default class Field extends Vue {
       ...targetCharacter,
       hp: targetCharacter.hp - this.interactiveCharacter.attackPoint
     }
+    if (damageTakenCharacter.hp <= 0) {
+      damageTakenCharacter.latLng = { x: -1, y: -1 }
+    }
     this.updateCharacter({
       battleId: this.battleId,
       character: damageTakenCharacter
@@ -338,19 +343,9 @@ export default class Field extends Vue {
   applyInteractiveCharacterStore(
     interactiveCharacter: ICharacter
   ): Promise<void> {
-    const defaultActionState = {
-      name: '',
-      itemId: 0
-    } as const
-    const actedCharacter = {
-      ...interactiveCharacter,
-      latLng: interactiveCharacter.latLng,
-      lastLatLng: interactiveCharacter.latLng,
-      actionState: defaultActionState
-    }
     return this.updateCharacter({
       battleId: this.battleId,
-      character: actedCharacter
+      character: interactiveCharacter
     })
   }
 

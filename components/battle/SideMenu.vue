@@ -16,7 +16,7 @@
               :style="selectedBorderStyle(character.id)"
             >
               <CharacterRenderer
-                :character-id="character.id"
+                :character="character"
                 :is-deployed="isDeployed(character)"
                 @click.native.stop="onClickCharacter(character.id)"
               />
@@ -70,7 +70,6 @@ export default class SideMenu extends Vue {
   }
 
   isDeployed(character: Character) {
-    console.log(character)
     return character.latLng.x >= 0 && character.latLng.y >= 0
   }
 
