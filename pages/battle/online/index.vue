@@ -33,9 +33,9 @@ import Component from 'vue-class-component'
 import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import Modal from '~/components/utility/Modal.vue'
-import { IUser, IBattleRoom } from '~/types/store'
+import { IUser, IBattleRoomRes } from '~/types/store'
 const UserModule = namespace('user')
-const BattleRoomsModule = namespace('battleRooms')
+const BattleRoomModule = namespace('battleRoom')
 
 @Component({
   components: {
@@ -46,23 +46,23 @@ export default class OnlineBattle extends Vue {
   @UserModule.Getter('getUser')
   private storeUser!: IUser
 
-  @BattleRoomsModule.Getter('getBattles')
-  private storeBattleRooms!: IBattleRoom[]
+  @BattleRoomModule.Getter('getBattles')
+  private storeBattleRooms!: IBattleRoomRes[]
 
-  @BattleRoomsModule.Action('bindBattleRoomsRef')
-  private bindBattleRoomsRef!: (ref: any) => void
+  @BattleRoomModule.Action('bindBattleRoomList')
+  private bindBattleRoomList!: (ref: any) => void
 
-  @BattleRoomsModule.Action('setBattleRoomRef')
+  @BattleRoomModule.Action('setBattleRoomRef')
   private setBattleRoomRef!: (ref: any) => void
 
-  @BattleRoomsModule.Action('setBattleRoomGuest')
+  @BattleRoomModule.Action('setBattleRoomGuest')
   private setBattleRoomGuest!: (userInfo: {
     uid: string
     name: string
     battleId: string
   }) => void
 
-  @BattleRoomsModule.Action('createBattleRoom')
+  @BattleRoomModule.Action('createBattleRoom')
   private createBattleRoom!: (userInfo: {
     uid: string
     name: string
@@ -70,16 +70,16 @@ export default class OnlineBattle extends Vue {
     firebase.firestore.DocumentReference<firebase.firestore.DocumentData>
   >
 
-  @BattleRoomsModule.Action('setUserBattleId')
+  @BattleRoomModule.Action('setUserBattleId')
   private setUserBattleId!: (userInfo: {
     uid: string
     battleId: string
   }) => void
 
-  @BattleRoomsModule.Action('deleteUserBattleId')
+  @BattleRoomModule.Action('deleteUserBattleId')
   private deleteUserBattleId!: (uid: string) => void
 
-  @BattleRoomsModule.Action('deleteBattleRoom')
+  @BattleRoomModule.Action('deleteBattleRoom')
   private deleteBattleRoom!: (battleId: string) => Promise<null>
 
   private isOpneWaitingMatchModal: boolean = false
@@ -131,7 +131,7 @@ export default class OnlineBattle extends Vue {
   }
 
   syncFirestoreVuexBattleRooms() {
-    return this.bindBattleRoomsRef(this.$firestore.getBattleRoomsRef())
+    return this.bindBattleRoomList(this.$firestore.getBattleRoomsRef())
   }
 
   deleteBattleIdIfNeeded() {

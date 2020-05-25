@@ -32,75 +32,75 @@ import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import CharacterList from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
-import { IUser, ICharacter, IBattleRoom } from '~/types/store'
+import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { IDeployableArea } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
 import field from '~/assets/field.json'
 
-const ItemUserModule = namespace('user')
-const ItemBattleRoomsModule = namespace('battleRooms')
-const ItemBattleModule = namespace('battle')
+const UserModule = namespace('user')
+const BattleRoomModule = namespace('battleRoom')
+const BattleModule = namespace('battle')
 
 @Component({
   components: { Field, Modal, EndBattleDialogue, Header },
   layout: 'battle'
 })
 export default class OnlineBattleRoom extends Vue {
-  @ItemUserModule.Getter('getUser') private storeUser!: IUser
-  @ItemBattleRoomsModule.State('battleRoom')
-  private battleRoom!: IBattleRoom
+  @UserModule.Getter('getUser') private storeUser!: IUser
+  @BattleRoomModule.State('battleRoom')
+  private battleRoom!: IBattleRoomRes
 
-  @ItemBattleModule.Action('updateCharacters')
+  @BattleModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
     battleId: string
     characters: ICharacter[]
   }) => Promise<null>
 
-  @ItemBattleModule.Action('bindCharactersRef')
+  @BattleModule.Action('bindCharactersRef')
   private bindCharactersRef!: (
     characterRef: firebase.firestore.CollectionReference<
       firebase.firestore.DocumentData
     >
   ) => Promise<null>
 
-  @ItemBattleRoomsModule.Action('bindBattleRoomRef')
+  @BattleRoomModule.Action('bindBattleRoomRef')
   private bindBattleRoomRef!: (ref: any) => void
 
-  @ItemBattleRoomsModule.Action('deleteBattleRoom')
+  @BattleRoomModule.Action('deleteBattleRoom')
   private deleteBattleRoom!: (battleId: string) => Promise<null>
 
-  @ItemBattleRoomsModule.Action('setUserBattleId')
+  @BattleRoomModule.Action('setUserBattleId')
   private setUserBattleId!: (userInfo: {
     uid: string
     battleId: string
   }) => Promise<null>
 
-  @ItemBattleRoomsModule.Action('setBattleRoomWinner')
+  @BattleRoomModule.Action('setBattleRoomWinner')
   private setBattleRoomWinner!: (battleRoomInfo: {
     id: string
     winnerUid: string
   }) => void
 
-  @ItemBattleRoomsModule.Action('deleteUserBattleId')
+  @BattleRoomModule.Action('deleteUserBattleId')
   private deleteUserBattleId!: (uid: string) => void
 
-  @ItemBattleRoomsModule.Action('setTurnInfo')
+  @BattleRoomModule.Action('setTurnInfo')
   private setTurnInfo!: (battleRoomInfo: {
     id: string
     uid: string
     turnNumber: number
   }) => void
 
-  @ItemBattleRoomsModule.Action('setOpponentOfflineTimes')
+  @BattleRoomModule.Action('setOpponentOfflineTimes')
   public setOpponentOfflineTimes!: (battleRoomInfo: {
     id: string
     hostOrGuest: 'host' | 'guest'
     offlineTimes: number
   }) => void
 
-  @ItemBattleRoomsModule.Getter('isHostOrGuest')
+  @BattleRoomModule.Getter('isHostOrGuest')
   public isHostOrGuest!: 'host' | 'guest' | ''
 
   private TIME_LIMIT = 45

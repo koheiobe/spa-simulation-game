@@ -38,7 +38,7 @@
 import Component from 'vue-class-component'
 import { BIconGearFill } from 'bootstrap-vue'
 import { Vue, Prop } from 'vue-property-decorator'
-import { IBattleRoom, IUser } from '../../types/store'
+import { IBattleRoomRes, IUser } from '../../types/store'
 import Option from './ModalContent/Option.vue'
 import Modal from '~/components/utility/Modal.vue'
 
@@ -57,7 +57,7 @@ export default class BattleHeader extends Vue {
   nearlyTimeOut!: number
 
   @Prop({ default: undefined })
-  battleRoom?: IBattleRoom
+  battleRoom?: IBattleRoomRes
 
   @Prop({ default: undefined })
   storeUser?: IUser
@@ -106,7 +106,7 @@ export default class BattleHeader extends Vue {
   //   }
   // }
 
-  setMyTimer(battleRoom: IBattleRoom) {
+  setMyTimer(battleRoom: IBattleRoomRes) {
     this.timer = Math.round(
       (new Date().getTime() - battleRoom.turn.updatedAt.toDate().getTime()) /
         1000
@@ -126,7 +126,7 @@ export default class BattleHeader extends Vue {
   }
 
   // 50秒たっても相手から反応がない場合オフラインとみなし、３回目で勝利となる
-  setOpponentTimer(battleRoom: IBattleRoom, user: IUser) {
+  setOpponentTimer(battleRoom: IBattleRoomRes, user: IUser) {
     this.lastIntervalId = setTimeout(() => {
       if (!user.battleId) return
       const hostOrGuest = user.uid === battleRoom.host.uid ? 'host' : 'guest'

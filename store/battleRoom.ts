@@ -1,13 +1,13 @@
 import { ActionTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
-import { IBattleRoomsState, IRootState } from '~/types/store'
+import { IBattleRoomState, IRootState } from '~/types/store'
 
-export const state = (): IBattleRoomsState => ({
+export const state = (): IBattleRoomState => ({
   list: [],
   battleRoom: undefined
 })
 
-export const getters: GetterTree<IBattleRoomsState, IRootState> = {
+export const getters: GetterTree<IBattleRoomState, IRootState> = {
   getBattles: (state) => {
     return state.list
   },
@@ -20,7 +20,7 @@ export const getters: GetterTree<IBattleRoomsState, IRootState> = {
 }
 
 export const actions: ActionTree<IRootState, IRootState> = {
-  bindBattleRoomsRef: firestoreAction(({ bindFirestoreRef }, ref) => {
+  bindBattleRoomList: firestoreAction(({ bindFirestoreRef }, ref) => {
     return bindFirestoreRef('list', ref)
   }),
   bindBattleRoomRef: firestoreAction(({ bindFirestoreRef }, ref) => {

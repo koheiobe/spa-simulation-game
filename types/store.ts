@@ -2,14 +2,14 @@ import { ILatlng, ActionType } from '~/types/battle'
 
 export interface IRootState {
   version: string
-  battle: IBattleRoomsState
-  battleRooms: IBattleRoomsState
+  battle: IBattleRoomState
+  battleRoom: IBattleRoomState
   user: IUserState
 }
 
-export interface IBattleRoomsState {
-  list: IBattleRoom[]
-  battleRoom?: IBattleRoom
+export interface IBattleRoomState {
+  list: IBattleRoomRes[]
+  battleRoom?: IBattleRoomRes
 }
 
 export interface IBattleState {
@@ -53,13 +53,35 @@ export interface IBattleRoom {
     uid: IUser['uid']
     name: IUser['name']
     opponentOfflineTimes: number
+    isDeployModeEnd: boolean
   }
   guest: {
     uid: IUser['uid']
     name: IUser['name']
     opponentOfflineTimes: number
+    isDeployModeEnd: boolean
   }
   winnerUid: string
+  turn: {
+    uid: string
+    number: number
+    updatedAt: any
+  }
+  createdAt: any
+}
+
+// Firestoreの/battles/:id の初期化パラメーター
+export interface IBattleRoomReq extends IBattleRoom {
+  turn: {
+    uid: string
+    number: number
+    updatedAt: firebase.firestore.FieldValue
+  }
+  createdAt: firebase.firestore.FieldValue
+}
+
+// Firestoreの/battles/:id のレスポンス
+export interface IBattleRoomRes extends IBattleRoom {
   turn: {
     uid: string
     number: number

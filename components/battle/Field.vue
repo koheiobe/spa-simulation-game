@@ -62,11 +62,11 @@ import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
-import { IUser, ICharacter, IBattleRoom } from '~/types/store'
+import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { downloadFile } from '~/utility/download'
-const ItemUserModule = namespace('user')
-const ItemBattleModule = namespace('battle')
-const ItemBattleRoomsModule = namespace('battleRooms')
+const UserModule = namespace('user')
+const BattleModule = namespace('battle')
+const BattleRoomModule = namespace('battleRoom')
 
 @Component({
   components: {
@@ -79,41 +79,41 @@ const ItemBattleRoomsModule = namespace('battleRooms')
   }
 })
 export default class Field extends Vue {
-  @ItemUserModule.Getter('getUser') private storeUser!: IUser
+  @UserModule.Getter('getUser') private storeUser!: IUser
 
   // キャラクターが移動するときに一時的に使用する。行動が完了したらdbに反映
-  @ItemBattleModule.State('interactiveCharacter')
+  @BattleModule.State('interactiveCharacter')
   private interactiveCharacter!: ICharacter | undefined
 
-  @ItemBattleModule.State('characters')
+  @BattleModule.State('characters')
   private storeCharacters!: ICharacter[]
 
-  @ItemBattleModule.Action('setCharacterParam')
+  @BattleModule.Action('setCharacterParam')
   private setCharacterParam!: (characterObj: {
     id: string
     value: any
   }) => Promise<null>
 
-  @ItemBattleModule.Action('updateCharacter')
+  @BattleModule.Action('updateCharacter')
   private updateCharacter!: (dbInfo: {
     battleId: string
     character: ICharacter
   }) => Promise<void>
 
-  @ItemBattleModule.Action('updateCharacters')
+  @BattleModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
     battleId: string
     characters: ICharacter[]
   }) => Promise<null>
 
-  @ItemBattleModule.Mutation('setInteractiveCharacter')
+  @BattleModule.Mutation('setInteractiveCharacter')
   private setInteractiveCharacter!: (cellCharacterId: string) => void
 
-  @ItemBattleModule.Mutation('updateInteractiveCharacter')
+  @BattleModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (param: any) => void
 
-  @ItemBattleRoomsModule.State('battleRoom')
-  private battleRoom!: IBattleRoom
+  @BattleRoomModule.State('battleRoom')
+  private battleRoom!: IBattleRoomRes
 
   @Prop({ default: () => [] })
   deployableAreas!: IDeployableArea[]

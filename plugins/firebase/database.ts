@@ -1,6 +1,6 @@
 import { Plugin } from '@nuxt/types'
 import firebase from './firebase'
-import { ICharacter, IBattleRoom } from '~/types/store'
+import { ICharacter, IBattleRoomReq, IBattleRoomRes } from '~/types/store'
 
 const db = firebase.firestore()
 
@@ -46,9 +46,14 @@ class Firestore {
   }
 
   createBattleRoom(uid: string, name: string) {
-    const battleRoom = {
-      host: { uid, name, opponentOfflineTimes: 0, deployed: false },
-      guest: { uid: '', name: '', opponentOfflineTimes: 0, deployed: false },
+    const battleRoom: IBattleRoomReq = {
+      host: { uid, name, opponentOfflineTimes: 0, isDeployModeEnd: false },
+      guest: {
+        uid: '',
+        name: '',
+        opponentOfflineTimes: 0,
+        isDeployModeEnd: false
+      },
       winnerUid: '',
       turn: {
         uid: '',
@@ -165,7 +170,7 @@ class Firestore {
     hostOrGuest: 'host' | 'guest'
     offlineTimes: number
   }) {
-    const battleRoomParam: Partial<IBattleRoom> = {
+    const battleRoomParam: Partial<IBattleRoomRes> = {
       [`${battleRoomInfo.hostOrGuest}.opponentOfflineTimes`]: battleRoomInfo.offlineTimes
     }
     db.collection('battles')

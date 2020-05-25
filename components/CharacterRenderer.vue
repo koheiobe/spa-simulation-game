@@ -59,9 +59,9 @@ import Wizard from '~/assets/img/character/wizard.svg'
 import WoodCutter from '~/assets/img/character/woodcutter.svg'
 import Yeti from '~/assets/img/character/yeti.svg'
 import Zombie from '~/assets/img/character/zombie.svg'
-import { IBattleRoom } from '~/types/store'
+import { IBattleRoomRes } from '~/types/store'
 
-const BattleRoomsModule = namespace('battleRooms')
+const BattleRoomModule = namespace('battleRoom')
 
 @Component({
   components: {
@@ -117,10 +117,10 @@ const BattleRoomsModule = namespace('battleRooms')
   }
 })
 export default class CharacterRenderer extends Vue {
-  @BattleRoomsModule.State('battleRoom')
-  private battleRoom!: IBattleRoom
+  @BattleRoomModule.State('battleRoom')
+  private battleRoom!: IBattleRoomRes
 
-  @BattleRoomsModule.Getter('isHostOrGuest')
+  @BattleRoomModule.Getter('isHostOrGuest')
   private isHostOrGuest!: 'host' | 'guest' | ''
 
   @Prop({ default: '' })
