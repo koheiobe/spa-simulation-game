@@ -288,10 +288,14 @@ export default class Field extends Vue {
       if (!this.interactiveCharacter) {
         throw new Error('interactiveCharacter が 存在しません')
       }
+      const targetCharacter = this.storeCharacters.find(
+        (character) => character.id === cellCharacterId
+      )
+      if (!targetCharacter || this.isMyCharacter(targetCharacter)) return
       if (cellCharacterId.length > 0) {
         switch (this.interactiveCharacter.actionState.name) {
           case 'attack':
-            this.attackCharacter(cellCharacterId)
+            this.attackCharacter(targetCharacter, this.interactiveCharacter)
             break
           case 'item':
             this.useItem(cellCharacterId)
@@ -307,14 +311,13 @@ export default class Field extends Vue {
     }
   }
 
-  attackCharacter(cellCharacterId: string) {
-    const targetCharacter = this.storeCharacters.find(
-      (character) => character.id === cellCharacterId
-    )
-    if (!targetCharacter || !this.interactiveCharacter) return
+  attackCharacter(
+    targetCharacter: ICharacter,
+    interactiveCharacter: ICharacter
+  ) {
     const damageTakenCharacter = {
       ...targetCharacter,
-      hp: targetCharacter.hp - this.interactiveCharacter.attackPoint
+      hp: targetCharacter.hp - interactiveCharacter.attackPoint
     }
     if (damageTakenCharacter.hp <= 0) {
       damageTakenCharacter.latLng = { x: -1, y: -1 }
