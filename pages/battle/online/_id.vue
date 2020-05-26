@@ -252,6 +252,20 @@ export default class OnlineBattleRoom extends Vue {
     }
   }
 
+  onTurnStart() {
+    const initActionStatesCharacter = this.storeCharacters.map((character) => ({
+      ...character,
+      actionState: {
+        ...character.actionState,
+        isEnd: false
+      }
+    }))
+    this.updateCharacters({
+      battleId: this.battleRoom.id,
+      characters: initActionStatesCharacter
+    })
+  }
+
   onTurnEnd() {
     if (!this.storeUser.battleId) return
     const nextTurnUid =
@@ -311,6 +325,13 @@ export default class OnlineBattleRoom extends Vue {
     this.onDecideWinner()
   }
 
+  @Watch('turnUid')
+  onChangeTurn(turnUid: string) {
+    if (turnUid === '' || !this.isMyTurn) return
+
+    this.onTurnStart()
+  }
+
   // 開発用
   toggleDeployMode() {
     if (this.isDeployModeEnd) {
@@ -327,6 +348,11 @@ export default class OnlineBattleRoom extends Vue {
   get winnerUid() {
     if (!this.battleRoom) return ''
     return this.battleRoom.winnerUid
+  }
+
+  // TODO: Header側のturn機能をこのファイルに移植する
+  get turnUid() {
+    return this.battleRoom ? this.battleRoom.turn.uid : ''
   }
 }
 </script>

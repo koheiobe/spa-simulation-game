@@ -90,6 +90,7 @@ export default class BattleHeader extends Vue {
     }
   }
 
+  // TODO: turn機能を pages/_id 側に移植させる
   // TODO: 開発に邪魔な機能なので、一時的にコメントアウト
   // @Watch('turnUid', {
   //   immediate: true
@@ -165,6 +166,7 @@ export default class BattleHeader extends Vue {
     this.isOptionModalOpen = false
   }
 
+  // TODO: turn機能を pages/_id 側に移植させる
   get turnUid() {
     return this.battleRoom ? this.battleRoom.turn.uid : undefined
   }

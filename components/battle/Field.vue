@@ -224,7 +224,8 @@ export default class Field extends Vue {
     if (
       isMovableCell &&
       this.isMyTurn &&
-      this.isMyCharacter(this.interactiveCharacter)
+      this.isMyCharacter(this.interactiveCharacter) &&
+      this.interactiveCharacter.actionState.isEnd === false
     ) {
       this.updateInteractiveCharacter({ latLng })
       this.setModal(true)
@@ -345,7 +346,13 @@ export default class Field extends Vue {
   ): Promise<void> {
     return this.updateCharacter({
       battleId: this.battleId,
-      character: interactiveCharacter
+      character: {
+        ...interactiveCharacter,
+        actionState: {
+          ...interactiveCharacter.actionState,
+          isEnd: true
+        }
+      }
     })
   }
 

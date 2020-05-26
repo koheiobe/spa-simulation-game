@@ -1,7 +1,10 @@
-// id は違う画面で初期値 + guest か host の文字列を追加され初期化される
-export default {
+import { ICharacter } from '~/types/store'
+
+// id は ~/pages/online/_id で初期値 + guest か host の文字列を追加され初期化される
+const characters: { [characterName: string]: ICharacter } = {
   centaur: {
     name: 'Centaur',
+    maxHp: 20,
     hp: 20,
     attackPoint: 8,
     defense: 4,
@@ -13,10 +16,11 @@ export default {
     moveDistance: 6,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   },
   valkyrie: {
     name: 'Valkyrie',
+    maxHp: 25,
     hp: 25,
     attackPoint: 13,
     defense: 6,
@@ -28,10 +32,11 @@ export default {
     moveDistance: 5,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   },
   woodCutter: {
     name: 'WoodCutter',
+    maxHp: 30,
     hp: 30,
     attackPoint: 10,
     defense: 10,
@@ -43,10 +48,11 @@ export default {
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   },
   babyDragon: {
     name: 'BabyDragon',
+    maxHp: 15,
     hp: 15,
     attackPoint: 7,
     defense: 5,
@@ -58,10 +64,11 @@ export default {
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   },
   dragon: {
     name: 'Dragon',
+    maxHp: 40,
     hp: 40,
     attackPoint: 18,
     defense: 10,
@@ -73,10 +80,11 @@ export default {
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   },
   phoenix: {
     name: 'Phoenix',
+    maxHp: 22,
     hp: 22,
     attackPoint: 8,
     defense: 7,
@@ -88,10 +96,11 @@ export default {
     moveDistance: 6,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   },
   chimera: {
     name: 'Chimera',
+    maxHp: 25,
     hp: 25,
     attackPoint: 10,
     defense: 7,
@@ -103,6 +112,8 @@ export default {
     moveDistance: 5,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0 }
+    actionState: { name: '', itemId: 0, isEnd: false }
   }
 }
+
+export default characters

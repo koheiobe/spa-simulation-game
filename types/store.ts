@@ -31,6 +31,7 @@ export interface IUser {
 
 export interface ICharacter {
   name: string
+  maxHp: number
   hp: number
   attackPoint: number
   critical: number
@@ -45,6 +46,7 @@ export interface ICharacter {
   actionState: {
     name: ActionType | ''
     itemId: number
+    isEnd: boolean
   }
 }
 

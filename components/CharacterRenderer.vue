@@ -4,7 +4,8 @@
     v-if="characterName.length > 0 && !isDead"
     :class="[
       isMyCharacter ? '' : $style.enemy,
-      isDeployed ? $style.deployed : ''
+      isDeployed ? $style.deployed : '',
+      isEnd ? $style.turnEnd : ''
     ]"
   ></div>
 </template>
@@ -132,6 +133,9 @@ export default class CharacterRenderer extends Vue {
   @Prop({ default: false })
   isDeployed?: boolean
 
+  @Prop({ default: false })
+  isEnd?: boolean
+
   get isMyCharacter() {
     const matchedSuffix = this.character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
@@ -156,6 +160,12 @@ export default class CharacterRenderer extends Vue {
 .enemy {
   path {
     fill: red;
+  }
+}
+
+.turnEnd {
+  path {
+    fill: gray;
   }
 }
 </style>

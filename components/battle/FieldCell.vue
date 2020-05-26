@@ -24,6 +24,7 @@
       <CharacterRenderer
         :id="props.character.id"
         :character="props.character"
+        :is-end="props.character.actionState.isEnd"
       />
       <b-tooltip
         triggers="hover"
