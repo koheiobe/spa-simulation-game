@@ -33,7 +33,7 @@
         :class="$style.characterToolTip"
       >
         Name: {{ props.character.name }} <br />
-        HP: {{ props.character.hp }}
+        HP: {{ props.character.hp }} / {{ props.character.maxHp }}
       </b-tooltip>
     </div>
     <!-- 開発用 -->

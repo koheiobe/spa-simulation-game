@@ -1,7 +1,7 @@
 <template>
   <div>
     <ul>
-      <li>HP: {{ character.hp }}</li>
+      <li>HP: {{ character.hp }} / {{ character.maxHp }}</li>
       <li>攻撃力: {{ character.attackPoint }}</li>
       <li>防御力: {{ character.defense }}</li>
       <li>移動: {{ character.moveDistance }}</li>
