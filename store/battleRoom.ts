@@ -1,6 +1,6 @@
 import { ActionTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
-import { IBattleRoomState, IRootState } from '~/types/store'
+import { IBattleRoomState, IRootState, ICharacter } from '~/types/store'
 
 export const state = (): IBattleRoomState => ({
   list: [],
@@ -65,6 +65,15 @@ export const actions: ActionTree<IRootState, IRootState> = {
   },
   setBattleRoomWinner(_, battleRoomInfo: { id: string; winnerUid: string }) {
     this.$firestore.setBattleRoomWinner(battleRoomInfo)
+  },
+  setLastInteractCharacter(
+    _,
+    battleRoomInfo: {
+      id: string
+      lastInteractCharacter: ICharacter
+    }
+  ) {
+    return this.$firestore.setLastInteractCharacter(battleRoomInfo)
   },
   setTurnInfo(
     _,

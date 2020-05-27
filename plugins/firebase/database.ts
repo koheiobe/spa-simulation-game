@@ -60,6 +60,7 @@ class Firestore {
         number: 0,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       },
+      lastInteractCharacter: null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }
     return db.collection('battles').add(battleRoom)
@@ -105,6 +106,16 @@ class Firestore {
     db.collection('battles')
       .doc(battleRoomInfo.id)
       .update({ winnerUid: battleRoomInfo.winnerUid })
+  }
+
+  setLastInteractCharacter(battleRoomInfo: {
+    id: string
+    lastInteractCharacter: ICharacter
+  }) {
+    return db
+      .collection('battles')
+      .doc(battleRoomInfo.id)
+      .update({ lastInteractCharacter: battleRoomInfo.lastInteractCharacter })
   }
 
   // #endregion online battle room

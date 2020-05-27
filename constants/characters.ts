@@ -16,7 +16,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 6,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   },
   valkyrie: {
     name: 'Valkyrie',
@@ -32,7 +37,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 5,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   },
   woodCutter: {
     name: 'WoodCutter',
@@ -48,7 +58,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   },
   babyDragon: {
     name: 'BabyDragon',
@@ -64,7 +79,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   },
   dragon: {
     name: 'Dragon',
@@ -80,7 +100,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   },
   phoenix: {
     name: 'Phoenix',
@@ -96,7 +121,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 6,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   },
   chimera: {
     name: 'Chimera',
@@ -112,7 +142,12 @@ const characters: { [characterName: string]: ICharacter } = {
     moveDistance: 5,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
-    actionState: { name: '', itemId: 0, isEnd: false }
+    actionState: {
+      name: '',
+      itemId: 0,
+      isEnd: false,
+      interactLatLng: { x: -1, y: -1 }
+    }
   }
 }
 

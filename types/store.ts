@@ -47,6 +47,7 @@ export interface ICharacter {
     name: ActionType | ''
     itemId: number
     isEnd: boolean
+    interactLatLng: ILatlng
   }
 }
 
@@ -69,6 +70,7 @@ export interface IBattleRoom {
     number: number
     updatedAt: any
   }
+  lastInteractCharacter: ICharacter | null
   createdAt: any
 }
 

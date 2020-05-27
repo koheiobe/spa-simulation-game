@@ -8,27 +8,18 @@
       @onClickCharacter="selectDeployCharacter"
       @surrender="surrender"
     />
-    <div v-for="n of 30" :key="n" :class="$style.row">
-      <template v-for="l of 30">
+    <div v-for="y of 30" :key="y" :class="$style.row">
+      <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
         <FieldCell
-          :key="`${n}-${l}`"
-          :cell-type="decideCellType({ x: l, y: n })"
-          :character="getCharacterAtCell({ x: l, y: n })"
-          :lat-lng="{ x: l, y: n }"
+          :cell-type="decideCellType({ x, y })"
+          :character="getCharacterAtCell({ x, y })"
+          :lat-lng="{ x, y }"
           :field="field"
           @onClick="onClickCell"
         >
         </FieldCell>
-      </template>
+      </div>
     </div>
-    <!-- 開発用 -->
-    <DevFieldUi
-      :is-dev-mode="isDevMode"
-      @onChangeDevMode="() => (isDevMode = !isDevMode)"
-      @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
-      @saveFieldJson="saveFieldJson"
-    />
-    <!-- !開発用 -->
     <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
         :character="interactiveCharacter"
@@ -37,12 +28,19 @@
         @onSelect="onSelectBattleAction"
       />
     </Modal>
+    <!-- 開発用 -->
+    <DevFieldUi
+      :is-dev-mode="isDevMode"
+      @onChangeDevMode="() => (isDevMode = !isDevMode)"
+      @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
+      @saveFieldJson="saveFieldJson"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { Vue, Prop } from 'vue-property-decorator'
+import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import DevFieldUi from './devFieldUi.vue'
 import {
@@ -58,9 +56,8 @@ import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
 import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
-import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
+import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
-const UserModule = namespace('user')
 const CharacterModule = namespace('character')
 const BattleRoomModule = namespace('battleRoom')
 
@@ -75,8 +72,6 @@ const BattleRoomModule = namespace('battleRoom')
   }
 })
 export default class Field extends Vue {
-  @UserModule.Getter('getUser') private storeUser!: IUser
-
   // キャラクターが移動するときに一時的に使用する。行動が完了したらdbに反映
   @CharacterModule.State('interactiveCharacter')
   private interactiveCharacter!: ICharacter | undefined
@@ -108,8 +103,11 @@ export default class Field extends Vue {
   @CharacterModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (param: any) => void
 
-  @BattleRoomModule.State('battleRoom')
-  private battleRoom!: IBattleRoomRes
+  @BattleRoomModule.Action('setLastInteractCharacter')
+  private setLastInteractCharacter!: (battleRoomInfo: {
+    id: string
+    lastInteractCharacter: ICharacter
+  }) => {}
 
   @Prop({ default: () => [] })
   deployableArea!: { [key: string]: Boolean }
@@ -125,6 +123,9 @@ export default class Field extends Vue {
 
   @Prop({ default: '' })
   isHostOrGuest!: 'host' | 'guest' | ''
+
+  @Prop({ default: null })
+  lastInteractCharacter?: ICharacter
 
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
@@ -291,8 +292,10 @@ export default class Field extends Vue {
       const targetCharacter = this.storeCharacters.find(
         (character) => character.id === cellCharacterId
       )
-      if (!targetCharacter || this.isMyCharacter(targetCharacter)) return
-      if (cellCharacterId.length > 0) {
+      if (targetCharacter) {
+        if (this.isMyCharacter(targetCharacter)) return
+        this.interactiveCharacter.actionState.interactLatLng =
+          targetCharacter.latLng
         switch (this.interactiveCharacter.actionState.name) {
           case 'attack':
             this.attackCharacter(targetCharacter, this.interactiveCharacter)
@@ -329,10 +332,15 @@ export default class Field extends Vue {
   }
 
   useItem(cellCharacterId: string) {
+    // TODO: 開発段階
     console.log('item', cellCharacterId)
   }
 
   async onFinishAction(interactiveCharacter: ICharacter) {
+    this.setLastInteractCharacter({
+      id: this.battleId,
+      lastInteractCharacter: interactiveCharacter
+    })
     await this.applyInteractiveCharacterStore(interactiveCharacter)
     this.resetCharacterState()
   }
@@ -411,6 +419,33 @@ export default class Field extends Vue {
   saveFieldJson() {
     const text = JSON.stringify(this.field)
     downloadFile(text, 'json', 'field')
+  }
+
+  animate({ timing, draw, duration }) {
+    const start = performance.now()
+
+    requestAnimationFrame(function animate(time) {
+      // timeFraction は 0 から 1 になります
+      let timeFraction = (time - start) / duration
+      if (timeFraction > 1) timeFraction = 1
+
+      // 現在のアニメーションの状態を計算します
+      const progress = timing(timeFraction)
+
+      draw(progress) // 描画します
+
+      if (timeFraction < 1) {
+        requestAnimationFrame(animate)
+      }
+    })
+  }
+
+  @Watch('lastInteractCharacter')
+  onChangeCharacterActionState(character: ICharacter | undefined) {
+    if (!character) return
+    const characterEl = document.getElementById(character.id)
+    if (characterEl) {
+    }
   }
 
   get characterName() {

@@ -20,6 +20,7 @@
       :field="field"
       :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
+      :last-interact-character="lastInteractCharacter"
     />
     <!-- 開発用 -->
     <b-button @click="toggleDeployMode"
@@ -353,6 +354,10 @@ export default class OnlineBattleRoom extends Vue {
   // TODO: Header側のturn機能をこのファイルに移植する
   get turnUid() {
     return this.battleRoom ? this.battleRoom.turn.uid : ''
+  }
+
+  get lastInteractCharacter() {
+    return this.battleRoom ? this.battleRoom.lastInteractCharacter : null
   }
 }
 </script>
