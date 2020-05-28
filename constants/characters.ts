@@ -88,8 +88,8 @@ const characters: { [characterName: string]: ICharacter } = {
   },
   dragon: {
     name: 'Dragon',
-    maxHp: 40,
-    hp: 40,
+    maxHp: 9999,
+    hp: 9999,
     attackPoint: 18,
     defense: 10,
     critical: 10,

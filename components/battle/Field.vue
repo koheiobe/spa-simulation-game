@@ -58,8 +58,8 @@ import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
+import { attackCharacter } from '~/utility/animation'
 const CharacterModule = namespace('character')
-const BattleRoomModule = namespace('battleRoom')
 
 @Component({
   components: {
@@ -102,12 +102,6 @@ export default class Field extends Vue {
 
   @CharacterModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (param: any) => void
-
-  @BattleRoomModule.Action('setLastInteractCharacter')
-  private setLastInteractCharacter!: (battleRoomInfo: {
-    id: string
-    lastInteractCharacter: ICharacter
-  }) => {}
 
   @Prop({ default: () => [] })
   deployableArea!: { [key: string]: Boolean }
@@ -296,14 +290,6 @@ export default class Field extends Vue {
         if (this.isMyCharacter(targetCharacter)) return
         this.interactiveCharacter.actionState.interactLatLng =
           targetCharacter.latLng
-        switch (this.interactiveCharacter.actionState.name) {
-          case 'attack':
-            this.attackCharacter(targetCharacter, this.interactiveCharacter)
-            break
-          case 'item':
-            this.useItem(cellCharacterId)
-            break
-        }
         this.onFinishAction(this.interactiveCharacter)
       } else {
         this.resetCharacterState()
@@ -314,30 +300,13 @@ export default class Field extends Vue {
     }
   }
 
-  attackCharacter(
-    targetCharacter: ICharacter,
-    interactiveCharacter: ICharacter
-  ) {
-    const damageTakenCharacter = {
-      ...targetCharacter,
-      hp: targetCharacter.hp - interactiveCharacter.attackPoint
-    }
-    if (damageTakenCharacter.hp <= 0) {
-      damageTakenCharacter.latLng = { x: -1, y: -1 }
-    }
-    this.updateCharacter({
-      battleId: this.battleId,
-      character: damageTakenCharacter
-    })
-  }
-
   useItem(cellCharacterId: string) {
     // TODO: 開発段階
     console.log('item', cellCharacterId)
   }
 
   async onFinishAction(interactiveCharacter: ICharacter) {
-    this.setLastInteractCharacter({
+    this.$emit('setLastInteractCharacter', {
       id: this.battleId,
       lastInteractCharacter: interactiveCharacter
     })
@@ -421,31 +390,45 @@ export default class Field extends Vue {
     downloadFile(text, 'json', 'field')
   }
 
-  animate({ timing, draw, duration }) {
-    const start = performance.now()
-
-    requestAnimationFrame(function animate(time) {
-      // timeFraction は 0 から 1 になります
-      let timeFraction = (time - start) / duration
-      if (timeFraction > 1) timeFraction = 1
-
-      // 現在のアニメーションの状態を計算します
-      const progress = timing(timeFraction)
-
-      draw(progress) // 描画します
-
-      if (timeFraction < 1) {
-        requestAnimationFrame(animate)
-      }
-    })
+  @Watch('lastInteractCharacter')
+  onChangeCharacterActionState(
+    newState: ICharacter | undefined,
+    lastState: ICharacter | undefined
+  ) {
+    if (
+      !newState ||
+      (lastState && newState.actionState.name === lastState.actionState.name)
+    )
+      return
+    const characterEl = document.getElementById(newState.id)
+    if (!characterEl) return
+    switch (newState.actionState.name) {
+      case 'attack':
+        attackCharacter(characterEl, newState, () => {
+          const enemyLatLng = newState.actionState.interactLatLng
+          const targetCharacter = this.storeCharacters.find(
+            (character) =>
+              character.latLng.x === enemyLatLng.x &&
+              character.latLng.y === enemyLatLng.y
+          )
+          if (!targetCharacter) return
+          this.attackCharacter(targetCharacter, newState)
+        })
+    }
   }
 
-  @Watch('lastInteractCharacter')
-  onChangeCharacterActionState(character: ICharacter | undefined) {
-    if (!character) return
-    const characterEl = document.getElementById(character.id)
-    if (characterEl) {
+  attackCharacter(enemy: ICharacter, myCharacter: ICharacter) {
+    const damageTakenCharacter = {
+      ...enemy,
+      hp: enemy.hp - myCharacter.attackPoint
     }
+    if (damageTakenCharacter.hp <= 0) {
+      damageTakenCharacter.latLng = { x: -1, y: -1 }
+    }
+    this.updateCharacter({
+      battleId: this.battleId,
+      character: damageTakenCharacter
+    })
   }
 
   get characterName() {

@@ -1,13 +1,17 @@
 <template>
-  <div
-    :is="characterName"
-    v-if="characterName.length > 0 && !isDead"
-    :class="[
-      isMyCharacter ? '' : $style.enemy,
-      isDeployed ? $style.deployed : '',
-      isEnd ? $style.turnEnd : ''
-    ]"
-  ></div>
+  <div :class="$style.container">
+    <div
+      :is="characterName"
+      v-if="characterName.length > 0 && !isDead"
+      :style="width ? { width } : ''"
+      :class="[
+        $style.character,
+        isMyCharacter ? '' : $style.enemy,
+        isDeployed ? $style.deployed : '',
+        isEnd ? $style.turnEnd : ''
+      ]"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -136,6 +140,9 @@ export default class CharacterRenderer extends Vue {
   @Prop({ default: false })
   isEnd?: boolean
 
+  @Prop({ default: 0 })
+  width?: number
+
   get isMyCharacter() {
     const matchedSuffix = this.character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
@@ -153,19 +160,22 @@ export default class CharacterRenderer extends Vue {
 </script>
 
 <style lang="scss" module>
-.deployed {
-  opacity: 0;
-}
-
-.enemy {
-  path {
-    fill: red;
+.container {
+  position: relative;
+  .deployed {
+    opacity: 0;
   }
-}
 
-.turnEnd {
-  path {
-    fill: gray;
+  .enemy {
+    path {
+      fill: red;
+    }
+  }
+
+  .turnEnd {
+    path {
+      fill: gray;
+    }
   }
 }
 </style>

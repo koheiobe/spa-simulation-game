@@ -21,6 +21,7 @@
       :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
+      @setLastInteractCharacter="setLastInteractCharacter"
     />
     <!-- 開発用 -->
     <b-button @click="toggleDeployMode"
@@ -39,7 +40,7 @@ import { namespace } from 'vuex-class'
 import CharacterList from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
-import { IDeployableArea } from '~/types/battle'
+import { IDeployableArea, ActionType } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
@@ -123,6 +124,12 @@ export default class OnlineBattleRoom extends Vue {
     hostOrGuest: 'host' | 'guest'
     bool: boolean
   }) => void
+
+  @BattleRoomModule.Action('setLastInteractCharacter')
+  private setLastInteractCharacter!: (battleRoomInfo: {
+    id: string
+    lastInteractCharacter: ICharacter | null
+  }) => {}
 
   private TIME_LIMIT = 45
   private NEARLY_TIME_OUT = 35
@@ -258,12 +265,17 @@ export default class OnlineBattleRoom extends Vue {
       ...character,
       actionState: {
         ...character.actionState,
+        name: '' as ActionType,
         isEnd: false
       }
     }))
     this.updateCharacters({
       battleId: this.battleRoom.id,
       characters: initActionStatesCharacter
+    })
+    this.setLastInteractCharacter({
+      id: this.battleRoom.id,
+      lastInteractCharacter: null
     })
   }
 

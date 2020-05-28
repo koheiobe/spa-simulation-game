@@ -70,7 +70,7 @@ export const actions: ActionTree<IRootState, IRootState> = {
     _,
     battleRoomInfo: {
       id: string
-      lastInteractCharacter: ICharacter
+      lastInteractCharacter: ICharacter | null
     }
   ) {
     return this.$firestore.setLastInteractCharacter(battleRoomInfo)

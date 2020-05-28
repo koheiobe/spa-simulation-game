@@ -110,7 +110,7 @@ class Firestore {
 
   setLastInteractCharacter(battleRoomInfo: {
     id: string
-    lastInteractCharacter: ICharacter
+    lastInteractCharacter: ICharacter | null
   }) {
     return db
       .collection('battles')

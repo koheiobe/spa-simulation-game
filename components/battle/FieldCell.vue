@@ -20,11 +20,12 @@
         )
     "
   >
-    <div v-if="props.character">
+    <template v-if="props.character">
       <CharacterRenderer
         :id="props.character.id"
         :character="props.character"
         :is-end="props.character.actionState.isEnd"
+        :width="30"
       />
       <b-tooltip
         triggers="hover"
@@ -35,7 +36,7 @@
         Name: {{ props.character.name }} <br />
         HP: {{ props.character.hp }} / {{ props.character.maxHp }}
       </b-tooltip>
-    </div>
+    </template>
     <!-- 開発用 -->
     <!-- <div v-else :class="$style.latLngCell">
       {{ `${props.latLng.y}_${props.latLng.x}` }}
@@ -139,6 +140,7 @@ export default {
     background-color: blue;
   }
 }
+
 // 開発用
 .latLngCell {
   font-size: 8px;

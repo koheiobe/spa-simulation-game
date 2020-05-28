@@ -16,7 +16,7 @@ export interface IDeployableArea {
   lowerRight: ILatlng
 }
 
-export type ActionType = 'attack' | 'wait' | 'item' | 'none'
+export type ActionType = 'attack' | 'wait' | 'item' | ''
 
 export type WeaponType = 'closeRange' | 'projectile' | 'other'
 
