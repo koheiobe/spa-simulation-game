@@ -58,7 +58,10 @@ import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
-import { attackCharacter } from '~/utility/animation'
+import {
+  attackCharacterAnimation,
+  takeDamageCharacterAnimation
+} from '~/utility/animation'
 const CharacterModule = namespace('character')
 
 @Component({
@@ -404,17 +407,25 @@ export default class Field extends Vue {
     if (!characterEl) return
     switch (newState.actionState.name) {
       case 'attack':
-        attackCharacter(characterEl, newState, () => {
-          const enemyLatLng = newState.actionState.interactLatLng
-          const targetCharacter = this.storeCharacters.find(
-            (character) =>
-              character.latLng.x === enemyLatLng.x &&
-              character.latLng.y === enemyLatLng.y
-          )
-          if (!targetCharacter) return
-          this.attackCharacter(targetCharacter, newState)
-        })
+        attackCharacterAnimation(characterEl, newState, () =>
+          this.onEndAttackAnimation(newState)
+        )
     }
+  }
+
+  onEndAttackAnimation(character: ICharacter) {
+    const enemyLatLng = character.actionState.interactLatLng
+    const enemy = this.storeCharacters.find(
+      (character) =>
+        character.latLng.x === enemyLatLng.x &&
+        character.latLng.y === enemyLatLng.y
+    )
+    if (!enemy) return
+    const enemyEl = document.getElementById(enemy.id)
+    if (!enemyEl) return
+    takeDamageCharacterAnimation(enemyEl, () => {
+      this.attackCharacter(enemy, character)
+    })
   }
 
   attackCharacter(enemy: ICharacter, myCharacter: ICharacter) {
