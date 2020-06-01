@@ -431,7 +431,7 @@ export default class Field extends Vue {
   attackCharacter(enemy: ICharacter, myCharacter: ICharacter) {
     const damageTakenCharacter = {
       ...enemy,
-      hp: enemy.hp - myCharacter.attackPoint
+      hp: enemy.hp - Math.abs(myCharacter.attackPoint - enemy.defense)
     }
     if (damageTakenCharacter.hp <= 0) {
       damageTakenCharacter.latLng = { x: -1, y: -1 }
