@@ -394,15 +394,8 @@ export default class Field extends Vue {
   }
 
   @Watch('lastInteractCharacter')
-  onChangeCharacterActionState(
-    newState: ICharacter | undefined,
-    lastState: ICharacter | undefined
-  ) {
-    if (
-      !newState ||
-      (lastState && newState.actionState.name === lastState.actionState.name)
-    )
-      return
+  onChangeCharacterActionState(newState: ICharacter | undefined) {
+    if (!newState) return
     const characterEl = document.getElementById(newState.id)
     if (!characterEl) return
     switch (newState.actionState.name) {
