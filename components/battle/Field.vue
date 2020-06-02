@@ -42,8 +42,8 @@
 import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import { getDamageTakenCharacter } from 'utility/helper/battle'
 import DevFieldUi from './devFieldUi.vue'
+import { getDamageTakenCharacter } from '~/utility/helper/battle'
 import {
   IField,
   ILatlng,

@@ -1016,8 +1016,8 @@ const characters: { [characterName: string]: ICharacter } = {
   },
   zombie: {
     name: 'Zombie',
-    maxHp: 9999,
-    hp: 9999,
+    maxHp: 10,
+    hp: 10,
     attackPoint: 18,
     defense: 10,
     critical: 10,

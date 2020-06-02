@@ -9,15 +9,8 @@ export const getDamageTakenCharacter = (info: {
     ...enemy,
     hp: enemy.hp - calculateDamage(enemy, myCharacter)
   }
-  // if (enemy.skill) {
-  //   if (enemy.skill.includes('undead')) {
-  //     if (Math.floor(Math.random() * 100) % 2 === 0) {
-  //       return 0
-  //     }
-  //     return attackPoint - enemyDefence
-  //   }
-  // }
-  return damageTakenCharacter
+  const finalDamageTakenCharacter = onEndCalculateDamage(damageTakenCharacter)
+  return finalDamageTakenCharacter
 }
 
 const calculateDamage = (
@@ -27,8 +20,7 @@ const calculateDamage = (
   const enemyDefence = calculateEnemyDefense(enemy)
   const attackPoint = calculateAttackPoint(myCharacter)
   const tempDamage = attackPoint - enemyDefence
-  const damage = tempDamage > 0 ? tempDamage : 0
-  return damage
+  return tempDamage > 0 ? tempDamage : 0
 }
 
 const calculateEnemyDefense = (enemy: ICharacter) => {
@@ -37,4 +29,20 @@ const calculateEnemyDefense = (enemy: ICharacter) => {
 
 const calculateAttackPoint = (myCharacter: ICharacter) => {
   return myCharacter.attackPoint
+}
+
+const onEndCalculateDamage = (damageTakenCharacter: ICharacter): ICharacter => {
+  if (!damageTakenCharacter.skill) return damageTakenCharacter
+  if (
+    damageTakenCharacter.skill.includes('undead') &&
+    damageTakenCharacter.hp <= 0
+  ) {
+    return Math.floor(Math.random() * 10) % 2 === 0
+      ? { ...damageTakenCharacter, hp: 1 }
+      : damageTakenCharacter
+  }
+  console.error(
+    '登録していないスキルが存在します。恐らくスキルのスペルが間違っています'
+  )
+  return damageTakenCharacter
 }
