@@ -32,7 +32,6 @@ const calculateAttackPoint = (myCharacter: ICharacter) => {
 }
 
 const onEndCalculateDamage = (damageTakenCharacter: ICharacter): ICharacter => {
-  if (!damageTakenCharacter.skill) return damageTakenCharacter
   if (
     damageTakenCharacter.skill.includes('undead') &&
     damageTakenCharacter.hp <= 0
@@ -41,8 +40,5 @@ const onEndCalculateDamage = (damageTakenCharacter: ICharacter): ICharacter => {
       ? { ...damageTakenCharacter, hp: 1 }
       : damageTakenCharacter
   }
-  console.error(
-    '登録していないスキルが存在します。恐らくスキルのスペルが間違っています'
-  )
   return damageTakenCharacter
 }
