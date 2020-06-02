@@ -1,4 +1,5 @@
 import { ICharacter } from 'types/store'
+import { fiftyParcent } from '~/utility/randNum'
 
 export const getDamageTakenCharacter = (info: {
   myCharacter: ICharacter
@@ -36,7 +37,7 @@ const onEndCalculateDamage = (damageTakenCharacter: ICharacter): ICharacter => {
     damageTakenCharacter.skill.includes('undead') &&
     damageTakenCharacter.hp <= 0
   ) {
-    return Math.floor(Math.random() * 10) % 2 === 0
+    return fiftyParcent()
       ? { ...damageTakenCharacter, hp: 1 }
       : damageTakenCharacter
   }

@@ -20,7 +20,7 @@ import { Vue, Prop } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import Alien from '~/assets/img/character/alien.svg'
 import Centaur from '~/assets/img/character/centaur.svg'
-import Ceberus from '~/assets/img/character/cerberus.svg'
+import Cerberus from '~/assets/img/character/cerberus.svg'
 import Chimera from '~/assets/img/character/chimera.svg'
 import Curupira from '~/assets/img/character/curupira.svg'
 import Cyclops from '~/assets/img/character/cyclops.svg'
@@ -75,7 +75,7 @@ const BattleRoomModule = namespace('battleRoom')
   components: {
     Centaur,
     Alien,
-    Ceberus,
+    Cerberus,
     Chimera,
     Curupira,
     Cyclops,

@@ -6,7 +6,7 @@
       :selected-character-id="deployCharacterId"
       :is-my-character="isMyCharacter"
       @onClickCharacter="selectDeployCharacter"
-      @surrender="surrender"
+      @surrender="$emit('surrender')"
     />
     <div v-for="y of 30" :key="y" :class="$style.row">
       <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
@@ -62,6 +62,7 @@ import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
+import { sixtyParcent } from '~/utility/randNum'
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
@@ -371,10 +372,6 @@ export default class Field extends Vue {
     }
   }
 
-  surrender() {
-    this.$emit('surrender')
-  }
-
   isMyCharacter(character: ICharacter) {
     if (!character) return false
     const matchedSuffix = character.id.match(/-.+()$/)
@@ -434,6 +431,14 @@ export default class Field extends Vue {
       battleId: this.battleId,
       character: damageTakenCharacter
     })
+    if (myCharacter.skill.includes('sequncialAttack') && sixtyParcent()) {
+      this.$emit('setLastInteractCharacter', {
+        id: this.battleId,
+        lastInteractCharacter: null
+      })
+      this.updateInteractiveCharacter({ ...myCharacter, isEnd: false })
+      this.setModal(true)
+    }
   }
 
   get characterName() {

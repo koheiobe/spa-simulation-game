@@ -46,8 +46,8 @@ const characters: { [characterName: string]: ICharacter } = {
       interactLatLng: { x: -1, y: -1 }
     }
   },
-  ceberus: {
-    name: 'Ceberus',
+  cerberus: {
+    name: 'Cerberus',
     maxHp: 25,
     hp: 25,
     attackPoint: 13,
@@ -56,8 +56,8 @@ const characters: { [characterName: string]: ICharacter } = {
     luck: 10,
     speed: 6,
     level: 1,
-    skill: [],
-    id: 'Ceberus',
+    skill: ['sequncialAttack'],
+    id: 'Cerberus',
     moveDistance: 5,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
@@ -452,7 +452,7 @@ const characters: { [characterName: string]: ICharacter } = {
     luck: 10,
     speed: 6,
     level: 1,
-    skill: [],
+    skill: ['sequncialAttack'],
     id: 'Hydra',
     moveDistance: 4,
     latLng: { x: -1, y: -1 },
