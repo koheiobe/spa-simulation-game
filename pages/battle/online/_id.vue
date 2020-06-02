@@ -7,6 +7,7 @@
       :nearly-time-out="NEARLY_TIME_OUT"
       :battle-room="battleRoom"
       :is-my-turn="isMyTurn"
+      :turn-uid="turnUid"
       :set-opponent-offline-times="setOpponentOfflineTimes"
       :set-battle-room-winner="setBattleRoomWinner"
       @surrender="onSurrender"
@@ -45,7 +46,7 @@ import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
 import field from '~/assets/field.json'
-import { fillDeployableArea } from '~/utility/helper/field'
+import { fillDeployableArea } from '~/utility/helper/battle/field'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
@@ -273,19 +274,19 @@ export default class OnlineBattleRoom extends Vue {
       battleId: this.battleRoom.id,
       characters: initActionStatesCharacter
     })
-    this.setLastInteractCharacter({
-      id: this.battleRoom.id,
-      lastInteractCharacter: null
-    })
   }
 
-  onTurnEnd() {
+  async onTurnEnd() {
     if (!this.storeUser.battleId) return
     const nextTurnUid =
       this.battleRoom.turn.uid === this.battleRoom.host.uid
         ? this.battleRoom.guest.uid
         : this.battleRoom.host.uid
     const nextTurnNumber = this.battleRoom.turn.number + 1
+    await this.setLastInteractCharacter({
+      id: this.battleRoom.id,
+      lastInteractCharacter: null
+    })
     this.setTurnInfo({
       id: this.storeUser.battleId,
       uid: nextTurnUid,

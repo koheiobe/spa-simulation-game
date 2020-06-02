@@ -43,7 +43,7 @@ import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import DevFieldUi from './devFieldUi.vue'
-import { getDamageTakenCharacter } from '~/utility/helper/battle'
+import { getDamageTakenCharacter } from '~/utility/helper/battle/damageCalculator'
 import {
   IField,
   ILatlng,
@@ -51,7 +51,10 @@ import {
   WeaponType,
   CellType
 } from '~/types/battle'
-import { fillMovableArea, fillInteractiveArea } from '~/utility/helper/field'
+import {
+  fillMovableArea,
+  fillInteractiveArea
+} from '~/utility/helper/battle/field'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -395,7 +398,7 @@ export default class Field extends Vue {
   }
 
   @Watch('lastInteractCharacter')
-  onChangeCharacterActionState(newState: ICharacter | undefined) {
+  onChangeLastInteractCharacter(newState: ICharacter | undefined) {
     if (!newState) return
     const characterEl = document.getElementById(newState.id)
     if (!characterEl) return

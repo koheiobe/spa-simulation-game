@@ -37,7 +37,7 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { BIconGearFill } from 'bootstrap-vue'
-import { Vue, Prop } from 'vue-property-decorator'
+import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { IBattleRoomRes, IUser } from '../../types/store'
 import Option from './ModalContent/Option.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -64,6 +64,9 @@ export default class BattleHeader extends Vue {
 
   @Prop({ default: false })
   isMyTurn!: boolean
+
+  @Prop({ default: '' })
+  turnUid!: string
 
   @Prop({ default: Function })
   setOpponentOfflineTimes!: (battleRoomInfo: {
@@ -155,6 +158,7 @@ export default class BattleHeader extends Vue {
         offlineTimes: updatedOfflineTimes
       })
       this.$emit('turnEnd')
+      // TODO: 現在は５秒だが本番では50秒にする
     }, 5000)
   }
 
@@ -164,11 +168,6 @@ export default class BattleHeader extends Vue {
 
   closeOptionModal() {
     this.isOptionModalOpen = false
-  }
-
-  // TODO: turn機能を pages/_id 側に移植させる
-  get turnUid() {
-    return this.battleRoom ? this.battleRoom.turn.uid : undefined
   }
 
   get turnNumber() {
