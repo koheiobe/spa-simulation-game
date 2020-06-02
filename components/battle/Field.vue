@@ -42,6 +42,7 @@
 import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
+import { getDamageTakenCharacter } from 'utility/helper/battle'
 import DevFieldUi from './devFieldUi.vue'
 import {
   IField,
@@ -422,10 +423,7 @@ export default class Field extends Vue {
   }
 
   attackCharacter(enemy: ICharacter, myCharacter: ICharacter) {
-    const damageTakenCharacter = {
-      ...enemy,
-      hp: enemy.hp - Math.abs(myCharacter.attackPoint - enemy.defense)
-    }
+    const damageTakenCharacter = getDamageTakenCharacter({ myCharacter, enemy })
     if (damageTakenCharacter.hp <= 0) {
       damageTakenCharacter.latLng = { x: -1, y: -1 }
     }

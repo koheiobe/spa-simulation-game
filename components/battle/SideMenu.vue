@@ -93,6 +93,7 @@ export default class SideMenu extends Vue {
   flex-direction: column;
   transition: 0.5s;
   align-items: center;
+  overflow-y: scroll;
   .sideMenuContent {
     padding: 16px;
     height: 100%;

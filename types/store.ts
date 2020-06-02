@@ -1,4 +1,4 @@
-import { ILatlng, ActionType } from '~/types/battle'
+import { ILatlng, ActionType, SkillType } from '~/types/battle'
 
 export interface IRootState {
   version: string
@@ -43,6 +43,7 @@ export interface ICharacter {
   id: string
   latLng: ILatlng
   lastLatLng: ILatlng
+  skill: Array<SkillType>
   actionState: {
     name: ActionType
     itemId: number

@@ -21,3 +21,5 @@ export type ActionType = 'attack' | 'wait' | 'item' | ''
 export type WeaponType = 'closeRange' | 'projectile' | 'other'
 
 export type CellType = 'deploy' | 'move' | 'interact' | null
+
+export type SkillType = 'undead'
