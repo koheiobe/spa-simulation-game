@@ -70,7 +70,11 @@ import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
 } from '~/utility/animation'
-import { counter, sequncialAttack } from '~/utility/helper/battle/skills'
+import {
+  counter,
+  sequncialAttack,
+  summonOnDead
+} from '~/utility/helper/battle/skills'
 const CharacterModule = namespace('character')
 
 @Component({
@@ -374,7 +378,7 @@ export default class Field extends Vue {
   }
 
   isMyCharacter(character: ICharacter | undefined) {
-    if (!character) return
+    if (!character) return false
     const matchedSuffix = character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
     return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
@@ -469,16 +473,29 @@ export default class Field extends Vue {
       playerCharacter,
       isMyTurn: this.isMyTurn,
       onSequncialAttack(playerCharacter) {
-        self.$emit('setLastInteractCharacter', {
-          id: self.battleId,
-          lastInteractCharacter: null
-        })
         self.updateInteractiveCharacter({
           ...playerCharacter,
           actionState: { isEnd: false }
         })
         self.setModal(true)
       }
+    })
+    summonOnDead({
+      taker,
+      isMyCharacter: this.isMyCharacter,
+      onSummonCharacter(character) {
+        self.updateCharacter({
+          battleId: self.battleId,
+          character: {
+            ...character,
+            id: character.id + '-' + self.isHostOrGuest
+          }
+        })
+      }
+    })
+    this.$emit('setLastInteractCharacter', {
+      id: self.battleId,
+      lastInteractCharacter: null
     })
   }
 

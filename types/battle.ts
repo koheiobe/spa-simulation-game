@@ -28,3 +28,4 @@ export type SkillType =
   | 'counter'
   | 'fly'
   | 'bloodSucking'
+  | 'summonOnDead'

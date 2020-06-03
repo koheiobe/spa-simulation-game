@@ -1,5 +1,6 @@
 import { ICharacter } from '~/types/store'
 import { sixtyParcent } from '~/utility/randNum'
+import characters from '~/constants/characters'
 
 export const counter = (params: {
   taker: ICharacter
@@ -38,5 +39,23 @@ export const sequncialAttack = (params: {
     sixtyParcent()
   ) {
     onSequncialAttack(playerCharacter)
+  }
+}
+
+export const summonOnDead = (params: {
+  taker: ICharacter
+  isMyCharacter: (character: ICharacter | undefined) => boolean
+  onSummonCharacter: (summonCharacter: ICharacter) => any
+}): void => {
+  const { taker, onSummonCharacter, isMyCharacter } = params
+  if (
+    !isMyCharacter(taker) ||
+    !taker.skill.includes('summonOnDead') ||
+    taker.hp > 0
+  )
+    return
+  switch (taker.name) {
+    case 'WoodCutter':
+      onSummonCharacter({ ...characters.robot, latLng: taker.lastLatLng })
   }
 }

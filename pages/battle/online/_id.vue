@@ -276,17 +276,13 @@ export default class OnlineBattleRoom extends Vue {
     })
   }
 
-  async onTurnEnd() {
+  onTurnEnd() {
     if (!this.storeUser.battleId) return
     const nextTurnUid =
       this.battleRoom.turn.uid === this.battleRoom.host.uid
         ? this.battleRoom.guest.uid
         : this.battleRoom.host.uid
     const nextTurnNumber = this.battleRoom.turn.number + 1
-    await this.setLastInteractCharacter({
-      id: this.battleRoom.id,
-      lastInteractCharacter: null
-    })
     this.setTurnInfo({
       id: this.storeUser.battleId,
       uid: nextTurnUid,
