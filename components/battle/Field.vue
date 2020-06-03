@@ -186,10 +186,7 @@ export default class Field extends Vue {
         if (cellCharacterId.length > 0) {
           this.setInteractiveCharacter(cellCharacterId)
           if (!this.interactiveCharacter) return
-          this.movableArea = fillMovableArea(
-            latLng,
-            this.interactiveCharacter.moveDistance
-          )
+          this.movableArea = fillMovableArea(latLng, this.interactiveCharacter)
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
           this.resetCharacterState()

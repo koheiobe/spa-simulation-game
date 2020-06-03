@@ -1,5 +1,12 @@
-import { IDeployableArea, ILatlng, WeaponType, IField } from '~/types/battle'
+import {
+  IDeployableArea,
+  ILatlng,
+  WeaponType,
+  IField,
+  SkillType
+} from '~/types/battle'
 import fieldJson from '~/assets/field.json'
+import { ICharacter } from '~/types/store'
 
 export const fillDeployableArea = (
   deployableAreas: IDeployableArea[]
@@ -25,69 +32,96 @@ export const fillDeployableArea = (
 
 export const fillMovableArea = (
   latLng: ILatlng,
-  movePoint: number
+  character: ICharacter
 ): { [key: string]: Boolean } => {
+  const { moveDistance, skill } = character
   const movableArea: { [key: string]: Boolean } = {}
   movableArea[`${latLng.y}_${latLng.x}`] = true
-  // const latLng1 = { x: latLng.x + 1, y: latLng.y }
-  // const latLng2 = { x: latLng.x - 1, y: latLng.y }
-  // const latLng3 = { x: latLng.x, y: latLng.y + 1 }
-  // const latLng4 = { x: latLng.x, y: latLng.y - 1 }
-  computeMovableCell(latLng, movePoint, movableArea, { x: 1, y: 0 })
-  computeMovableCell(latLng, movePoint, movableArea, { x: -1, y: 0 })
-  computeMovableCell(latLng, movePoint, movableArea, { x: 0, y: 1 })
-  computeMovableCell(latLng, movePoint, movableArea, { x: 0, y: -1 })
+  computeMovableCell(latLng, moveDistance, movableArea, { x: 1, y: 0 }, skill)
+  computeMovableCell(latLng, moveDistance, movableArea, { x: -1, y: 0 }, skill)
+  computeMovableCell(latLng, moveDistance, movableArea, { x: 0, y: 1 }, skill)
+  computeMovableCell(latLng, moveDistance, movableArea, { x: 0, y: -1 }, skill)
 
   return movableArea
 }
 
 const computeMovableCell = (
   latLng: ILatlng,
-  movePoint: number,
+  moveDistance: number,
   movableArea: { [key: string]: Boolean },
-  direction: ILatlng
+  direction: ILatlng,
+  skill: Array<SkillType>
 ) => {
   const updatedLatLng = {
     x: latLng.x + direction.x,
     y: latLng.y + direction.y
   }
   const field: IField = fieldJson
-  let updatedMovepoint = movePoint
+  let updatedMovepoint = moveDistance
   const cell = field[`${updatedLatLng.y}_${updatedLatLng.x}`]
   if (cell) {
     switch (cell.type) {
       case 'mountain':
-        return
+        if (skill.includes('fly')) {
+          updatedMovepoint = moveDistance - 1
+        } else {
+          return
+        }
+        break
       default:
-        updatedMovepoint = movePoint - 1
+        updatedMovepoint = moveDistance - 1
     }
   } else {
-    updatedMovepoint = movePoint - 1
+    updatedMovepoint = moveDistance - 1
   }
 
   movableArea[`${updatedLatLng.y}_${updatedLatLng.x}`] = true
   if (updatedMovepoint === 0) return
 
   if (direction.x !== 1)
-    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
-      x: -1,
-      y: 0
-    })
+    computeMovableCell(
+      updatedLatLng,
+      updatedMovepoint,
+      movableArea,
+      {
+        x: -1,
+        y: 0
+      },
+      skill
+    )
   if (direction.x !== -1)
-    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
-      x: 1,
-      y: 0
-    })
+    computeMovableCell(
+      updatedLatLng,
+      updatedMovepoint,
+      movableArea,
+      {
+        x: 1,
+        y: 0
+      },
+      skill
+    )
   if (direction.y !== 1)
-    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
-      x: 0,
-      y: -1
-    })
+    computeMovableCell(
+      updatedLatLng,
+      updatedMovepoint,
+      movableArea,
+      {
+        x: 0,
+        y: -1
+      },
+      skill
+    )
   if (direction.y !== -1)
-    computeMovableCell(updatedLatLng, updatedMovepoint, movableArea, {
-      x: 0,
-      y: 1
-    })
+    computeMovableCell(
+      updatedLatLng,
+      updatedMovepoint,
+      movableArea,
+      {
+        x: 0,
+        y: 1
+      },
+      skill
+    )
 }
 
 export const fillInteractiveArea = (
