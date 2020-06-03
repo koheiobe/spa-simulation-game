@@ -29,6 +29,9 @@ const calculateTakerDefense = (taker: ICharacter) => {
 }
 
 const calculateAttackerPoint = (attacker: ICharacter) => {
+  if (attacker.skill.includes('predation') && fiftyParcent()) {
+    return 9999
+  }
   return attacker.attackPoint
 }
 

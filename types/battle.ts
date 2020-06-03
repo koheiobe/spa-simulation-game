@@ -29,3 +29,4 @@ export type SkillType =
   | 'fly'
   | 'bloodSucking'
   | 'summonOnDead'
+  | 'predation'

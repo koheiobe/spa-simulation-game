@@ -1,5 +1,5 @@
 import { ICharacter } from '~/types/store'
-import { sixtyParcent } from '~/utility/randNum'
+import { sixtyParcent, getRandomVariable } from '~/utility/randNum'
 import characters from '~/constants/characters'
 
 export const counter = (params: {
@@ -57,5 +57,17 @@ export const summonOnDead = (params: {
   switch (taker.name) {
     case 'WoodCutter':
       onSummonCharacter({ ...characters.robot, latLng: taker.lastLatLng })
+      break
+    case 'Curupira': {
+      const characterName = getRandomVariable([
+        'dinosaur',
+        'lochNessMonster',
+        'Narwhal'
+      ])
+      onSummonCharacter({
+        ...characters[characterName],
+        latLng: taker.lastLatLng
+      })
+    }
   }
 }
