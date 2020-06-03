@@ -892,7 +892,7 @@ const characters: { [characterName: string]: ICharacter } = {
     luck: 10,
     speed: 6,
     level: 1,
-    skill: [],
+    skill: ['counter', 'sequncialAttack'],
     id: 'Valkyrie',
     moveDistance: 5,
     latLng: { x: -1, y: -1 },

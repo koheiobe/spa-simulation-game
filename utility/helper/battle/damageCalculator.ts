@@ -2,34 +2,31 @@ import { ICharacter } from 'types/store'
 import { fiftyParcent } from '~/utility/randNum'
 
 export const getDamageTakenCharacter = (info: {
-  myCharacter: ICharacter
-  enemy: ICharacter
+  attacker: ICharacter
+  taker: ICharacter
 }) => {
-  const { myCharacter, enemy } = info
+  const { attacker, taker } = info
   const damageTakenCharacter = {
-    ...enemy,
-    hp: enemy.hp - calculateDamage(enemy, myCharacter)
+    ...taker,
+    hp: taker.hp - calculateDamage(attacker, taker)
   }
   const finalDamageTakenCharacter = onEndCalculateDamage(damageTakenCharacter)
   return finalDamageTakenCharacter
 }
 
-const calculateDamage = (
-  enemy: ICharacter,
-  myCharacter: ICharacter
-): number => {
-  const enemyDefence = calculateEnemyDefense(enemy)
-  const attackPoint = calculateAttackPoint(myCharacter)
+const calculateDamage = (attacker: ICharacter, taker: ICharacter): number => {
+  const enemyDefence = calculateTakerDefense(taker)
+  const attackPoint = calculateAttackerPoint(attacker)
   const tempDamage = attackPoint - enemyDefence
   return tempDamage > 0 ? tempDamage : 0
 }
 
-const calculateEnemyDefense = (enemy: ICharacter) => {
-  return enemy.defense
+const calculateTakerDefense = (taker: ICharacter) => {
+  return taker.defense
 }
 
-const calculateAttackPoint = (myCharacter: ICharacter) => {
-  return myCharacter.attackPoint
+const calculateAttackerPoint = (attacker: ICharacter) => {
+  return attacker.attackPoint
 }
 
 const onEndCalculateDamage = (damageTakenCharacter: ICharacter): ICharacter => {

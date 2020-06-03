@@ -62,11 +62,12 @@ import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
-import { sixtyParcent } from '~/utility/randNum'
+
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
 } from '~/utility/animation'
+import { counter, sequncialAttack } from '~/utility/helper/battle/skills'
 const CharacterModule = namespace('character')
 
 @Component({
@@ -372,8 +373,8 @@ export default class Field extends Vue {
     }
   }
 
-  isMyCharacter(character: ICharacter) {
-    if (!character) return false
+  isMyCharacter(character: ICharacter | undefined) {
+    if (!character) return
     const matchedSuffix = character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
     return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
@@ -395,50 +396,75 @@ export default class Field extends Vue {
   }
 
   @Watch('lastInteractCharacter')
-  onChangeLastInteractCharacter(newState: ICharacter | undefined) {
-    if (!newState) return
-    const characterEl = document.getElementById(newState.id)
-    if (!characterEl) return
-    switch (newState.actionState.name) {
+  onChangeLastInteractCharacter(attacker: ICharacter | undefined) {
+    if (!attacker) return
+    const attackerEl = document.getElementById(attacker.id)
+    if (!attackerEl) return
+    switch (attacker.actionState.name) {
       case 'attack':
-        attackCharacterAnimation(characterEl, newState, () =>
-          this.onEndAttackAnimation(newState)
-        )
+        this.attackCharacter(attackerEl, attacker)
     }
   }
 
-  onEndAttackAnimation(character: ICharacter) {
-    const enemyLatLng = character.actionState.interactLatLng
-    const enemy = this.storeCharacters.find(
+  async attackCharacter(attackerEl: HTMLElement, attacker: ICharacter) {
+    await attackCharacterAnimation(attackerEl, attacker)
+    const takerLatLng = attacker.actionState.interactLatLng
+    const taker = this.storeCharacters.find(
       (character) =>
-        character.latLng.x === enemyLatLng.x &&
-        character.latLng.y === enemyLatLng.y
+        character.latLng.x === takerLatLng.x &&
+        character.latLng.y === takerLatLng.y
     )
-    if (!enemy) return
-    const enemyEl = document.getElementById(enemy.id)
+    if (!taker) return
+    const enemyEl = document.getElementById(taker.id)
     if (!enemyEl) return
-    takeDamageCharacterAnimation(enemyEl, () => {
-      this.attackCharacter(enemy, character)
-    })
+    await takeDamageCharacterAnimation(enemyEl)
+    const damageTakenCharacter = await this.updateDamageTakenCharacter(
+      attacker,
+      taker
+    )
+    this.onEndAttackCharacter(attacker, damageTakenCharacter)
   }
 
-  attackCharacter(enemy: ICharacter, myCharacter: ICharacter) {
-    const damageTakenCharacter = getDamageTakenCharacter({ myCharacter, enemy })
+  async updateDamageTakenCharacter(attacker: ICharacter, taker: ICharacter) {
+    const damageTakenCharacter = getDamageTakenCharacter({ attacker, taker })
     if (damageTakenCharacter.hp <= 0) {
       damageTakenCharacter.latLng = { x: -1, y: -1 }
     }
-    this.updateCharacter({
+    await this.updateCharacter({
       battleId: this.battleId,
       character: damageTakenCharacter
     })
-    if (myCharacter.skill.includes('sequncialAttack') && sixtyParcent()) {
-      this.$emit('setLastInteractCharacter', {
-        id: this.battleId,
-        lastInteractCharacter: null
+    return damageTakenCharacter
+  }
+
+  onEndAttackCharacter(attacker: ICharacter, taker: ICharacter) {
+    const self = this
+    if (
+      counter({
+        taker,
+        attacker,
+        onCounter({ takerEl, updatedTaker }) {
+          self.attackCharacter(takerEl, updatedTaker)
+        }
       })
-      this.updateInteractiveCharacter({ ...myCharacter, isEnd: false })
-      this.setModal(true)
-    }
+    )
+      return
+    const playerCharacter = this.isMyCharacter(attacker) ? attacker : taker
+    sequncialAttack({
+      playerCharacter,
+      isMyTurn: this.isMyTurn,
+      onSequncialAttack(playerCharacter) {
+        self.$emit('setLastInteractCharacter', {
+          id: self.battleId,
+          lastInteractCharacter: null
+        })
+        self.updateInteractiveCharacter({
+          ...playerCharacter,
+          actionState: { isEnd: false }
+        })
+        self.setModal(true)
+      }
+    })
   }
 
   get characterName() {
