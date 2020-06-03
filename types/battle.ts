@@ -22,4 +22,9 @@ export type WeaponType = 'closeRange' | 'projectile' | 'other'
 
 export type CellType = 'deploy' | 'move' | 'interact' | null
 
-export type SkillType = 'undead' | 'sequncialAttack' | 'counter' | 'fly'
+export type SkillType =
+  | 'undead'
+  | 'sequncialAttack'
+  | 'counter'
+  | 'fly'
+  | 'bloodSucking'

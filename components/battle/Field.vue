@@ -43,7 +43,10 @@ import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import DevFieldUi from './devFieldUi.vue'
-import { getDamageTakenCharacter } from '~/utility/helper/battle/damageCalculator'
+import {
+  calculateDamage,
+  onEndCalculateDamage
+} from '~/utility/helper/battle/damageCalculator'
 import {
   IField,
   ILatlng,
@@ -423,15 +426,30 @@ export default class Field extends Vue {
   }
 
   async updateDamageTakenCharacter(attacker: ICharacter, taker: ICharacter) {
-    const damageTakenCharacter = getDamageTakenCharacter({ attacker, taker })
+    const damage = calculateDamage(attacker, taker)
+    const damageTakenCharacter = {
+      ...taker,
+      hp: taker.hp - damage
+    }
+    if (attacker.skill.includes('bloodSucking')) {
+      const suckedHp = attacker.hp + damage
+      await this.updateCharacter({
+        battleId: this.battleId,
+        character: {
+          ...attacker,
+          hp: suckedHp > attacker.maxHp ? attacker.maxHp : suckedHp
+        }
+      })
+    }
+    const finalDamageTakenCharacter = onEndCalculateDamage(damageTakenCharacter)
     if (damageTakenCharacter.hp <= 0) {
       damageTakenCharacter.latLng = { x: -1, y: -1 }
     }
     await this.updateCharacter({
       battleId: this.battleId,
-      character: damageTakenCharacter
+      character: finalDamageTakenCharacter
     })
-    return damageTakenCharacter
+    return finalDamageTakenCharacter
   }
 
   onEndAttackCharacter(attacker: ICharacter, taker: ICharacter) {

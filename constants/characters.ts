@@ -914,7 +914,7 @@ const characters: { [characterName: string]: ICharacter } = {
     luck: 10,
     speed: 6,
     level: 1,
-    skill: [],
+    skill: ['bloodSucking'],
     id: 'Vampire',
     moveDistance: 4,
     latLng: { x: -1, y: -1 },

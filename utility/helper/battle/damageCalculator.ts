@@ -14,7 +14,10 @@ export const getDamageTakenCharacter = (info: {
   return finalDamageTakenCharacter
 }
 
-const calculateDamage = (attacker: ICharacter, taker: ICharacter): number => {
+export const calculateDamage = (
+  attacker: ICharacter,
+  taker: ICharacter
+): number => {
   const enemyDefence = calculateTakerDefense(taker)
   const attackPoint = calculateAttackerPoint(attacker)
   const tempDamage = attackPoint - enemyDefence
@@ -29,7 +32,9 @@ const calculateAttackerPoint = (attacker: ICharacter) => {
   return attacker.attackPoint
 }
 
-const onEndCalculateDamage = (damageTakenCharacter: ICharacter): ICharacter => {
+export const onEndCalculateDamage = (
+  damageTakenCharacter: ICharacter
+): ICharacter => {
   if (
     damageTakenCharacter.skill.includes('undead') &&
     damageTakenCharacter.hp <= 0
