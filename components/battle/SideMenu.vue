@@ -7,7 +7,7 @@
       :class="$style.sideMenuOpener"
       @click="toggleSideMenu()"
     >
-      PUSH
+      PUSH !!
     </b-button>
     <transition name="sideMenuAnim">
       <div v-if="isOpenSideMenu" :class="$style.sideMenu">

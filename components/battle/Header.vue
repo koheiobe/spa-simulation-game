@@ -206,6 +206,7 @@ export default class BattleHeader extends Vue {
   .gearIcon {
     width: 30px;
     height: 30px;
+    fill: white;
   }
 }
 </style>
