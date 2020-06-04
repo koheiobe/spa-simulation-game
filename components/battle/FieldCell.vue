@@ -37,7 +37,7 @@
         HP: {{ props.character.hp }} / {{ props.character.maxHp }}
       </b-tooltip>
     </template>
-    <!-- 開発用 -->
+    <!-- 開発用 x,y座標を表示したい時に-->
     <!-- <div v-else :class="$style.latLngCell">
       {{ `${props.latLng.y}_${props.latLng.x}` }}
     </div> -->

@@ -41,12 +41,16 @@ import { namespace } from 'vuex-class'
 import CharacterList from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
-import { IDeployableArea, ActionType } from '~/types/battle'
+import { ActionType } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
 import field from '~/assets/field.json'
-import { fillDeployableArea } from '~/utility/helper/battle/field'
+import {
+  hostDeployableAreas,
+  guestDeployableAreas,
+  fillDeployableArea
+} from '~/utility/helper/battle/field'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
@@ -135,28 +139,6 @@ export default class OnlineBattleRoom extends Vue {
   private TIME_LIMIT = 45
   private NEARLY_TIME_OUT = 35
 
-  // TODO: フィールドによって可変
-  public deployableAreas: IDeployableArea[] = [
-    {
-      upperLeft: {
-        x: 25,
-        y: 5
-      },
-      upperRight: {
-        x: 30,
-        y: 5
-      },
-      lowerLeft: {
-        x: 25,
-        y: 10
-      },
-      lowerRight: {
-        x: 30,
-        y: 10
-      }
-    }
-  ]
-
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
   public deployableArea: { [key: string]: Boolean } = {}
@@ -226,7 +208,9 @@ export default class OnlineBattleRoom extends Vue {
   }
 
   startDeployMode() {
-    this.deployableArea = fillDeployableArea(this.deployableAreas)
+    const deployableAreas =
+      this.isHostOrGuest === 'host' ? hostDeployableAreas : guestDeployableAreas
+    this.deployableArea = fillDeployableArea(deployableAreas)
     // 開発用
     if (this.isHostOrGuest !== '') {
       this.setDeployModeEnd({
@@ -373,6 +357,7 @@ export default class OnlineBattleRoom extends Vue {
 
 <style lang="scss" module>
 .container {
+  padding: 55px;
   position: relative;
 
   .header {
