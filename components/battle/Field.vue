@@ -534,8 +534,10 @@ export default class Field extends Vue {
   }
 
   .field {
-    min-width: 1400px;
-    padding: 50px;
+    background-image: url('../../assets/img/field/mountain.png');
+    background-size: 30px 30px;
+    min-width: 1381px;
+    padding: 60px;
     display: flex;
     flex-direction: column;
     justify-content: center;

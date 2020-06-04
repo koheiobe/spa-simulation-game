@@ -190,6 +190,7 @@ export default class BattleHeader extends Vue {
   display: flex;
 
   .timerContainer {
+    background-color: white;
     display: flex;
     align-items: center;
   }
