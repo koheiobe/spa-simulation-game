@@ -1,15 +1,15 @@
 <template>
   <div :class="$style.container">
-    <div>{{ turnNumber }}ターン目</div>
-    <div>
-      {{ isMyTurn ? 'あなたのターンです' : '相手のターンです' }}
-    </div>
     <div :class="$style.timerContainer">
       <span :class="[isNearlyTimeOut ? $style.nearlyTimeOut : '']">{{
         limitedTimer
       }}</span>
       /
       {{ timeLimit }}
+    </div>
+    <div>
+      <b-button v-if="isMyTurn" variant="success">あなたのターンです</b-button>
+      <b-button v-else>あいてのターンです</b-button>
     </div>
     <div>
       <b-button
@@ -29,7 +29,11 @@
       <BIconGearFill :class="$style.gearIcon" @click="openOptionModal" />
     </div>
     <Modal :is-open="isOptionModalOpen" @onClickOuter="closeOptionModal">
-      <Option @surrender="$emit('surrender')" />
+      <Option
+        :turn-number="turnNumber"
+        :is-my-turn="isMyTurn ? 'あなたのターンです' : '相手のターンです'"
+        @surrender="$emit('surrender')"
+      />
     </Modal>
   </div>
 </template>
@@ -184,6 +188,11 @@ export default class BattleHeader extends Vue {
 .container {
   padding: 8px;
   display: flex;
+
+  .timerContainer {
+    display: flex;
+    align-items: center;
+  }
 
   div:not(:first-child) {
     margin-left: 8px;
