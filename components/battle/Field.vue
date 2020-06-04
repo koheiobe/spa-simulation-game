@@ -1,5 +1,5 @@
 <template>
-  <div :class="$style.field">
+  <div :class="$style.container">
     <SideMenu
       v-if="!isDeployModeEnd"
       :characters="storeCharacters"
@@ -8,17 +8,25 @@
       @onClickCharacter="selectDeployCharacter"
       @surrender="$emit('surrender')"
     />
-    <div v-for="y of 30" :key="y" :class="$style.row">
-      <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
-        <FieldCell
-          :cell-type="decideCellType({ x, y })"
-          :character="getCharacterAtCell({ x, y })"
-          :lat-lng="{ x, y }"
-          :field="field"
-          @onClick="onClickCell"
-        >
-        </FieldCell>
+    <div :class="$style.field">
+      <div v-for="y of 30" :key="y" :class="$style.row">
+        <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
+          <FieldCell
+            :cell-type="decideCellType({ x, y })"
+            :character="getCharacterAtCell({ x, y })"
+            :lat-lng="{ x, y }"
+            :field="field"
+            @onClick="onClickCell"
+          >
+          </FieldCell>
+        </div>
       </div>
+      <DevFieldUi
+        :is-dev-mode="isDevMode"
+        @onChangeDevMode="() => (isDevMode = !isDevMode)"
+        @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
+        @saveFieldJson="saveFieldJson"
+      />
     </div>
     <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
@@ -29,12 +37,6 @@
       />
     </Modal>
     <!-- 開発用 -->
-    <DevFieldUi
-      :is-dev-mode="isDevMode"
-      @onChangeDevMode="() => (isDevMode = !isDevMode)"
-      @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
-      @saveFieldJson="saveFieldJson"
-    />
   </div>
 </template>
 
@@ -136,6 +138,9 @@ export default class Field extends Vue {
 
   @Prop({ default: null })
   lastInteractCharacter?: ICharacter
+
+  @Prop({ default: null })
+  _winnerCell!: { host: ILatlng; guest: ILatlng }
 
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
@@ -319,6 +324,12 @@ export default class Field extends Vue {
   }
 
   async onFinishAction(interactiveCharacter: ICharacter) {
+    if (
+      interactiveCharacter.latLng.x === this.winnerCell.x &&
+      interactiveCharacter.latLng.y === this.winnerCell.y
+    ) {
+      this.$emit('onWin')
+    }
     this.$emit('setLastInteractCharacter', {
       id: this.battleId,
       lastInteractCharacter: interactiveCharacter
@@ -347,56 +358,6 @@ export default class Field extends Vue {
         }
       }
     })
-  }
-
-  setModal(bool: boolean) {
-    this.isBattleModalOpen = bool
-  }
-
-  // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
-  getCharacterAtCell(latLng: ILatlng) {
-    const existCharacter = this.storeCharacters.find(
-      (character: ICharacter) =>
-        character.latLng.x === latLng.x && character.latLng.y === latLng.y
-    )
-    if (this.interactiveCharacter) {
-      const isSameId =
-        existCharacter && this.interactiveCharacter.id === existCharacter.id
-      if (
-        this.interactiveCharacter.latLng.x === latLng.x &&
-        this.interactiveCharacter.latLng.y === latLng.y
-      ) {
-        return this.interactiveCharacter
-      } else if (isSameId) {
-        return undefined
-      } else {
-        return existCharacter
-      }
-    } else {
-      return existCharacter
-    }
-  }
-
-  isMyCharacter(character: ICharacter | undefined) {
-    if (!character) return false
-    const matchedSuffix = character.id.match(/-.+()$/)
-    if (!matchedSuffix) return false
-    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
-  }
-
-  // 開発用
-  mergeField(latLng: ILatlng, selectedFieldIcon: string) {
-    if (!selectedFieldIcon) {
-      delete this.field[`${latLng.y}_${latLng.x}`]
-      return
-    }
-    Vue.set(this.field, `${latLng.y}_${latLng.x}`, { type: selectedFieldIcon })
-  }
-
-  // 開発用
-  saveFieldJson() {
-    const text = JSON.stringify(this.field)
-    downloadFile(text, 'json', 'field')
   }
 
   @Watch('lastInteractCharacter')
@@ -499,22 +460,89 @@ export default class Field extends Vue {
     })
   }
 
+  setModal(bool: boolean) {
+    this.isBattleModalOpen = bool
+  }
+
+  // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
+  getCharacterAtCell(latLng: ILatlng) {
+    const existCharacter = this.storeCharacters.find(
+      (character: ICharacter) =>
+        character.latLng.x === latLng.x && character.latLng.y === latLng.y
+    )
+    if (this.interactiveCharacter) {
+      const isSameId =
+        existCharacter && this.interactiveCharacter.id === existCharacter.id
+      if (
+        this.interactiveCharacter.latLng.x === latLng.x &&
+        this.interactiveCharacter.latLng.y === latLng.y
+      ) {
+        return this.interactiveCharacter
+      } else if (isSameId) {
+        return undefined
+      } else {
+        return existCharacter
+      }
+    } else {
+      return existCharacter
+    }
+  }
+
+  isMyCharacter(character: ICharacter | undefined) {
+    if (!character) return false
+    const matchedSuffix = character.id.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
+  }
+
+  // 開発用
+  mergeField(latLng: ILatlng, selectedFieldIcon: string) {
+    if (!selectedFieldIcon) {
+      delete this.field[`${latLng.y}_${latLng.x}`]
+      return
+    }
+    Vue.set(this.field, `${latLng.y}_${latLng.x}`, { type: selectedFieldIcon })
+  }
+
+  // 開発用
+  saveFieldJson() {
+    const text = JSON.stringify(this.field)
+    downloadFile(text, 'json', 'field')
+  }
+
   get characterName() {
     return this.interactiveCharacter ? this.interactiveCharacter.name : ''
+  }
+
+  get winnerCell() {
+    return this.isHostOrGuest === 'host'
+      ? this._winnerCell.host
+      : this._winnerCell.guest
   }
 }
 </script>
 
 <style lang="scss" module>
-.field {
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
   .debugArea {
     position: fixed;
     left: 300px;
     top: 20px;
   }
 
-  .row {
+  .field {
+    min-width: 1400px;
+    padding: 50px;
     display: flex;
+    flex-direction: column;
+    justify-content: center;
+    .row {
+      display: flex;
+      justify-content: center;
+    }
   }
 }
 </style>

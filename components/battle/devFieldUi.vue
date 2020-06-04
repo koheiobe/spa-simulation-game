@@ -57,7 +57,8 @@ export default class DevFieldUi extends Vue {
 
 <style lang="scss" module>
 .container {
-  height: 100px;
+  display: flex;
+  justify-content: center;
 }
 .pngList {
   list-style: none;

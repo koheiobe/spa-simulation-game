@@ -14,7 +14,7 @@ const characters: { [characterName: string]: ICharacter } = {
     level: 1,
     skill: [],
     id: 'Centaur',
-    moveDistance: 6,
+    moveDistance: 10,
     latLng: { x: -1, y: -1 },
     lastLatLng: { x: -1, y: -1 },
     actionState: {

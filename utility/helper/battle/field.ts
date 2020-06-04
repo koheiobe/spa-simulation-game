@@ -8,6 +8,9 @@ import {
 import fieldJson from '~/assets/field.json'
 import { ICharacter } from '~/types/store'
 
+export const hostWinCell = { x: 5, y: 25 }
+export const guestWinCell = { x: 28, y: 3 }
+
 export const hostDeployableAreas: IDeployableArea[] = [
   {
     upperLeft: {

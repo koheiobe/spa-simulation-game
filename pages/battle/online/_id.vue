@@ -22,6 +22,8 @@
       :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
+      :_winner-cell="winnerCell"
+      @onWin="onWin"
       @setLastInteractCharacter="setLastInteractCharacter"
     />
     <!-- 開発用 -->
@@ -49,7 +51,9 @@ import field from '~/assets/field.json'
 import {
   hostDeployableAreas,
   guestDeployableAreas,
-  fillDeployableArea
+  fillDeployableArea,
+  hostWinCell,
+  guestWinCell
 } from '~/utility/helper/battle/field'
 
 const UserModule = namespace('user')
@@ -144,6 +148,10 @@ export default class OnlineBattleRoom extends Vue {
   public deployableArea: { [key: string]: Boolean } = {}
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
+  public winnerCell = {
+    host: hostWinCell,
+    guest: guestWinCell
+  }
 
   async mounted() {
     if (!this.storeUser.battleId) {
@@ -287,6 +295,14 @@ export default class OnlineBattleRoom extends Vue {
     })
   }
 
+  onWin() {
+    if (!this.battleRoom || !this.storeUser.uid) return
+    this.setBattleRoomWinner({
+      id: this.battleRoom.id,
+      winnerUid: this.storeUser.uid
+    })
+  }
+
   onDecideWinner() {
     if (this.isBattleFinishModalOpen) return
     this.isBattleFinishModalOpen = true
@@ -357,7 +373,6 @@ export default class OnlineBattleRoom extends Vue {
 
 <style lang="scss" module>
 .container {
-  padding: 55px;
   position: relative;
 
   .header {
