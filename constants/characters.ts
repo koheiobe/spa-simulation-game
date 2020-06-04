@@ -468,7 +468,7 @@ const characters: { [characterName: string]: ICharacter } = {
     name: 'LochNessMonster',
     maxHp: 34,
     hp: 34,
-    attackPoint: 15,
+    attackPoint: 25,
     defense: 6,
     critical: 10,
     luck: 10,
