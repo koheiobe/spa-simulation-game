@@ -1,10 +1,14 @@
 <template>
   <div>
-    <SideMenuRightIcon
+    <b-button
       v-if="!isOpenSideMenu"
+      pill
+      variant="danger"
       :class="$style.sideMenuOpener"
       @click="toggleSideMenu()"
-    />
+    >
+      PUSH
+    </b-button>
     <transition name="sideMenuAnim">
       <div v-if="isOpenSideMenu" :class="$style.sideMenu">
         <div :class="$style.sideMenuContent">
@@ -36,16 +40,12 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
-import SideMenuLeftIcon from '~/assets/img/leftArrow.svg'
-import SideMenuRightIcon from '~/assets/img/rightArrow.svg'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import Character from '~/class/character/playableCharacter'
 import { ICharacter } from '~/types/store'
 
 @Component({
   components: {
-    SideMenuLeftIcon,
-    SideMenuRightIcon,
     CharacterRenderer
   }
 })
@@ -82,6 +82,8 @@ export default class SideMenu extends Vue {
 <style lang="scss" module>
 .sideMenuOpener {
   position: fixed;
+  top: 5px;
+  left: 5px;
 }
 .sideMenu {
   position: fixed;
