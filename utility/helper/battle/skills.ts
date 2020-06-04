@@ -58,16 +58,24 @@ export const summonOnDead = (params: {
     case 'WoodCutter':
       onSummonCharacter({ ...characters.robot, latLng: taker.lastLatLng })
       break
-    case 'Curupira': {
-      const characterName = getRandomVariable([
-        'dinosaur',
-        'lochNessMonster',
-        'Narwhal'
-      ])
-      onSummonCharacter({
-        ...characters[characterName],
-        latLng: taker.lastLatLng
-      })
-    }
+    case 'Curupira':
+      {
+        const characterName = getRandomVariable([
+          'dinosaur',
+          'lochNessMonster',
+          'Narwhal'
+        ])
+        onSummonCharacter({
+          ...characters[characterName],
+          latLng: taker.lastLatLng
+        })
+      }
+      break
+    case 'BabyDragon':
+      onSummonCharacter({ ...characters.dragon, latLng: taker.lastLatLng })
+      break
+    case 'Witch':
+      onSummonCharacter({ ...characters.wizard, latLng: taker.lastLatLng })
+      break
   }
 }
