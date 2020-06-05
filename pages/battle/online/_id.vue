@@ -24,6 +24,8 @@
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
       :_winner-cell="winnerCell"
+      :characters-lat-lng-map="charactersLatLngMap"
+      @setcharactersLatLngMap="setcharactersLatLngMap"
       @onWin="onWin"
       @setLastInteractCharacter="setLastInteractCharacter"
     />
@@ -44,7 +46,7 @@ import { namespace } from 'vuex-class'
 import CharacterList from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
-import { ActionType } from '~/types/battle'
+import { ActionType, IField } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
 import Header from '~/components/battle/Header.vue'
@@ -75,14 +77,14 @@ export default class OnlineBattleRoom extends Vue {
   private updateCharacters!: (dbInfo: {
     battleId: string
     characters: ICharacter[]
-  }) => Promise<null>
+  }) => Promise<void>
 
   @CharacterModule.Action('bindCharactersRef')
   private bindCharactersRef!: (
     characterRef: firebase.firestore.CollectionReference<
       firebase.firestore.DocumentData
     >
-  ) => Promise<null>
+  ) => Promise<firebase.firestore.DocumentData[]>
 
   @BattleRoomModule.State('battleRoom')
   private battleRoom!: IBattleRoomRes
@@ -144,6 +146,8 @@ export default class OnlineBattleRoom extends Vue {
   private TIME_LIMIT = 45
   private NEARLY_TIME_OUT = 35
 
+  public charactersLatLngMap: IField = {}
+
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
   public deployableArea: { [key: string]: Boolean } = {}
@@ -173,13 +177,15 @@ export default class OnlineBattleRoom extends Vue {
     if (!this.isDeployModeEnd) {
       this.startDeployMode()
     }
-    if (this.battleRoom.turn.number === 0) {
-      // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
-      this.initCharacters()
-    } else {
-      this.syncVuexFirestoreCharacters(this.battleRoom.id)
-    }
+    const characters =
+      this.battleRoom.turn.number === 0
+        ? // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
+          await this.initCharacters()
+        : await this.syncVuexFirestoreCharacters(this.battleRoom.id)
 
+    if (characters) {
+      this.initCharactersLatLngMap(characters)
+    }
     // ウィンドウを閉じる時に注意を表示
     window.addEventListener('beforeunload', function(e) {
       e.preventDefault()
@@ -203,12 +209,12 @@ export default class OnlineBattleRoom extends Vue {
       battleId: this.storeUser.battleId,
       characters
     })
-    this.syncVuexFirestoreCharacters(this.storeUser.battleId)
+    return this.syncVuexFirestoreCharacters(this.storeUser.battleId)
   }
 
   syncVuexFirestoreCharacters(battleId: string) {
     const dbCharactersRef = this.$firestore.getCharactersRef(battleId)
-    this.bindCharactersRef(dbCharactersRef)
+    return this.bindCharactersRef(dbCharactersRef)
   }
 
   startDeployMode() {
@@ -240,7 +246,10 @@ export default class OnlineBattleRoom extends Vue {
         this.isMyCharacter(character)
       )
     })
-    this.syncVuexFirestoreCharacters(this.storeUser.battleId)
+    const characters = await this.syncVuexFirestoreCharacters(
+      this.storeUser.battleId
+    )
+    this.initCharactersLatLngMap(characters)
     // Field.vueのdeployCharacterのthis.setCharacterParamをすると
     // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
     if (this.isHostOrGuest !== '') {
@@ -275,6 +284,7 @@ export default class OnlineBattleRoom extends Vue {
       battleId: this.battleRoom.id,
       characters: initActionStatesCharacter
     })
+    this.initCharactersLatLngMap(this.storeCharacters)
   }
 
   onTurnEnd() {
@@ -327,6 +337,28 @@ export default class OnlineBattleRoom extends Vue {
     const matchedSuffix = character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
     return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
+  }
+
+  initCharactersLatLngMap(characters: firebase.firestore.DocumentData[]) {
+    this.charactersLatLngMap = characters.reduce((acum, cur) => {
+      if (!this.isMyCharacter(cur as ICharacter) && cur.latLng.x > 0) {
+        acum[`${cur.latLng.y}_${cur.latLng.x}`] = {
+          type: 'character'
+        }
+      }
+      return acum
+    }, {})
+  }
+
+  setcharactersLatLngMap(character: ICharacter) {
+    if (this.isMyCharacter(character)) return
+    const { lastLatLng, latLng } = character
+    delete this.charactersLatLngMap[`${lastLatLng.y}_${lastLatLng.x}`]
+    if (latLng.x > 0) {
+      this.charactersLatLngMap[`${latLng.y}_${latLng.x}`] = {
+        type: 'character'
+      }
+    }
   }
 
   async onEndBattle() {

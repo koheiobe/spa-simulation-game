@@ -19,15 +19,17 @@ export const mutations: MutationTree<ICharacterState> = {
     )
   },
   updateInteractiveCharacter(state, param) {
-    state.interactiveCharacter = { ...state.interactiveCharacter, ...param }
+    state.interactiveCharacter = { ...param }
   }
 }
 
 export const actions: ActionTree<ICharacterState, IRootState> = {
-  bindCharactersRef: firestoreAction(({ bindFirestoreRef }, ref) => {
-    // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
-    bindFirestoreRef('characters', ref)
-  }),
+  bindCharactersRef: firestoreAction(
+    ({ bindFirestoreRef }, ref): Promise<firebase.firestore.DocumentData[]> => {
+      // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
+      return bindFirestoreRef('characters', ref)
+    }
+  ),
   updateCharacter(_, dbInfo: { battleId: string; character: ICharacter }) {
     return this.$firestore.updateCharacter(dbInfo.battleId, dbInfo.character)
   },

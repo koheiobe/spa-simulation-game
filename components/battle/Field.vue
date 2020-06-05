@@ -113,7 +113,10 @@ export default class Field extends Vue {
   private setInteractiveCharacter!: (cellCharacterId: string) => void
 
   @CharacterModule.Mutation('updateInteractiveCharacter')
-  private updateInteractiveCharacter!: (param: any) => void
+  private updateInteractiveCharacter!: (character: ICharacter) => void
+
+  @Prop({ default: null })
+  private _winnerCell!: { host: ILatlng; guest: ILatlng }
 
   @Prop({ default: () => [] })
   deployableArea!: { [key: string]: Boolean }
@@ -133,11 +136,11 @@ export default class Field extends Vue {
   @Prop({ default: null })
   lastInteractCharacter?: ICharacter
 
-  @Prop({ default: null })
-  _winnerCell!: { host: ILatlng; guest: ILatlng }
-
   @Prop({ default: (_: ICharacter | undefined) => false })
   isMyCharacter!: (character: ICharacter | undefined) => boolean
+
+  @Prop({ default: () => {} })
+  charactersLatLngMap!: IField
 
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
@@ -195,7 +198,11 @@ export default class Field extends Vue {
         if (cellCharacterId.length > 0) {
           this.setInteractiveCharacter(cellCharacterId)
           if (!this.interactiveCharacter) return
-          this.movableArea = fillMovableArea(latLng, this.interactiveCharacter)
+          this.movableArea = fillMovableArea(
+            latLng,
+            this.interactiveCharacter,
+            this.charactersLatLngMap
+          )
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
           this.resetCharacterState()
@@ -237,7 +244,11 @@ export default class Field extends Vue {
       this.isMyCharacter(this.interactiveCharacter) &&
       this.interactiveCharacter.actionState.isEnd === false
     ) {
-      this.updateInteractiveCharacter({ latLng })
+      this.updateInteractiveCharacter({
+        ...this.interactiveCharacter,
+        latLng,
+        lastLatLng: this.interactiveCharacter.latLng
+      })
       this.setModal(true)
     }
 
@@ -280,8 +291,9 @@ export default class Field extends Vue {
   ) {
     if (this.interactiveCharacter === undefined) return
     this.updateInteractiveCharacter({
-      id: this.interactiveCharacter.id,
+      ...this.interactiveCharacter,
       actionState: {
+        ...this.interactiveCharacter.actionState,
         name: actionType,
         itemId
       }
@@ -303,8 +315,13 @@ export default class Field extends Vue {
       )
       if (targetCharacter) {
         if (this.isMyCharacter(targetCharacter)) return
-        this.interactiveCharacter.actionState.interactLatLng =
-          targetCharacter.latLng
+        this.updateInteractiveCharacter({
+          ...this.interactiveCharacter,
+          actionState: {
+            ...this.interactiveCharacter.actionState,
+            interactLatLng: targetCharacter.latLng
+          }
+        })
         this.onFinishAction(this.interactiveCharacter)
       } else {
         this.resetCharacterState()
@@ -331,6 +348,7 @@ export default class Field extends Vue {
       id: this.battleId,
       lastInteractCharacter: interactiveCharacter
     })
+    this.$emit('setcharactersLatLngMap', interactiveCharacter)
     await this.applyInteractiveCharacterStore(interactiveCharacter)
     this.resetCharacterState()
   }
@@ -358,14 +376,15 @@ export default class Field extends Vue {
   }
 
   @Watch('lastInteractCharacter')
-  onChangeLastInteractCharacter(attacker: ICharacter | undefined) {
-    if (!attacker) return
-    const attackerEl = document.getElementById(attacker.id)
-    if (!attackerEl) return
-    switch (attacker.actionState.name) {
+  onChangeLastInteractCharacter(interacter: ICharacter | undefined) {
+    if (!interacter) return
+    const interacterEl = document.getElementById(interacter.id)
+    if (!interacterEl) return
+    switch (interacter.actionState.name) {
       case 'attack':
-        this.attackCharacter(attackerEl, attacker)
+        this.attackCharacter(interacterEl, interacter)
     }
+    this.$emit('setcharactersLatLngMap', interacter)
   }
 
   async attackCharacter(attackerEl: HTMLElement, attacker: ICharacter) {
@@ -404,9 +423,11 @@ export default class Field extends Vue {
       })
     }
     const finalDamageTakenCharacter = onEndCalculateDamage(damageTakenCharacter)
-    if (damageTakenCharacter.hp <= 0) {
-      damageTakenCharacter.latLng = { x: -1, y: -1 }
+    if (finalDamageTakenCharacter.hp <= 0) {
+      finalDamageTakenCharacter.lastLatLng = finalDamageTakenCharacter.latLng
+      finalDamageTakenCharacter.latLng = { x: -1, y: -1 }
     }
+    this.$emit('setcharactersLatLngMap', finalDamageTakenCharacter)
     await this.updateCharacter({
       battleId: this.battleId,
       character: finalDamageTakenCharacter
@@ -433,7 +454,11 @@ export default class Field extends Vue {
       onSequncialAttack(playerCharacter) {
         self.updateInteractiveCharacter({
           ...playerCharacter,
-          actionState: { isEnd: false }
+          actionState: {
+            ...playerCharacter.actionState,
+            name: '',
+            isEnd: false
+          }
         })
         self.setModal(true)
       }

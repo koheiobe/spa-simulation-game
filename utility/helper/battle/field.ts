@@ -113,15 +113,46 @@ export const fillDeployableArea = (
 
 export const fillMovableArea = (
   latLng: ILatlng,
-  character: ICharacter
+  character: ICharacter,
+  charactersLatLngMap: IField
 ): { [key: string]: Boolean } => {
   const { moveDistance, skill } = character
   const movableArea: { [key: string]: Boolean } = {}
   movableArea[`${latLng.y}_${latLng.x}`] = true
-  computeMovableCell(latLng, moveDistance, movableArea, { x: 1, y: 0 }, skill)
-  computeMovableCell(latLng, moveDistance, movableArea, { x: -1, y: 0 }, skill)
-  computeMovableCell(latLng, moveDistance, movableArea, { x: 0, y: 1 }, skill)
-  computeMovableCell(latLng, moveDistance, movableArea, { x: 0, y: -1 }, skill)
+  const field: IField = fieldJson
+  const mergedField = Object.assign({}, field, charactersLatLngMap)
+  computeMovableCell(
+    latLng,
+    moveDistance,
+    movableArea,
+    { x: 1, y: 0 },
+    skill,
+    mergedField
+  )
+  computeMovableCell(
+    latLng,
+    moveDistance,
+    movableArea,
+    { x: -1, y: 0 },
+    skill,
+    mergedField
+  )
+  computeMovableCell(
+    latLng,
+    moveDistance,
+    movableArea,
+    { x: 0, y: 1 },
+    skill,
+    mergedField
+  )
+  computeMovableCell(
+    latLng,
+    moveDistance,
+    movableArea,
+    { x: 0, y: -1 },
+    skill,
+    mergedField
+  )
 
   return movableArea
 }
@@ -131,18 +162,20 @@ const computeMovableCell = (
   moveDistance: number,
   movableArea: { [key: string]: Boolean },
   direction: ILatlng,
-  skill: Array<SkillType>
+  skill: Array<SkillType>,
+  mergedField: IField
 ) => {
   const updatedLatLng = {
     x: latLng.x + direction.x,
     y: latLng.y + direction.y
   }
-  const field: IField = fieldJson
+
   let updatedMovepoint = moveDistance
-  const cell = field[`${updatedLatLng.y}_${updatedLatLng.x}`]
+  const cell = mergedField[`${updatedLatLng.y}_${updatedLatLng.x}`]
   if (cell) {
     switch (cell.type) {
       case 'mountain':
+      case 'character':
         if (skill.includes('fly')) {
           updatedMovepoint = moveDistance - 1
         } else {
@@ -168,7 +201,8 @@ const computeMovableCell = (
         x: -1,
         y: 0
       },
-      skill
+      skill,
+      mergedField
     )
   if (direction.x !== -1)
     computeMovableCell(
@@ -179,7 +213,8 @@ const computeMovableCell = (
         x: 1,
         y: 0
       },
-      skill
+      skill,
+      mergedField
     )
   if (direction.y !== 1)
     computeMovableCell(
@@ -190,7 +225,8 @@ const computeMovableCell = (
         x: 0,
         y: -1
       },
-      skill
+      skill,
+      mergedField
     )
   if (direction.y !== -1)
     computeMovableCell(
@@ -201,7 +237,8 @@ const computeMovableCell = (
         x: 0,
         y: 1
       },
-      skill
+      skill,
+      mergedField
     )
 }
 
