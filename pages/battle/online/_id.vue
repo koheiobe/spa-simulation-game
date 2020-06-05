@@ -18,6 +18,7 @@
       :deployable-area="deployableArea"
       :is-deploy-mode-end="isDeployModeEnd"
       :is-my-turn="isMyTurn"
+      :is-my-character="isMyCharacter"
       :field="field"
       :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
@@ -170,16 +171,11 @@ export default class OnlineBattleRoom extends Vue {
       return
     }
     if (!this.isDeployModeEnd) {
+      this.startDeployMode()
+    }
+    if (this.battleRoom.turn.number === 0) {
       // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
       this.initCharacters()
-      this.startDeployMode()
-      // TODO: どっちが先行なのか、どうやって決めるかは未定
-      const turnNumber = this.battleRoom.turn.number
-      this.setTurnInfo({
-        id: this.storeUser.battleId,
-        uid: this.storeUser.uid,
-        turnNumber: turnNumber === 0 ? 1 : turnNumber
-      })
     } else {
       this.syncVuexFirestoreCharacters(this.battleRoom.id)
     }
@@ -236,14 +232,17 @@ export default class OnlineBattleRoom extends Vue {
     )
       return
     this.deployableArea = {}
-
     await this.updateCharacters({
       battleId: this.storeUser.battleId,
-      characters: this.storeCharacters
+      // 敵キャラクターまで初期化すると、ローカルに存在する敵キャラクターのデータで
+      // 敵がすでに変更したfirestore上の敵キャラクターデータを上書きしてしまうためfilterする
+      characters: this.storeCharacters.filter((character) =>
+        this.isMyCharacter(character)
+      )
     })
+    this.syncVuexFirestoreCharacters(this.storeUser.battleId)
     // Field.vueのdeployCharacterのthis.setCharacterParamをすると
     // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
-    this.syncVuexFirestoreCharacters(this.storeUser.battleId)
     if (this.isHostOrGuest !== '') {
       this.setDeployModeEnd({
         id: this.storeUser.battleId,
@@ -251,6 +250,16 @@ export default class OnlineBattleRoom extends Vue {
         bool: true
       })
     }
+  }
+
+  onFirstDeployEnd() {
+    // TODO: どっちが先行なのか、どうやって決めるかは未定
+    const turnNumber = this.battleRoom.turn.number
+    this.setTurnInfo({
+      id: this.battleRoom.id,
+      uid: this.storeUser.uid,
+      turnNumber: turnNumber === 0 ? 1 : turnNumber
+    })
   }
 
   onTurnStart() {
@@ -313,6 +322,13 @@ export default class OnlineBattleRoom extends Vue {
     window.setTimeout(this.onEndBattle, 5000)
   }
 
+  isMyCharacter(character: ICharacter | undefined) {
+    if (!character) return false
+    const matchedSuffix = character.id.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
+  }
+
   async onEndBattle() {
     if (!this.storeUser.battleId) return
     await this.deleteBattleRoom(this.storeUser.battleId).catch((e) =>
@@ -328,6 +344,18 @@ export default class OnlineBattleRoom extends Vue {
     window.addEventListener('popstate', (_) => {
       history.go(1)
     })
+  }
+
+  @Watch('battleRoom')
+  onChangeIsDeployModeEnd(battleRoom: IBattleRoomRes) {
+    if (
+      battleRoom &&
+      battleRoom.turn.number === 0 &&
+      battleRoom.host.isDeployModeEnd &&
+      battleRoom.guest.isDeployModeEnd
+    ) {
+      this.onFirstDeployEnd()
+    }
   }
 
   @Watch('winnerUid')

@@ -59,10 +59,10 @@ export default class DevFieldUi extends Vue {
 .container {
   display: flex;
   justify-content: center;
-  background-color: white;
 }
 .pngList {
   list-style: none;
+  background-color: white;
   li {
     cursor: pointer;
     display: inline-block;

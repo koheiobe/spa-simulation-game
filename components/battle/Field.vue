@@ -32,7 +32,7 @@
       <BattleDialogue
         :character="interactiveCharacter"
         :is-my-turn="isMyTurn"
-        :is-my-character="isMyCharacter(interactiveCharacter)"
+        :is-my-character="() => isMyCharacter(interactiveCharacter)"
         @onSelect="onSelectBattleAction"
       />
     </Modal>
@@ -109,12 +109,6 @@ export default class Field extends Vue {
     character: ICharacter
   }) => Promise<void>
 
-  @CharacterModule.Action('updateCharacters')
-  private updateCharacters!: (dbInfo: {
-    battleId: string
-    characters: ICharacter[]
-  }) => Promise<null>
-
   @CharacterModule.Mutation('setInteractiveCharacter')
   private setInteractiveCharacter!: (cellCharacterId: string) => void
 
@@ -141,6 +135,9 @@ export default class Field extends Vue {
 
   @Prop({ default: null })
   _winnerCell!: { host: ILatlng; guest: ILatlng }
+
+  @Prop({ default: (_: ICharacter | undefined) => false })
+  isMyCharacter!: (character: ICharacter | undefined) => boolean
 
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
@@ -486,13 +483,6 @@ export default class Field extends Vue {
     } else {
       return existCharacter
     }
-  }
-
-  isMyCharacter(character: ICharacter | undefined) {
-    if (!character) return false
-    const matchedSuffix = character.id.match(/-.+()$/)
-    if (!matchedSuffix) return false
-    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
   }
 
   // 開発用

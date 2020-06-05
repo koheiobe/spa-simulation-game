@@ -52,7 +52,7 @@ export interface ICharacter {
   }
 }
 
-export interface IBattleRoom {
+interface IBattleRoom {
   host: {
     uid: IUser['uid']
     name: IUser['name']
