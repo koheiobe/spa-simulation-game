@@ -1,7 +1,7 @@
 import { ICharacter } from '~/types/store'
 
 // id は ~/pages/online/_id で初期値 + guest か host の文字列を追加され初期化される
-const characters: { [characterName: string]: ICharacter } = {
+export const CHARACTERS: { [characterName: string]: ICharacter } = {
   centaur: {
     name: 'Centaur',
     maxHp: 20,
@@ -928,4 +928,11 @@ const characters: { [characterName: string]: ICharacter } = {
   }
 }
 
-export default characters
+export const EXCEPTION_CHARACTERS_NAME = [
+  'Robot',
+  'Dinosaur',
+  'LochNessMonster',
+  'Narwhal',
+  'Dragon',
+  'Wizard'
+]

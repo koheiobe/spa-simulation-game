@@ -43,7 +43,7 @@
 import Component from 'vue-class-component'
 import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import CharacterList from '~/constants/characters'
+import { CHARACTERS } from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { ActionType, IField } from '~/types/battle'
@@ -58,6 +58,7 @@ import {
   hostWinCell,
   guestWinCell
 } from '~/utility/helper/battle/field'
+import { getRandomCharacters } from '~/utility/helper/battle/character'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
@@ -193,10 +194,21 @@ export default class OnlineBattleRoom extends Vue {
     this.preventHistoryBack()
   }
 
-  initCharacters() {
+  async initCharacters() {
     if (!this.storeUser.battleId) return
 
-    const characterList = CharacterList as any
+    const firestoreCharacters = await this.syncVuexFirestoreCharacters(
+      this.storeUser.battleId
+    )
+
+    if (
+      firestoreCharacters.some((character) =>
+        this.isMyCharacter(character as ICharacter)
+      )
+    )
+      return firestoreCharacters
+
+    const characterList = CHARACTERS as { [name: string]: ICharacter }
     const characters = [] as ICharacter[]
     const hostOrGuest = this.isHostOrGuest
     Object.keys(characterList).forEach((key) => {
@@ -205,11 +217,13 @@ export default class OnlineBattleRoom extends Vue {
         id: characterList[key].id + '-' + hostOrGuest
       })
     })
+    const randomCharacters = getRandomCharacters(characters)
+
     this.updateCharacters({
       battleId: this.storeUser.battleId,
-      characters
+      characters: randomCharacters
     })
-    return this.syncVuexFirestoreCharacters(this.storeUser.battleId)
+    return randomCharacters
   }
 
   syncVuexFirestoreCharacters(battleId: string) {
