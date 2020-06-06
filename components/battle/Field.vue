@@ -33,6 +33,7 @@
         :character="interactiveCharacter"
         :is-my-turn="isMyTurn"
         :is-my-character="() => isMyCharacter(interactiveCharacter)"
+        :is-deploying="isDeploying"
         @onSelect="onSelectBattleAction"
       />
     </Modal>
@@ -164,7 +165,7 @@ export default class Field extends Vue {
       return this.movableArea[`${latLng.y}_${latLng.x}`] ? 'move' : null
     } else if (this.interactiveArea.length > 0) {
       return this.isInteractiveArea(latLng) ? 'interact' : null
-    } else if (Object.keys(this.deployableArea).length > 0) {
+    } else if (this.isDeploying) {
       return this.deployableArea[`${latLng.y}_${latLng.x}`] ? 'deploy' : null
     }
     return null
@@ -182,11 +183,12 @@ export default class Field extends Vue {
       this.mergeField(latLng, this.selectedFieldIcon)
       return
     }
+    if (this.isDeploying) {
+      if (cellType === 'deploy') this.deployCharacter(latLng, cellCharacterId)
+      return
+    }
 
     switch (cellType) {
-      case 'deploy':
-        this.deployCharacter(latLng, cellCharacterId)
-        break
       case 'move':
         this.moveCharacter(latLng, cellCharacterId)
         break
@@ -194,7 +196,7 @@ export default class Field extends Vue {
         this.interactCharacter(cellCharacterId)
         break
       default:
-        // 通常戦闘モード キャラクターを選択するステージ
+        // キャラクターを選択する
         if (cellCharacterId.length > 0) {
           this.setInteractiveCharacter(cellCharacterId)
           if (!this.interactiveCharacter) return
@@ -211,6 +213,10 @@ export default class Field extends Vue {
   }
 
   selectDeployCharacter(id: string) {
+    if (this.deployCharacterId === id) {
+      this.setInteractiveCharacter(id)
+      this.setModal(true)
+    }
     this.deployCharacterId = id
   }
 
@@ -533,6 +539,10 @@ export default class Field extends Vue {
     return this.isHostOrGuest === 'host'
       ? this._winnerCell.host
       : this._winnerCell.guest
+  }
+
+  get isDeploying() {
+    return Object.keys(this.deployableArea).length > 0
   }
 }
 </script>

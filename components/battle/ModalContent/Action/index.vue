@@ -3,13 +3,13 @@
     <div :class="$style.characterNameContainer">Name: {{ characterName }}</div>
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
       <li
-        v-if="isMyTurn && isMyCharacter && !isEnd"
+        v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
         @click="$emit('onSelect', 'attack')"
       >
         攻撃
       </li>
       <li
-        v-if="isMyTurn && isMyCharacter && !isEnd"
+        v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
         @click="$emit('onSelect', 'wait')"
       >
         待機
@@ -18,7 +18,7 @@
       <!-- <li v-if="isMyTurn" @click="selectedAction = 'item'">アイテム</li> -->
       <li @click="selectedAction = 'detail'">能力</li>
     </ul>
-    <div v-if="selectedAction === 'item'">
+    <!-- <div v-if="selectedAction === 'item'">
       <ul :class="$style.itemOptions">
         <template v-for="(item, idx) in itemList">
           <li
@@ -40,7 +40,7 @@
         </template>
       </ul>
       <b-button @click="backToTop">もどる</b-button>
-    </div>
+    </div> -->
     <div v-if="selectedAction === 'detail'">
       <Detail :character="character" />
     </div>
@@ -69,6 +69,9 @@ export default class BattleDialogue extends Vue {
 
   @Prop({ default: () => {} })
   isMyCharacter!: boolean
+
+  @Prop({ default: false })
+  isDeploying!: boolean
 
   public itemList: string[] = ['dd', 'dd', 'dd', 'dd', 'dd', 'dd']
   public selectedAction: 'item' | 'detail' | 'none' = 'none'
