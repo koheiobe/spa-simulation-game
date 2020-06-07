@@ -29,17 +29,23 @@ export const actions: ActionTree<IRootState, IRootState> = {
     return this.$firestore.createBattleRoom(userInfo.uid, userInfo.name)
   },
   setUserBattleId(_, userInfo: { uid: string; battleId: string }) {
-    this.$firestore.setUserBattleId(userInfo.uid, userInfo.battleId)
+    return this.$firestore.setUserBattleId(userInfo.uid, userInfo.battleId)
   },
   deleteUserBattleId(_, userUid: string | undefined) {
     if (!userUid) return
     this.$firestore.deleteUserBattleId(userUid)
   },
+  setBattleStartAt(
+    _,
+    battleInfo: { hostOrGuest: 'host' | 'guest'; id: string }
+  ) {
+    return this.$firestore.setBattleStartAt(battleInfo)
+  },
   setBattleRoomGuest(
     _,
     userInfo: { uid: string; name: string; battleId: string }
   ) {
-    this.$firestore.setBattleRoomGuest(userInfo)
+    return this.$firestore.setBattleRoomGuest(userInfo)
   },
   setDeployModeEnd(
     _,

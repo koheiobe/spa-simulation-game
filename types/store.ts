@@ -52,19 +52,16 @@ export interface ICharacter {
   }
 }
 
+interface battleRoomUser {
+  uid: IUser['uid']
+  name: IUser['name']
+  opponentOfflineTimes: number
+  isDeployModeEnd: boolean
+}
+
 interface IBattleRoom {
-  host: {
-    uid: IUser['uid']
-    name: IUser['name']
-    opponentOfflineTimes: number
-    isDeployModeEnd: boolean
-  }
-  guest: {
-    uid: IUser['uid']
-    name: IUser['name']
-    opponentOfflineTimes: number
-    isDeployModeEnd: boolean
-  }
+  host: battleRoomUser
+  guest: battleRoomUser
   winnerUid: string
   turn: {
     uid: string
@@ -77,6 +74,20 @@ interface IBattleRoom {
 
 // Firestoreの/battles/:id の初期化パラメーター
 export interface IBattleRoomReq extends IBattleRoom {
+  host: {
+    uid: IUser['uid']
+    name: IUser['name']
+    opponentOfflineTimes: number
+    isDeployModeEnd: boolean
+    battleStartAt: firebase.firestore.FieldValue | null
+  }
+  guest: {
+    uid: IUser['uid']
+    name: IUser['name']
+    opponentOfflineTimes: number
+    isDeployModeEnd: boolean
+    battleStartAt: firebase.firestore.FieldValue | null
+  }
   turn: {
     uid: string
     number: number
@@ -87,6 +98,20 @@ export interface IBattleRoomReq extends IBattleRoom {
 
 // Firestoreの/battles/:id のレスポンス
 export interface IBattleRoomRes extends IBattleRoom {
+  host: {
+    uid: IUser['uid']
+    name: IUser['name']
+    opponentOfflineTimes: number
+    isDeployModeEnd: boolean
+    battleStartAt: firebase.firestore.Timestamp | null
+  }
+  guest: {
+    uid: IUser['uid']
+    name: IUser['name']
+    opponentOfflineTimes: number
+    isDeployModeEnd: boolean
+    battleStartAt: firebase.firestore.Timestamp | null
+  }
   turn: {
     uid: string
     number: number

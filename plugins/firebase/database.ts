@@ -52,14 +52,14 @@ class Firestore {
         name,
         opponentOfflineTimes: 0,
         isDeployModeEnd: false,
-        battleStartAt: firebase.firestore.FieldValue.serverTimestamp()
+        battleStartAt: null
       },
       guest: {
         uid: '',
         name: '',
         opponentOfflineTimes: 0,
         isDeployModeEnd: false,
-        battleStartAt: firebase.firestore.FieldValue.serverTimestamp()
+        battleStartAt: null
       },
       winnerUid: '',
       turn: {
@@ -106,6 +106,15 @@ class Firestore {
       .update({
         'guest.name': userInfo.name,
         'guest.uid': userInfo.uid
+      })
+  }
+
+  setBattleStartAt(battleInfo: { hostOrGuest: 'host' | 'guest'; id: string }) {
+    return db
+      .collection('battles')
+      .doc(battleInfo.id)
+      .update({
+        [`${battleInfo.hostOrGuest}.battleStartAt`]: new Date()
       })
   }
 

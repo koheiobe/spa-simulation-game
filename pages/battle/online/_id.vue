@@ -10,6 +10,8 @@
       :turn-uid="turnUid"
       :set-opponent-offline-times="setOpponentOfflineTimes"
       :set-battle-room-winner="setBattleRoomWinner"
+      :is-deploy-mode-end="isDeployModeEnd"
+      :battle-start-at="battleStartAt"
       @surrender="onSurrender"
       @turnEnd="onTurnEnd"
       @opponentOfflineThreeTimes="setBattleRoomWinner"
@@ -50,7 +52,7 @@ import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { ActionType, IField } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
-import Header from '~/components/battle/Header.vue'
+import Header from '~/components/battle/header/index.vue'
 import field from '~/assets/field.json'
 import {
   hostDeployableAreas,
@@ -136,17 +138,23 @@ export default class OnlineBattleRoom extends Vue {
     lastInteractCharacter: ICharacter | null
   }) => {}
 
+  @BattleRoomModule.Action('setBattleStartAt')
+  private setBattleStartAt!: (battleInfo: {
+    id: string
+    hostOrGuest: 'host' | 'guest'
+  }) => {}
+
   private TIME_LIMIT = 45
   private NEARLY_TIME_OUT = 35
 
   public charactersLatLngMap: IField = {}
   public battleId: string = ''
-
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
   public deployableArea: { [key: string]: Boolean } = {}
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
+  public battleStartAt: number = 0
   public winnerCell = {
     host: hostWinCell,
     guest: guestWinCell
@@ -162,9 +170,23 @@ export default class OnlineBattleRoom extends Vue {
       this.$router.push('/battle/online')
       return
     }
+    const battleStartAt = this.battleRoom[this.isHostOrGuest].battleStartAt
+    if (battleStartAt) {
+      this.battleStartAt = Math.round(
+        (new Date().getTime() - battleStartAt.toDate().getTime()) / 1000
+      )
+    } else {
+      this.setBattleStartAt({
+        id: this.battleId,
+        hostOrGuest: this.isHostOrGuest
+      })
+      this.battleStartAt = 0
+    }
+
     if (!this.isDeployModeEnd) {
       this.startDeployMode()
     }
+
     const characters =
       this.battleRoom.turn.number === 0
         ? // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定

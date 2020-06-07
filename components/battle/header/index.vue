@@ -85,6 +85,12 @@ export default class BattleHeader extends Vue {
     winnerUid: string
   }) => void
 
+  @Prop({ default: false })
+  isBattleModeEnd!: boolean
+
+  @Prop({ default: 0 })
+  battleStartAt!: number
+
   private lastIntervalId: NodeJS.Timeout | undefined = undefined
 
   public isOptionModalOpen: boolean = false
