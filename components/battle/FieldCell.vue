@@ -25,6 +25,7 @@
         :id="props.character.id"
         :character="props.character"
         :is-end="props.character.actionState.isEnd"
+        :is-host-or-guest="isHostOrGuest"
         :width="30"
       />
       <b-tooltip
@@ -78,6 +79,11 @@ export default {
     field: {
       default: (): IField | null => null,
       type: Object,
+      require: true
+    },
+    isHostOrGuest: {
+      default: '',
+      type: String,
       require: true
     }
   },

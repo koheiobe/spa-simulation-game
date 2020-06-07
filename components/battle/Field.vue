@@ -5,6 +5,7 @@
       :characters="storeCharacters"
       :selected-character-id="deployCharacterId"
       :is-my-character="isMyCharacter"
+      :is-host-or-guest="isHostOrGuest"
       @onClickCharacter="selectDeployCharacter"
       @surrender="$emit('surrender')"
     />
@@ -14,6 +15,7 @@
           <FieldCell
             :cell-type="decideCellType({ x, y })"
             :character="getCharacterAtCell({ x, y })"
+            :is-host-or-guest="isHostOrGuest"
             :lat-lng="{ x, y }"
             :field="field"
             @onClick="onClickCell"
@@ -69,7 +71,6 @@ import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
-
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
@@ -133,7 +134,7 @@ export default class Field extends Vue {
   field!: IField
 
   @Prop({ default: '' })
-  isHostOrGuest!: 'host' | 'guest' | ''
+  isHostOrGuest!: 'host' | 'guest'
 
   @Prop({ default: null })
   lastInteractCharacter?: ICharacter
@@ -144,6 +145,9 @@ export default class Field extends Vue {
   @Prop({ default: () => {} })
   charactersLatLngMap!: IField
 
+  @Prop({ default: '' })
+  battleId!: string
+
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
   // public deployableArea: { [key: string]: Boolean } = {}
@@ -152,14 +156,10 @@ export default class Field extends Vue {
   // TODO: 各characterの移動距離と置き換える
   public moveNum = 8
   public isBattleModalOpen: boolean = false
-  private battleId: string = ''
+
   // 開発用
   private isDevMode = false
   private selectedFieldIcon = ''
-
-  mounted() {
-    this.battleId = this.$route.params.id
-  }
 
   decideCellType(latLng: ILatlng): CellType {
     if (Object.keys(this.movableArea).length > 0) {

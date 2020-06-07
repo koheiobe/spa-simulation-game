@@ -22,6 +22,7 @@
               <CharacterRenderer
                 :character="character"
                 :is-deployed="isDeployed(character)"
+                :is-host-or-guest="isHostOrGuest"
                 @click.native.stop="onClickCharacter(character.id)"
               />
             </div>
@@ -50,6 +51,9 @@ import { ICharacter } from '~/types/store'
   }
 })
 export default class SideMenu extends Vue {
+  @Prop({ default: '' })
+  isHostOrGuest!: 'host' | 'guest'
+
   @Prop({ default: () => [] })
   characters!: ICharacter[]
 

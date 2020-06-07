@@ -10,18 +10,6 @@ export const state = (): IBattleRoomState => ({
 export const getters: GetterTree<IBattleRoomState, IRootState> = {
   getBattles: (state) => {
     return state.list
-  },
-  isHostOrGuest: (state, _, RootState) => {
-    if (!state.battleRoom) return ''
-    return state.battleRoom.host.uid === RootState.user.loginUser.uid
-      ? 'host'
-      : 'guest'
-  },
-  isDeployModeEnd: (state, getters) => {
-    if (!state.battleRoom) return ''
-    return getters.isHostOrGuest === 'host'
-      ? state.battleRoom.host.isDeployModeEnd
-      : state.battleRoom.guest.isDeployModeEnd
   }
 }
 

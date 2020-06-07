@@ -8,7 +8,7 @@
         v-for="battleRoom in battleRooms"
         :key="battleRoom.id"
         :class="$style.listItem"
-        @click="goToBattleRoom(battleRoom.id)"
+        @click="onClickBattleRoomList(battleRoom.id)"
         >{{ battleRoom.host && battleRoom.host.name }}</b-list-group-item
       >
     </b-list-group>
@@ -82,6 +82,9 @@ export default class OnlineBattle extends Vue {
   @BattleRoomModule.Action('deleteBattleRoom')
   private deleteBattleRoom!: (battleId: string) => Promise<null>
 
+  @BattleRoomModule.Action('bindBattleRoomRef')
+  private bindBattleRoomRef!: (ref: any) => void
+
   private isOpneWaitingMatchModal: boolean = false
   private setTimeId: NodeJS.Timeout | null = null
 
@@ -112,14 +115,18 @@ export default class OnlineBattle extends Vue {
     this.isOpneWaitingMatchModal = true
   }
 
-  goToBattleRoom(battleId: string) {
-    this.setUserBattleId({ uid: this.storeUser.uid, battleId })
-    this.setBattleRoomGuest({
+  async onClickBattleRoomList(battleId: string) {
+    await this.setBattleRoomInfo(battleId)
+    this.goToBattleRoom()
+  }
+
+  async setBattleRoomInfo(battleId: string) {
+    await this.setUserBattleId({ uid: this.storeUser.uid, battleId })
+    await this.setBattleRoomGuest({
       uid: this.storeUser.uid,
       name: this.storeUser.name,
       battleId
     })
-    this.$router.push(`/battle/online/${battleId}`)
   }
 
   async cancelHosting() {
@@ -142,11 +149,20 @@ export default class OnlineBattle extends Vue {
     }
   }
 
+  async goToBattleRoom() {
+    if (this.storeUser.battleId) {
+      await this.bindBattleRoomRef(
+        this.$firestore.getBattleRoomRef(this.storeUser.battleId)
+      )
+      this.$router.push(`/battle/online/${this.storeUser.battleId}`)
+    }
+  }
+
   @Watch('isBattleMatched')
   onMatched(cur: boolean) {
     if (cur) {
       this.setTimeId = setTimeout(() => {
-        this.$router.push(`/battle/online/${this.storeUser.battleId}`)
+        this.goToBattleRoom()
       }, 1000)
     }
   }

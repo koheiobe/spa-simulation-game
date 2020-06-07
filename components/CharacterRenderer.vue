@@ -17,7 +17,6 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
-import { namespace } from 'vuex-class'
 import Alien from '~/assets/img/character/alien.svg'
 import Centaur from '~/assets/img/character/centaur.svg'
 import Cerberus from '~/assets/img/character/cerberus.svg'
@@ -67,9 +66,7 @@ import Wizard from '~/assets/img/character/wizard.svg'
 import WoodCutter from '~/assets/img/character/woodcutter.svg'
 import Yeti from '~/assets/img/character/yeti.svg'
 import Zombie from '~/assets/img/character/zombie.svg'
-import { IBattleRoomRes, ICharacter } from '~/types/store'
-
-const BattleRoomModule = namespace('battleRoom')
+import { ICharacter } from '~/types/store'
 
 @Component({
   components: {
@@ -125,11 +122,8 @@ const BattleRoomModule = namespace('battleRoom')
   }
 })
 export default class CharacterRenderer extends Vue {
-  @BattleRoomModule.State('battleRoom')
-  private battleRoom!: IBattleRoomRes
-
-  @BattleRoomModule.Getter('isHostOrGuest')
-  private isHostOrGuest!: 'host' | 'guest' | ''
+  @Prop({ default: '' })
+  isHostOrGuest!: 'host' | 'guest'
 
   @Prop({ default: () => {} })
   character!: ICharacter
