@@ -47,12 +47,19 @@ class Firestore {
 
   createBattleRoom(uid: string, name: string) {
     const battleRoom: IBattleRoomReq = {
-      host: { uid, name, opponentOfflineTimes: 0, isDeployModeEnd: false },
+      host: {
+        uid,
+        name,
+        opponentOfflineTimes: 0,
+        isDeployModeEnd: false,
+        battleStartAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
       guest: {
         uid: '',
         name: '',
         opponentOfflineTimes: 0,
-        isDeployModeEnd: false
+        isDeployModeEnd: false,
+        battleStartAt: firebase.firestore.FieldValue.serverTimestamp()
       },
       winnerUid: '',
       turn: {
@@ -74,7 +81,8 @@ class Firestore {
   }
 
   setUserBattleId(uid: string, battleId: string) {
-    db.collection('users')
+    return db
+      .collection('users')
       .doc(uid)
       .set({ battleId }, { merge: true })
   }
@@ -92,13 +100,12 @@ class Firestore {
     name: string
     battleId: string
   }) {
-    db.collection('battles')
+    return db
+      .collection('battles')
       .doc(userInfo.battleId)
       .update({
-        guest: {
-          name: userInfo.name,
-          uid: userInfo.uid
-        }
+        'guest.name': userInfo.name,
+        'guest.uid': userInfo.uid
       })
   }
 
