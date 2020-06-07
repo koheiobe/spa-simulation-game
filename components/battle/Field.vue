@@ -21,12 +21,13 @@
           </FieldCell>
         </div>
       </div>
-      <DevFieldUi
+      <!-- フィールド開発用UI -->
+      <!-- <DevFieldUi
         :is-dev-mode="isDevMode"
         @onChangeDevMode="() => (isDevMode = !isDevMode)"
         @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
         @saveFieldJson="saveFieldJson"
-      />
+      /> -->
     </div>
     <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
