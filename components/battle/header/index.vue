@@ -1,36 +1,30 @@
 <template>
   <div :class="$style.container">
-    <div :class="$style.timerContainer">
-      <span :class="[isNearlyTimeOut ? $style.nearlyTimeOut : '']">{{
-        limitedTimer
-      }}</span>
-      /
-      {{ timeLimit }}
-    </div>
-    <div>
-      <b-button v-if="isMyTurn" variant="success">あなたのターンです</b-button>
-      <b-button v-else>あいてのターンです</b-button>
-    </div>
-    <div>
-      <b-button
-        variant="primary"
-        :disabled="!isMyTurn"
-        @click="$emit('turnEnd')"
-      >
-        ターン終了
-      </b-button>
-    </div>
-    <div>
-      <b-button variant="primary" @click="$emit('turnEnd')">
-        ターン交代(開発)
-      </b-button>
-    </div>
+    <Battle
+      v-if="isDeployModeEnd && turnNumber !== 0"
+      :battle-room="battleRoom"
+      :store-user="storeUser"
+      :is-my-turn="isMyTurn"
+      :turn-uid="turnUid"
+      :set-opponent-offline-times="setOpponentOfflineTimes"
+      :set-battle-room-winner="setBattleRoomWinner"
+      @turnEnd="$emit('turnEnd')"
+    />
+    <Deploy
+      v-else
+      :battle-room="battleRoom"
+      :store-user="storeUser"
+      :is-host-or-guest="isHostOrGuest"
+      :set-battle-room-winner="setBattleRoomWinner"
+      :set-battle-start-at="setBattleStartAt"
+      @deployEnd="$emit('deployEnd')"
+    />
     <div>
       <BIconGearFill :class="$style.gearIcon" @click="openOptionModal" />
     </div>
     <Modal :is-open="isOptionModalOpen" @onClickOuter="closeOptionModal">
       <Option
-        :turn-number="turnNumber"
+        :turn-number="String(turnNumber)"
         :is-my-turn="isMyTurn ? 'あなたのターンです' : '相手のターンです'"
         @surrender="$emit('surrender')"
       />
@@ -41,27 +35,25 @@
 <script lang="ts">
 import Component from 'vue-class-component'
 import { BIconGearFill } from 'bootstrap-vue'
-import { Vue, Prop, Watch } from 'vue-property-decorator'
-import { IBattleRoomRes, IUser } from '../../types/store'
-import Option from './ModalContent/Option.vue'
+import { Vue, Prop } from 'vue-property-decorator'
+import Option from '../ModalContent/Option.vue'
+import Battle from './battle.vue'
+import Deploy from './Deploy.vue'
+import { IBattleRoomRes, IUser } from '~/types/store'
 import Modal from '~/components/utility/Modal.vue'
 
 @Component({
   components: {
+    Battle,
+    Deploy,
     BIconGearFill,
     Modal,
     Option
   }
 })
-export default class BattleHeader extends Vue {
-  @Prop({ default: 0 })
-  timeLimit!: number
-
-  @Prop({ default: 0 })
-  nearlyTimeOut!: number
-
+export default class BattleRoomHeader extends Vue {
   @Prop({ default: undefined })
-  battleRoom?: IBattleRoomRes
+  battleRoom!: IBattleRoomRes
 
   @Prop({ default: undefined })
   storeUser?: IUser
@@ -72,105 +64,33 @@ export default class BattleHeader extends Vue {
   @Prop({ default: '' })
   turnUid!: string
 
-  @Prop({ default: Function })
+  @Prop({ default: undefined })
   setOpponentOfflineTimes!: (battleRoomInfo: {
     id: string
     hostOrGuest: 'host' | 'guest'
     offlineTimes: number
   }) => void
 
-  @Prop({ default: Function })
+  @Prop({ default: undefined })
   setBattleRoomWinner!: (battleRoomInfo: {
     id: string
     winnerUid: string
+    message?: string
+  }) => void
+
+  @Prop({ default: undefined })
+  setBattleStartAt!: (battleInfo: {
+    id: string
+    hostOrGuest: 'host' | 'guest'
   }) => void
 
   @Prop({ default: false })
-  isBattleModeEnd!: boolean
+  isDeployModeEnd!: boolean
 
-  @Prop({ default: 0 })
-  battleStartAt!: number
-
-  private lastIntervalId: NodeJS.Timeout | undefined = undefined
+  @Prop({ default: '' })
+  isHostOrGuest!: 'host' | 'guest'
 
   public isOptionModalOpen: boolean = false
-  public timer: number = 0
-  public isNearlyTimeOut: boolean = false
-
-  destroyed() {
-    if (this.lastIntervalId) {
-      clearInterval(this.lastIntervalId)
-    }
-  }
-
-  // TODO: turn機能を pages/_id 側に移植させる
-  // TODO: 開発に邪魔な機能なので、一時的にコメントアウト
-  // @Watch('turnUid', {
-  //   immediate: true
-  // })
-  // onChangeTurn() {
-  //   if (!this.battleRoom || !this.storeUser) return
-  //   if (this.lastIntervalId) {
-  //     clearInterval(this.lastIntervalId)
-  //   }
-  //   if (this.storeUser.uid === this.battleRoom.turn.uid) {
-  //     this.setMyTimer(this.battleRoom)
-  //   } else {
-  //     this.setOpponentTimer(this.battleRoom, this.storeUser)
-  //   }
-  // }
-
-  setMyTimer(battleRoom: IBattleRoomRes) {
-    this.timer = Math.round(
-      (new Date().getTime() - battleRoom.turn.updatedAt.toDate().getTime()) /
-        1000
-    )
-    this.lastIntervalId = setInterval(() => {
-      if (this.timer >= this.timeLimit) {
-        this.timer = 0
-        this.isNearlyTimeOut = false
-        this.$emit('turnEnd')
-      } else if (this.timer >= this.nearlyTimeOut) {
-        this.isNearlyTimeOut = true
-        this.timer += 1
-      } else {
-        this.timer += 1
-      }
-    }, 1000)
-  }
-
-  // 50秒たっても相手から反応がない場合オフラインとみなし、３回目で勝利となる
-  setOpponentTimer(battleRoom: IBattleRoomRes, user: IUser) {
-    this.lastIntervalId = setTimeout(() => {
-      if (!user.battleId) return
-      const hostOrGuest = user.uid === battleRoom.host.uid ? 'host' : 'guest'
-      const updatedOfflineTimes =
-        battleRoom[hostOrGuest].opponentOfflineTimes + 1
-      if (updatedOfflineTimes >= 3) {
-        this.setBattleRoomWinner({
-          id: user.battleId,
-          winnerUid: user.uid
-        })
-        return
-      }
-      this.$bvToast.toast(
-        `あと${3 - updatedOfflineTimes}ターンで勝利が確定します。`,
-        {
-          title: '相手がオフラインです',
-          variant: 'info',
-          autoHideDelay: 1500,
-          appendToast: true
-        }
-      )
-      this.setOpponentOfflineTimes({
-        id: user.battleId,
-        hostOrGuest,
-        offlineTimes: updatedOfflineTimes
-      })
-      this.$emit('turnEnd')
-      // TODO: 現在は５秒だが本番では50秒にする
-    }, 5000)
-  }
 
   openOptionModal() {
     this.isOptionModalOpen = true
@@ -181,11 +101,7 @@ export default class BattleHeader extends Vue {
   }
 
   get turnNumber() {
-    return this.battleRoom ? String(this.battleRoom.turn.number) : ''
-  }
-
-  get limitedTimer() {
-    return this.timer > this.timeLimit ? 0 : this.timer
+    return this.battleRoom.turn.number
   }
 }
 </script>
@@ -194,22 +110,10 @@ export default class BattleHeader extends Vue {
 .container {
   padding: 8px;
   display: flex;
-
-  .timerContainer {
-    background-color: white;
-    display: flex;
-    align-items: center;
-  }
-
-  div:not(:first-child) {
-    margin-left: 8px;
-  }
-
-  .nearlyTimeOut {
-    color: red;
-  }
+  align-items: center;
 
   .gearIcon {
+    cursor: pointer;
     width: 30px;
     height: 30px;
     fill: white;

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <p>{{ message }}</p>
     <p>winner: {{ winnerName }}</p>
   </div>
 </template>
@@ -12,6 +13,9 @@ import { Vue, Prop } from 'vue-property-decorator'
 export default class EndBattleDialogue extends Vue {
   @Prop({ default: '' })
   winnerName!: string
+
+  @Prop({ default: '' })
+  message!: string
 }
 </script>
 

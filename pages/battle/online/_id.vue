@@ -3,16 +3,16 @@
     <Header
       :class="$style.header"
       :store-user="storeUser"
-      :time-limit="TIME_LIMIT"
-      :nearly-time-out="NEARLY_TIME_OUT"
       :battle-room="battleRoom"
       :is-my-turn="isMyTurn"
       :turn-uid="turnUid"
       :set-opponent-offline-times="setOpponentOfflineTimes"
       :set-battle-room-winner="setBattleRoomWinner"
       :is-deploy-mode-end="isDeployModeEnd"
-      :battle-start-at="battleStartAt"
+      :is-host-or-guest="isHostOrGuest"
+      :set-battle-start-at="setBattleStartAt"
       @surrender="onSurrender"
+      @deployEnd="finishDeployMode"
       @turnEnd="onTurnEnd"
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
@@ -37,7 +37,7 @@
       >deployモード: {{ isDeployModeEnd ? 'オフ' : 'オン' }}</b-button
     >
     <Modal :is-open="isBattleFinishModalOpen">
-      <EndBattleDialogue :winner-name="winnerName" />
+      <EndBattleDialogue :message="winnerMessage" :winner-name="winnerName" />
     </Modal>
   </div>
 </template>
@@ -103,7 +103,7 @@ export default class OnlineBattleRoom extends Vue {
   }) => Promise<null>
 
   @BattleRoomModule.Action('setBattleRoomWinner')
-  private setBattleRoomWinner!: (battleRoomInfo: {
+  private _setBattleRoomWinner!: (battleRoomInfo: {
     id: string
     winnerUid: string
   }) => void
@@ -144,9 +144,6 @@ export default class OnlineBattleRoom extends Vue {
     hostOrGuest: 'host' | 'guest'
   }) => {}
 
-  private TIME_LIMIT = 45
-  private NEARLY_TIME_OUT = 35
-
   public charactersLatLngMap: IField = {}
   public battleId: string = ''
   public winnerName: string = ''
@@ -155,6 +152,7 @@ export default class OnlineBattleRoom extends Vue {
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
   public battleStartAt: number = 0
+  public winnerMessage = ''
   public winnerCell = {
     host: hostWinCell,
     guest: guestWinCell
@@ -169,18 +167,6 @@ export default class OnlineBattleRoom extends Vue {
     ) {
       this.$router.push('/battle/online')
       return
-    }
-    const battleStartAt = this.battleRoom[this.isHostOrGuest].battleStartAt
-    if (battleStartAt) {
-      this.battleStartAt = Math.round(
-        (new Date().getTime() - battleStartAt.toDate().getTime()) / 1000
-      )
-    } else {
-      this.setBattleStartAt({
-        id: this.battleId,
-        hostOrGuest: this.isHostOrGuest
-      })
-      this.battleStartAt = 0
     }
 
     if (!this.isDeployModeEnd) {
@@ -266,7 +252,7 @@ export default class OnlineBattleRoom extends Vue {
     })
   }
 
-  onFirstDeployEnd() {
+  startBattle() {
     // TODO: どっちが先行なのか、どうやって決めるかは未定
     const turnNumber = this.battleRoom.turn.number
     this.setTurnInfo({
@@ -305,19 +291,32 @@ export default class OnlineBattleRoom extends Vue {
     })
   }
 
+  setBattleRoomWinner(battleRoomInfo: {
+    id: string
+    winnerUid: string
+    message?: string
+  }) {
+    const { message, id, winnerUid } = battleRoomInfo
+    this.winnerMessage = message || ''
+    this._setBattleRoomWinner({
+      id,
+      winnerUid
+    })
+  }
+
   onSurrender() {
     const opponentUid =
       this.battleRoom.host.uid === this.storeUser.uid
         ? this.battleRoom.guest.uid
         : this.battleRoom.host.uid
-    this.setBattleRoomWinner({
+    this._setBattleRoomWinner({
       id: this.battleId,
       winnerUid: opponentUid
     })
   }
 
   onWin() {
-    this.setBattleRoomWinner({
+    this._setBattleRoomWinner({
       id: this.battleId,
       winnerUid: this.storeUser.uid
     })
@@ -385,7 +384,7 @@ export default class OnlineBattleRoom extends Vue {
       battleRoom.host.isDeployModeEnd &&
       battleRoom.guest.isDeployModeEnd
     ) {
-      this.onFirstDeployEnd()
+      this.startBattle()
     }
   }
 
