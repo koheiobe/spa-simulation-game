@@ -26,9 +26,9 @@ import Option from '../ModalContent/Option.vue'
 import { IBattleRoomRes, IUser } from '~/types/store'
 import Modal from '~/components/utility/Modal.vue'
 
-const NEARLY_TIME_OUT = 50
+const NEARLY_TIME_OUT = 170
 // 70秒以上経過しても相手からレスポンスがない場合、無条件で勝利とする
-const OPPONENT_OFFLINE_TIME = 70
+const OPPONENT_OFFLINE_TIME = 190
 
 @Component({
   components: {
@@ -64,7 +64,7 @@ export default class DeployHeader extends Vue {
 
   public timer: number = 0
   public isNearlyTimeOut: boolean = false
-  public TIME_LIMIT = 60
+  public TIME_LIMIT = 180
 
   created() {
     const battleStartAt = this.battleRoom[this.isHostOrGuest].battleStartAt
