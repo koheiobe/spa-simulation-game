@@ -12,16 +12,12 @@
       <b-button v-else>あいてのターンです</b-button>
     </div>
     <div>
-      <b-button
-        variant="primary"
-        :disabled="!isMyTurn"
-        @click="$emit('turnEnd')"
-      >
+      <b-button variant="primary" :disabled="!isMyTurn" @click="onTurnEnd">
         ターン終了
       </b-button>
     </div>
     <div>
-      <b-button variant="primary" @click="$emit('turnEnd')">
+      <b-button variant="primary" @click="onTurnEnd">
         ターン交代(開発)
       </b-button>
     </div>
@@ -83,22 +79,20 @@ export default class BattleHeader extends Vue {
     }
   }
 
-  // TODO: turn機能を pages/_id 側に移植させる
-  // TODO: 開発に邪魔な機能なので、一時的にコメントアウト
-  // @Watch('turnUid', {
-  //   immediate: true
-  // })
-  // onChangeTurn() {
-  //   if (!this.battleRoom || !this.storeUser) return
-  //   if (this.lastIntervalId) {
-  //     clearInterval(this.lastIntervalId)
-  //   }
-  //   if (this.storeUser.uid === this.battleRoom.turn.uid) {
-  //     this.setMyTimer(this.battleRoom)
-  //   } else {
-  //     this.setOpponentTimer(this.battleRoom, this.storeUser)
-  //   }
-  // }
+  @Watch('turnUid', {
+    immediate: true
+  })
+  onChangeTurn() {
+    if (!this.storeUser) return
+    if (this.lastIntervalId) {
+      clearInterval(this.lastIntervalId)
+    }
+    if (this.storeUser.uid === this.battleRoom.turn.uid) {
+      this.setMyTimer(this.battleRoom)
+    } else {
+      this.setOpponentTimer(this.battleRoom, this.storeUser)
+    }
+  }
 
   setMyTimer(battleRoom: IBattleRoomRes) {
     this.timer = Math.round(
@@ -148,8 +142,12 @@ export default class BattleHeader extends Vue {
         offlineTimes: updatedOfflineTimes
       })
       this.$emit('turnEnd')
-      // TODO: 現在は５秒だが本番では50秒にする
-    }, 5000)
+    }, 50000)
+  }
+
+  onTurnEnd() {
+    this.timer = 0
+    this.$emit('turnEnd')
   }
 
   get time() {
