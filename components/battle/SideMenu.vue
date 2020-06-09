@@ -33,6 +33,11 @@
             >閉じる</b-button
           >
         </div>
+        <div :class="$style.attributionContainer">
+          Icon made by
+          <a href="https://www.flaticon.com/authors/freepik">Freepik</a>
+          from <a href="https://www.flaticon.com/">www.flaticon.com</a>
+        </div>
       </div>
     </transition>
   </div>
@@ -116,7 +121,10 @@ export default class SideMenu extends Vue {
     }
   }
   .closeButtonContainer {
-    margin: 8px;
+    padding: 8px;
+  }
+  .attributionContainer {
+    padding: 8px;
   }
 }
 </style>
