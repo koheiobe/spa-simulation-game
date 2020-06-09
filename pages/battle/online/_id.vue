@@ -33,9 +33,9 @@
       @setLastInteractCharacter="setLastInteractCharacter"
     />
     <!-- 開発用 -->
-    <b-button @click="toggleDeployMode"
+    <!-- <b-button @click="toggleDeployMode"
       >deployモード: {{ isDeployModeEnd ? 'オフ' : 'オン' }}</b-button
-    >
+    > -->
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :message="winnerMessage" :winner-name="winnerName" />
     </Modal>

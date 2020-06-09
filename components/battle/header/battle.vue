@@ -16,11 +16,12 @@
         ターン終了
       </b-button>
     </div>
-    <div>
+    <!-- 開発用 -->
+    <!-- <div>
       <b-button variant="primary" @click="onTurnEnd">
         ターン交代(開発)
       </b-button>
-    </div>
+    </div> -->
   </div>
 </template>
 
