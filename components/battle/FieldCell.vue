@@ -25,7 +25,7 @@
         :id="props.character.id"
         :character="props.character"
         :is-end="props.character.actionState.isEnd"
-        :is-host-or-guest="isHostOrGuest"
+        :is-host-or-guest="props.isHostOrGuest"
         :width="30"
       />
       <b-tooltip
