@@ -134,6 +134,12 @@ class Firestore {
       .update({ lastInteractCharacter: battleRoomInfo.lastInteractCharacter })
   }
 
+  setIsOpponentBattleEnd(id: string) {
+    db.collection('battles')
+      .doc(id)
+      .update({ isOpponentBattleEnd: true })
+  }
+
   // #endregion online battle room
 
   // #region online battle

@@ -144,6 +144,9 @@ export default class OnlineBattleRoom extends Vue {
     hostOrGuest: 'host' | 'guest'
   }) => {}
 
+  @BattleRoomModule.Action('unBindBattleRoomRef')
+  private unBindBattleRoomRef!: () => void
+
   public charactersLatLngMap: IField = {}
   public battleId: string = ''
   public winnerName: string = ''
@@ -187,6 +190,14 @@ export default class OnlineBattleRoom extends Vue {
       e.preventDefault()
     })
     this.preventHistoryBack()
+  }
+
+  destroyed() {
+    this.deleteBattleRoom(this.battleId).catch((e) =>
+      // TODO: エラーハンドリングはあとで考える
+      console.error('battleRoomの削除に失敗しました。', e)
+    )
+    this.deleteUserBattleId(this.storeUser.uid)
   }
 
   async initCharacters() {
@@ -329,7 +340,11 @@ export default class OnlineBattleRoom extends Vue {
       this.battleRoom.host.uid === this.battleRoom.winnerUid
         ? this.battleRoom.host.name
         : this.battleRoom.guest.name
-    window.setTimeout(this.onEndBattle, 5000)
+
+    // ホストかゲスト、どちらか先に退出してfirestoreのデータを削除すると
+    // 残されたクライアント側でエラーが発生するため、同期を中止する
+    this.unBindBattleRoomRef()
+    window.setTimeout(() => this.$router.push('/battle/online'), 5000)
   }
 
   isMyCharacter(character: ICharacter | undefined) {
@@ -359,15 +374,6 @@ export default class OnlineBattleRoom extends Vue {
         type: 'character'
       }
     }
-  }
-
-  async onEndBattle() {
-    await this.deleteBattleRoom(this.battleId).catch((e) =>
-      // TODO: エラーハンドリングはあとで考える
-      console.error('battleRoomの削除に失敗しました。', e)
-    )
-    this.deleteUserBattleId(this.storeUser.uid)
-    this.$router.push('/battle/online')
   }
 
   preventHistoryBack() {
@@ -404,6 +410,13 @@ export default class OnlineBattleRoom extends Vue {
   toggleDeployMode() {
     if (this.isDeployModeEnd) {
       this.startDeployMode()
+      // この機能を使用する場合、components/header/deployの
+      // setBattleRoomWinner を削除する必要がある
+      this.setDeployModeEnd({
+        id: this.battleId,
+        hostOrGuest: this.isHostOrGuest,
+        bool: false
+      })
     } else {
       this.finishDeployMode()
     }

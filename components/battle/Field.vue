@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.container">
     <SideMenu
-      v-if="!isDeployModeEnd"
+      v-if="isDeploying"
       :characters="storeCharacters"
       :selected-character-id="deployCharacterId"
       :is-my-character="isMyCharacter"
