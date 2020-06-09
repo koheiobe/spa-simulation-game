@@ -14,6 +14,7 @@
       v-else
       :battle-room="battleRoom"
       :store-user="storeUser"
+      :is-deploy-mode-end="isDeployModeEnd"
       :is-host-or-guest="isHostOrGuest"
       :set-battle-room-winner="setBattleRoomWinner"
       :set-battle-start-at="setBattleStartAt"

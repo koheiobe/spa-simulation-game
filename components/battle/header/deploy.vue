@@ -1,6 +1,6 @@
 <template>
   <div :class="$style.container">
-    <div :class="$style.timerContainer">
+    <div v-show="!isDeployModeEnd" :class="$style.timerContainer">
       <span :class="[isNearlyTimeOut ? $style.nearlyTimeOut : '']">{{
         time
       }}</span>
@@ -8,7 +8,11 @@
       {{ TIME_LIMIT }}
     </div>
     <div>
-      <b-button variant="danger">キャラクターを配置してください。</b-button>
+      <b-button variant="danger">{{
+        isDeployModeEnd
+          ? '対戦相手がキャラクターを配置中です...'
+          : 'キャラクターを配置してください。'
+      }}</b-button>
     </div>
     <div>
       <b-button variant="primary" @click="$emit('deployEnd')">
@@ -40,6 +44,9 @@ const OPPONENT_OFFLINE_TIME = 190
 export default class DeployHeader extends Vue {
   @Prop({ default: undefined })
   storeUser!: IUser
+
+  @Prop({ default: false })
+  isDeployModeEnd!: boolean
 
   @Prop({ default: undefined })
   battleRoom!: IBattleRoomRes
@@ -108,6 +115,13 @@ export default class DeployHeader extends Vue {
         this.timer += 1
       }
     }, 1000)
+  }
+
+  onEndDeploy() {
+    if (this.lastIntervalId) {
+      clearInterval(this.lastIntervalId)
+    }
+    this.$emit('deployEnd')
   }
 
   get time() {
