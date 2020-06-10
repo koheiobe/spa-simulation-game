@@ -168,19 +168,21 @@ export default class OnlineBattle extends Vue {
   }
 
   get battleRooms() {
-    return this.storeBattleRooms
+    return this.storeBattleRooms.filter(
+      (battleRoom) => !battleRoom.host.uid || !battleRoom.guest.uid
+    )
   }
 
   get isBattleRoomExist() {
     return Boolean(
-      this.battleRooms.find(
+      this.storeBattleRooms.find(
         (battleRoom) => battleRoom.id === this.storeUser.battleId
       )
     )
   }
 
   get isBattleMatched() {
-    const battleRoom = this.battleRooms.find(
+    const battleRoom = this.storeBattleRooms.find(
       (battleRoom) => battleRoom.id === this.storeUser.battleId
     )
     if (!battleRoom) {
