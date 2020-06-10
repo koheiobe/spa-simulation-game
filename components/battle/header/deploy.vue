@@ -8,25 +8,25 @@
       {{ TIME_LIMIT }}
     </div>
     <div>
-      <b-button variant="danger">{{
-        isDeployModeEnd
-          ? '対戦相手がキャラクターを配置中です...'
-          : 'キャラクターを配置してください。'
-      }}</b-button>
-    </div>
-    <div>
       <b-button variant="primary" @click="$emit('deployEnd')">
         デプロイ終了
       </b-button>
     </div>
+    <Modal :is-open="isOpen" @onClickOuter="tryCloseModal"
+      ><p>
+        {{
+          isDeployModeEnd
+            ? '対戦相手がキャラクターを配置中です...'
+            : 'キャラクターを配置してください。'
+        }}
+      </p></Modal
+    >
   </div>
 </template>
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import { BIconGearFill } from 'bootstrap-vue'
-import { Vue, Prop } from 'vue-property-decorator'
-import Option from '../ModalContent/Option.vue'
+import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { IBattleRoomRes, IUser } from '~/types/store'
 import Modal from '~/components/utility/Modal.vue'
 
@@ -36,9 +36,7 @@ const OPPONENT_OFFLINE_TIME = 190
 
 @Component({
   components: {
-    BIconGearFill,
-    Modal,
-    Option
+    Modal
   }
 })
 export default class DeployHeader extends Vue {
@@ -68,6 +66,7 @@ export default class DeployHeader extends Vue {
   }) => void
 
   private lastIntervalId: NodeJS.Timeout | undefined = undefined
+  private isOpen: boolean = false
 
   public timer: number = 0
   public isNearlyTimeOut: boolean = false
@@ -122,6 +121,17 @@ export default class DeployHeader extends Vue {
       clearInterval(this.lastIntervalId)
     }
     this.$emit('deployEnd')
+  }
+
+  tryCloseModal() {
+    if (!this.isDeployModeEnd) {
+      this.isOpen = false
+    }
+  }
+
+  @Watch('isDeployModeEnd', { immediate: true })
+  onChangeDeployModeEnd(_: boolean) {
+    this.isOpen = true
   }
 
   get time() {

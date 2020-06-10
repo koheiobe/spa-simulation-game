@@ -27,16 +27,16 @@
               />
             </div>
           </template>
-        </div>
-        <div :class="$style.closeButtonContainer">
-          <b-button variant="primary" @click="toggleSideMenu()"
-            >閉じる</b-button
-          >
-        </div>
-        <div :class="$style.attributionContainer">
-          Icon made by
-          <a href="https://www.flaticon.com/authors/freepik">Freepik</a>
-          from <a href="https://www.flaticon.com/">www.flaticon.com</a>
+          <div :class="$style.closeButtonContainer">
+            <b-button variant="primary" @click="toggleSideMenu()"
+              >閉じる</b-button
+            >
+          </div>
+          <div :class="$style.attributionContainer">
+            Icon made by
+            <a href="https://www.flaticon.com/authors/freepik">Freepik</a>
+            from <a href="https://www.flaticon.com/">www.flaticon.com</a>
+          </div>
         </div>
       </div>
     </transition>
@@ -119,12 +119,12 @@ export default class SideMenu extends Vue {
       width: 35%;
       max-height: 50px;
     }
-  }
-  .closeButtonContainer {
-    padding: 8px;
-  }
-  .attributionContainer {
-    padding: 8px;
+    .closeButtonContainer {
+      padding: 8px;
+    }
+    .attributionContainer {
+      padding: 8px;
+    }
   }
 }
 </style>
