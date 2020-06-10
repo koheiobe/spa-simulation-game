@@ -1,5 +1,6 @@
 import { firestoreAction } from 'vuexfire'
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
+import { v4 as uuidv4 } from 'uuid'
 import { IUserState, IUser, IRootState } from '~/types/store'
 
 export const state = (): IUserState => ({
@@ -21,6 +22,9 @@ export const getters: GetterTree<IUserState, IRootState> = {
 export const mutations: MutationTree<IUserState> = {
   setUser(state, loginUser) {
     state.loginUser = loginUser
+  },
+  setBattleId(state, battleId) {
+    state.loginUser.battleId = battleId
   }
 }
 
@@ -31,12 +35,14 @@ export const actions: ActionTree<IUserState, IRootState> = {
     bindFirestoreRef('loginUser', ref, { reset: false })
   }),
   setUserAsGuest(context) {
-    context.commit('setUser', {
+    const guest = {
       name: 'ゲスト',
-      uid: '',
+      uid: uuidv4(),
       battleId: '',
       roomId: '',
       isLogin: false
-    })
+    }
+    context.commit('setUser', guest)
+    return guest
   }
 }

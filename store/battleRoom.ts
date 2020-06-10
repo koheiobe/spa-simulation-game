@@ -34,12 +34,28 @@ export const actions: ActionTree<IRootState, IRootState> = {
   > {
     return this.$firestore.createBattleRoom(userInfo.uid, userInfo.name)
   },
-  setUserBattleId(_, userInfo: { uid: string; battleId: string }) {
-    return this.$firestore.setUserBattleId(userInfo.uid, userInfo.battleId)
+  async setUserBattleId(
+    { commit },
+    userInfo: { uid: string; battleId: string }
+  ) {
+    if (await this.$firestore.isLoginUserExists(userInfo.uid)) {
+      return this.$firestore.setUserBattleId(userInfo.uid, userInfo.battleId)
+      // firestoreのuserに存在していない場合、ゲストとして参加しているため、vuexにのみデータを保存する
+    } else {
+      return new Promise((resolve) => {
+        resolve(commit('user/setBattleId', userInfo.battleId, { root: true }))
+      })
+    }
   },
-  deleteUserBattleId(_, userUid: string | undefined) {
-    if (!userUid) return
-    this.$firestore.deleteUserBattleId(userUid)
+  async deleteUserBattleId({ commit }, userUid: string) {
+    if (await this.$firestore.isLoginUserExists(userUid)) {
+      this.$firestore.deleteUserBattleId(userUid)
+      // firestoreのuserに存在していない場合、ゲストとして参加しているため、vuexにのみデータを保存する
+    } else {
+      return new Promise((resolve) => {
+        resolve(commit('user/setBattleId', '', { root: true }))
+      })
+    }
   },
   setBattleStartAt(
     _,
