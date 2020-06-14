@@ -21,6 +21,7 @@
     "firebase": "^7.12.0",
     "firebaseui": "^4.5.0",
     "nuxt": "^2.0.0",
+    "uuid": "^8.1.0",
     "vue-class-component": "^7.2.3",
     "vue-property-decorator": "^8.4.1",
     "vue-svg-loader": "^0.16.0",
