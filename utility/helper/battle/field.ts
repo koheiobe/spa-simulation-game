@@ -3,7 +3,8 @@ import {
   ILatlng,
   WeaponType,
   IField,
-  SkillType
+  SkillType,
+  IMovableArea
 } from '~/types/battle'
 import fieldJson from '~/assets/field.json'
 import { ICharacter } from '~/types/store'
@@ -111,14 +112,19 @@ export const fillDeployableArea = (
   return filledDeployableArea
 }
 
+/**
+ * @param latLng クリックされたキャラクターの座標(x, y)
+ * @param character クリックされたキャラクター
+ * @param charactersLatLngMap フィールドに存在する全キャラクターの座標オブジェクト
+ */
 export const fillMovableArea = (
   latLng: ILatlng,
   character: ICharacter,
   charactersLatLngMap: IField
-): { [key: string]: Boolean } => {
+): IMovableArea => {
   const { moveDistance, skill } = character
-  const movableArea: { [key: string]: Boolean } = {}
-  movableArea[`${latLng.y}_${latLng.x}`] = true
+  const movableArea: IMovableArea = {}
+  movableArea[`${latLng.y}_${latLng.x}`] = moveDistance
   const field: IField = fieldJson
   const mergedField = Object.assign({}, field, charactersLatLngMap)
   computeMovableCell(
@@ -160,7 +166,7 @@ export const fillMovableArea = (
 const computeMovableCell = (
   latLng: ILatlng,
   moveDistance: number,
-  movableArea: { [key: string]: Boolean },
+  movableArea: IMovableArea,
   direction: ILatlng,
   skill: Array<SkillType>,
   mergedField: IField
@@ -188,8 +194,10 @@ const computeMovableCell = (
   } else {
     updatedMovepoint = moveDistance - 1
   }
-
-  movableArea[`${updatedLatLng.y}_${updatedLatLng.x}`] = true
+  const lastCheckedMovePoint =
+    movableArea[`${updatedLatLng.y}_${updatedLatLng.x}`]
+  if (lastCheckedMovePoint && lastCheckedMovePoint > updatedMovepoint) return
+  movableArea[`${updatedLatLng.y}_${updatedLatLng.x}`] = updatedMovepoint
   if (updatedMovepoint === 0) return
 
   if (direction.x !== 1)

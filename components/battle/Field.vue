@@ -58,7 +58,8 @@ import {
   ILatlng,
   ActionType,
   WeaponType,
-  CellType
+  CellType,
+  IMovableArea
 } from '~/types/battle'
 import {
   fillMovableArea,
@@ -151,7 +152,7 @@ export default class Field extends Vue {
   public deployCharacterId: string = ''
   // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
   // public deployableArea: { [key: string]: Boolean } = {}
-  public movableArea: { [key: string]: Boolean } = {}
+  public movableArea: IMovableArea = {}
   public interactiveArea: ILatlng[] = []
   // TODO: 各characterの移動距離と置き換える
   public moveNum = 8
@@ -163,7 +164,7 @@ export default class Field extends Vue {
 
   decideCellType(latLng: ILatlng): CellType {
     if (Object.keys(this.movableArea).length > 0) {
-      return this.movableArea[`${latLng.y}_${latLng.x}`] ? 'move' : null
+      return this.movableArea[`${latLng.y}_${latLng.x}`] > 0 ? 'move' : null
     } else if (this.interactiveArea.length > 0) {
       return this.isInteractiveArea(latLng) ? 'interact' : null
     } else if (this.isDeploying) {

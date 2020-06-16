@@ -9,6 +9,10 @@ export interface ILatlng {
   y: number
 }
 
+export interface IMovableArea {
+  [key: string]: number
+}
+
 export interface IDeployableArea {
   upperLeft: ILatlng
   upperRight: ILatlng
