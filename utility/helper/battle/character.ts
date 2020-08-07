@@ -1,21 +1,52 @@
+import { Vue } from 'vue-property-decorator'
 import { ICharacter } from '~/types/store'
-import { EXCEPTION_CHARACTERS_NAME } from '~/constants/characters'
+import { ILatlng } from '~/types/battle'
 
-const CAHARACTERS_NUM = 25
+export default class CharacterController extends Vue {
+  private activeCharacter?: ICharacter
+  private isHostOrGuest: 'host' | 'guest'
 
-export const getRandomCharacters = (characters: ICharacter[]) => {
-  const randomCharacters: ICharacter[] = []
-  while (randomCharacters.length < CAHARACTERS_NUM) {
-    const index = Math.floor((Math.random() * 100) % characters.length)
-    const character = characters[index]
-    if (
-      randomCharacters.includes(character) ||
-      EXCEPTION_CHARACTERS_NAME.includes(character.name)
-    ) {
-      continue
-    } else {
-      randomCharacters.push(characters[index])
-    }
+  constructor(isHostOrGuest: 'host' | 'guest') {
+    super()
+    this.isHostOrGuest = isHostOrGuest
   }
-  return randomCharacters
+
+  setActiveCharacter(character: ICharacter) {
+    this.activeCharacter = character
+  }
+
+  updateActiveCharacter(param: any) {
+    this.activeCharacter = { ...this.activeCharacter, ...param }
+  }
+
+  isActiveCharacterExist() {
+    return Boolean(this.activeCharacter)
+  }
+
+  moveCharacter(latLng: ILatlng, cellCharacterId: string, isMyTurn: boolean) {
+    if (!this.activeCharacter) return false
+    const isMovableCell =
+      this.activeCharacter.id === cellCharacterId ||
+      cellCharacterId.length === 0
+    if (
+      isMovableCell &&
+      isMyTurn &&
+      this.isMyCharacter(this.activeCharacter) &&
+      this.activeCharacter.actionState.isEnd === false
+    ) {
+      this.updateActiveCharacter({
+        latLng,
+        lastLatLng: this.activeCharacter.latLng
+      })
+      return true
+    }
+    return false
+  }
+
+  isMyCharacter(character: ICharacter | undefined) {
+    if (!character) return false
+    const matchedSuffix = character.id.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
+  }
 }

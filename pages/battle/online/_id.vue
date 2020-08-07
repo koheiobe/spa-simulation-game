@@ -17,7 +17,7 @@
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
     <Field
-      :deployable-area="deployableArea"
+      :field-controller="fieldController"
       :is-deploy-mode-end="isDeployModeEnd"
       :is-my-turn="isMyTurn"
       :is-my-character="isMyCharacter"
@@ -25,7 +25,6 @@
       :is-host-or-guest="isHostOrGuest"
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
-      :_winner-cell="winnerCell"
       :battle-id="battleId"
       :characters-lat-lng-map="charactersLatLngMap"
       @setcharactersLatLngMap="setcharactersLatLngMap"
@@ -35,7 +34,7 @@
     <!-- 開発用 -->
     <!-- <b-button @click="toggleDeployMode"
       >deployモード: {{ isDeployModeEnd ? 'オフ' : 'オン' }}</b-button
-    > -->
+    >-->
     <Modal :is-open="isBattleFinishModalOpen">
       <EndBattleDialogue :message="winnerMessage" :winner-name="winnerName" />
     </Modal>
@@ -46,7 +45,7 @@
 import Component from 'vue-class-component'
 import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import { CHARACTERS } from '~/constants/characters'
+import { CHARACTERS, EXCEPTION_CHARACTERS_NAME } from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { ActionType, IField } from '~/types/battle'
@@ -57,11 +56,10 @@ import field from '~/assets/field.json'
 import {
   hostDeployableAreas,
   guestDeployableAreas,
-  fillDeployableArea,
   hostWinCell,
-  guestWinCell
-} from '~/utility/helper/battle/field'
-import { getRandomCharacters } from '~/utility/helper/battle/character'
+  guestWinCell,
+  FieldController
+} from '~/utility/helper/battle/field/index'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
@@ -151,14 +149,20 @@ export default class OnlineBattleRoom extends Vue {
   public battleId: string = ''
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
-  public deployableArea: { [key: string]: Boolean } = {}
+  public fieldController: FieldController
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
   public battleStartAt: number = 0
   public winnerMessage = ''
-  public winnerCell = {
-    host: hostWinCell,
-    guest: guestWinCell
+
+  constructor() {
+    super()
+    this.fieldController = new FieldController({
+      hostWinCell,
+      guestWinCell,
+      hostDeployableAreas,
+      guestDeployableAreas
+    })
   }
 
   async created() {
@@ -221,7 +225,7 @@ export default class OnlineBattleRoom extends Vue {
         id: characterList[key].id + '-' + hostOrGuest
       })
     })
-    const randomCharacters = getRandomCharacters(characters)
+    const randomCharacters = this.getRandomCharacters(characters)
 
     this.updateCharacters({
       battleId: this.battleId,
@@ -236,14 +240,12 @@ export default class OnlineBattleRoom extends Vue {
   }
 
   startDeployMode() {
-    const deployableAreas =
-      this.isHostOrGuest === 'host' ? hostDeployableAreas : guestDeployableAreas
-    this.deployableArea = fillDeployableArea(deployableAreas)
+    this.fieldController.startDeployMode(this.isHostOrGuest)
   }
 
   async finishDeployMode() {
-    if (Object.keys(this.deployableArea).length === 0) return
-    this.deployableArea = {}
+    if (!this.fieldController.isDeploying()) return
+    this.fieldController.finishDeployMode()
     await this.updateCharacters({
       battleId: this.battleId,
       // 敵キャラクターまで初期化すると、ローカルに存在する敵キャラクターのデータで
@@ -374,6 +376,24 @@ export default class OnlineBattleRoom extends Vue {
         type: 'character'
       }
     }
+  }
+
+  CAHARACTERS_NUM = 25
+  getRandomCharacters(characters: ICharacter[]) {
+    const randomCharacters: ICharacter[] = []
+    while (randomCharacters.length < this.CAHARACTERS_NUM) {
+      const index = Math.floor((Math.random() * 100) % characters.length)
+      const character = characters[index]
+      if (
+        randomCharacters.includes(character) ||
+        EXCEPTION_CHARACTERS_NAME.includes(character.name)
+      ) {
+        continue
+      } else {
+        randomCharacters.push(characters[index])
+      }
+    }
+    return randomCharacters
   }
 
   preventHistoryBack() {

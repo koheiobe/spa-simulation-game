@@ -13,14 +13,13 @@
       <div v-for="y of 30" :key="y" :class="$style.row">
         <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
           <FieldCell
-            :cell-type="decideCellType({ x, y })"
+            :cell-type="fieldController.getModeType({ x, y })"
             :character="getCharacterAtCell({ x, y })"
             :is-host-or-guest="isHostOrGuest"
             :lat-lng="{ x, y }"
             :field="field"
             @onClick="onClickCell"
-          >
-          </FieldCell>
+          ></FieldCell>
         </div>
       </div>
       <!-- フィールド開発用UI -->
@@ -29,7 +28,7 @@
         @onChangeDevMode="() => (isDevMode = !isDevMode)"
         @onSelectFieldIcon="(newVal) => (selectedFieldIcon = newVal)"
         @saveFieldJson="saveFieldJson"
-      /> -->
+      />-->
     </div>
     <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
@@ -53,18 +52,8 @@ import {
   calculateDamage,
   onEndCalculateDamage
 } from '~/utility/helper/battle/damageCalculator'
-import {
-  IField,
-  ILatlng,
-  ActionType,
-  WeaponType,
-  CellType,
-  IMovableArea
-} from '~/types/battle'
-import {
-  fillMovableArea,
-  fillInteractiveArea
-} from '~/utility/helper/battle/field'
+import { IField, ILatlng, ActionType, WeaponType } from '~/types/battle'
+import { FieldController } from '~/utility/helper/battle/field/index'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -119,12 +108,6 @@ export default class Field extends Vue {
   @CharacterModule.Mutation('updateInteractiveCharacter')
   private updateInteractiveCharacter!: (character: ICharacter) => void
 
-  @Prop({ default: null })
-  private _winnerCell!: { host: ILatlng; guest: ILatlng }
-
-  @Prop({ default: () => [] })
-  deployableArea!: { [key: string]: Boolean }
-
   @Prop({ default: false })
   isDeployModeEnd!: boolean
 
@@ -149,48 +132,29 @@ export default class Field extends Vue {
   @Prop({ default: '' })
   battleId!: string
 
-  public deployCharacterId: string = ''
-  // 素早くアクセスするためにdeployableAreaとmovableAreaはobjectで作成
-  // public deployableArea: { [key: string]: Boolean } = {}
-  public movableArea: IMovableArea = {}
-  public interactiveArea: ILatlng[] = []
+  @Prop({ default: {} })
+  fieldController!: FieldController
+
   // TODO: 各characterの移動距離と置き換える
   public moveNum = 8
+  public deployCharacterId: string = ''
   public isBattleModalOpen: boolean = false
 
   // 開発用
   private isDevMode = false
   private selectedFieldIcon = ''
 
-  decideCellType(latLng: ILatlng): CellType {
-    if (Object.keys(this.movableArea).length > 0) {
-      return this.movableArea[`${latLng.y}_${latLng.x}`] > 0 ? 'move' : null
-    } else if (this.interactiveArea.length > 0) {
-      return this.isInteractiveArea(latLng) ? 'interact' : null
-    } else if (this.isDeploying) {
-      return this.deployableArea[`${latLng.y}_${latLng.x}`] ? 'deploy' : null
-    }
-    return null
-  }
-
-  isInteractiveArea(latLng: ILatlng) {
-    return this.interactiveArea.some(
-      (cell) => cell.x === latLng.x && cell.y === latLng.y
-    )
-  }
-
-  onClickCell(cellType: CellType, latLng: ILatlng, cellCharacterId: string) {
+  onClickCell(latLng: ILatlng, cellCharacterId: string) {
     // 開発用
     if (this.isDevMode) {
       this.mergeField(latLng, this.selectedFieldIcon)
       return
     }
-    if (this.isDeploying) {
-      if (cellType === 'deploy') this.deployCharacter(latLng, cellCharacterId)
-      return
-    }
 
-    switch (cellType) {
+    switch (this.fieldController.getModeType(latLng)) {
+      case 'deploy':
+        this.deployCharacter(latLng, cellCharacterId)
+        break
       case 'move':
         this.moveCharacter(latLng, cellCharacterId)
         break
@@ -202,7 +166,7 @@ export default class Field extends Vue {
         if (cellCharacterId.length > 0) {
           this.setInteractiveCharacter(cellCharacterId)
           if (!this.interactiveCharacter) return
-          this.movableArea = fillMovableArea(
+          this.fieldController.startMoveMode(
             latLng,
             this.interactiveCharacter,
             this.charactersLatLngMap
@@ -266,8 +230,7 @@ export default class Field extends Vue {
     ) {
       this.setModal(true)
     }
-
-    this.movableArea = {}
+    this.fieldController.finishMoveMode()
   }
 
   onSelectBattleAction(action: ActionType) {
@@ -306,7 +269,7 @@ export default class Field extends Vue {
         itemId
       }
     })
-    this.interactiveArea = fillInteractiveArea(
+    this.fieldController.startInteractMode(
       this.interactiveCharacter.latLng,
       interactType
     )
@@ -364,8 +327,8 @@ export default class Field extends Vue {
   resetCharacterState() {
     this.setInteractiveCharacter('')
     this.setModal(false)
-    this.interactiveArea = []
-    this.movableArea = {}
+    this.fieldController.finishInteractMode()
+    this.fieldController.finishMoveMode()
   }
 
   applyInteractiveCharacterStore(
@@ -538,13 +501,11 @@ export default class Field extends Vue {
   }
 
   get winnerCell() {
-    return this.isHostOrGuest === 'host'
-      ? this._winnerCell.host
-      : this._winnerCell.guest
+    return this.fieldController.getWinnerCell(this.isHostOrGuest)
   }
 
   get isDeploying() {
-    return Object.keys(this.deployableArea).length > 0
+    return this.fieldController.isDeploying()
   }
 }
 </script>

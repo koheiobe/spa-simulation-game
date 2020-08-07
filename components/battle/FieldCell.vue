@@ -11,13 +11,7 @@
     }"
     @click="
       (evt) =>
-        $options.methods.onClick(
-          evt,
-          props.cellType,
-          props.character,
-          props.latLng,
-          listeners
-        )
+        $options.methods.onClick(props.character, props.latLng, listeners)
     "
   >
     <template v-if="props.character">
@@ -34,14 +28,15 @@
         :target="props.character.id"
         :class="$style.characterToolTip"
       >
-        Name: {{ props.character.name }} <br />
+        Name: {{ props.character.name }}
+        <br />
         HP: {{ props.character.hp }} / {{ props.character.maxHp }}
       </b-tooltip>
     </template>
     <!-- 開発用 x,y座標を表示したい時に-->
     <!-- <div v-else :class="$style.latLngCell">
       {{ `${props.latLng.y}_${props.latLng.x}` }}
-    </div> -->
+    </div>-->
   </div>
 </template>
 
@@ -68,7 +63,7 @@ export default {
       require: true
     },
     cellType: {
-      default: null,
+      default: '',
       type: String,
       require: true
     },
@@ -88,20 +83,11 @@ export default {
     }
   },
   methods: {
-    onClick(
-      evt: Event,
-      cellType: CellType,
-      character: ICharacter,
-      latLng: ILatlng,
-      listeners: any
-    ) {
+    onClick(character: ICharacter, latLng: ILatlng, listeners: any) {
       // TODO: functional componentではrefが効かないので回避方法を探す
       // this.$refs.tooltip.$emit('close')
-      if (cellType) {
-        evt.stopPropagation()
-      }
       const characterId = character === undefined ? '' : character.id
-      listeners.onClick(cellType, latLng, characterId)
+      listeners.onClick(latLng, characterId)
     },
     getFieldBackgroundUrl(fieldType: string, latLng: ILatlng) {
       switch (fieldType) {
