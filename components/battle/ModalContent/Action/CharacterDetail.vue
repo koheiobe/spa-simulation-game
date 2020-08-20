@@ -6,12 +6,10 @@
       <li>防御力: {{ character.defense }}</li>
       <li>移動: {{ character.moveDistance }}</li>
     </ul>
-    スキル
+    <p>スキル</p>
     <ul>
       <template v-for="skill in character.skill">
-        <li :key="skill">
-          {{ getSkillDescription(skill, character) }}
-        </li>
+        <li :key="skill">{{ getSkillDescription(skill, character) }}</li>
       </template>
     </ul>
   </div>
@@ -22,11 +20,12 @@ import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import { ICharacter } from '~/types/store'
 import { SkillType } from '~/types/battle'
+import CharacterController from '~/utility/helper/battle/character/characterController'
 
 @Component
 export default class CharacterDetail extends Vue {
   @Prop({ default: () => {} })
-  character!: ICharacter
+  characterController!: CharacterController
 
   getSkillDescription(skill: SkillType, character: ICharacter) {
     switch (skill) {
@@ -66,6 +65,14 @@ export default class CharacterDetail extends Vue {
       default:
         return ''
     }
+  }
+
+  get character() {
+    const activeCharacter = this.characterController.getActiveCharacter()
+    if (!activeCharacter) {
+      throw new ReferenceError('no active character exist')
+    }
+    return activeCharacter
   }
 }
 </script>

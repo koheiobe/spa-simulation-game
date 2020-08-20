@@ -4,16 +4,12 @@
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
       <li
         v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
-        @click="$emit('onSelect', 'attack')"
-      >
-        攻撃
-      </li>
+        @click="$emit('on-select', 'attack')"
+      >攻撃</li>
       <li
         v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
-        @click="$emit('onSelect', 'wait')"
-      >
-        待機
-      </li>
+        @click="$emit('on-select', 'wait')"
+      >待機</li>
       <!-- TODO ミニマムリリースを目指すためアイテムは落とす -->
       <!-- <li v-if="isMyTurn" @click="selectedAction = 'item'">アイテム</li> -->
       <li @click="selectedAction = 'detail'">能力</li>
@@ -40,9 +36,9 @@
         </template>
       </ul>
       <b-button @click="backToTop">もどる</b-button>
-    </div> -->
+    </div>-->
     <div v-if="selectedAction === 'detail'">
-      <Detail :character="character" />
+      <Detail :character-controller="characterController" />
     </div>
   </div>
 </template>
@@ -51,8 +47,8 @@
 import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import Detail from './CharacterDetail.vue'
-import { ICharacter } from '~/types/store'
 import Modal from '~/components/utility/Modal.vue'
+import CharacterController from '~/utility/helper/battle/character/characterController.ts'
 
 @Component({
   components: {
@@ -62,13 +58,13 @@ import Modal from '~/components/utility/Modal.vue'
 })
 export default class BattleDialogue extends Vue {
   @Prop({ default: () => {} })
-  character!: ICharacter
+  characterController!: CharacterController
+
+  @Prop({ default: '' })
+  isHostOrGuest!: string
 
   @Prop({ default: false })
   isMyTurn!: boolean
-
-  @Prop({ default: () => {} })
-  isMyCharacter!: boolean
 
   @Prop({ default: false })
   isDeploying!: boolean
@@ -86,11 +82,23 @@ export default class BattleDialogue extends Vue {
   }
 
   get characterName() {
-    return this.character ? this.character.name : ''
+    const activeCharacter = this.characterController.getActiveCharacter()
+    return activeCharacter ? activeCharacter.name : ''
   }
 
   get isEnd() {
-    return this.character.actionState.isEnd
+    const activeCharacter = this.characterController.getActiveCharacter()
+    return activeCharacter ? activeCharacter.actionState.isEnd : true
+  }
+
+  get isMyCharacter() {
+    const activeCharacter = this.characterController.getActiveCharacter()
+    return activeCharacter
+      ? this.characterController.isMyCharacter(
+          activeCharacter,
+          this.isHostOrGuest
+        )
+      : false
   }
 }
 </script>

@@ -43,7 +43,7 @@
 <script lang="ts">
 import { ILatlng } from 'types/battle'
 import { ICharacter } from '~/types/store'
-import { CellType, IField } from '~/types/battle'
+import { IField } from '~/types/battle'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 const Grass = require('~/assets/img/field/grass.png')
 const Grass2 = require('~/assets/img/field/grass2.png')
