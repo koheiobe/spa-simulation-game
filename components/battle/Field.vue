@@ -47,6 +47,7 @@
 import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
+import _ from 'lodash'
 import DevFieldUi from './devFieldUi.vue'
 import { IField, ILatlng, ActionType, WeaponType } from '~/types/battle'
 import { FieldController } from '~/utility/helper/battle/field/index'
@@ -59,6 +60,7 @@ import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
 import CharacterController from '~/utility/helper/battle/character/characterController'
 import SkillController from '~/utility/helper/battle/character/skillController'
+
 const CharacterModule = namespace('character')
 
 @Component({
@@ -135,8 +137,6 @@ export default class Field extends Vue {
       this.characterController
     )
   }
-
-  mounted() {}
 
   onClickCell(latLng: ILatlng, cellCharacterId: string) {
     // 開発用
@@ -223,7 +223,7 @@ export default class Field extends Vue {
         this.beforeInteractCharacter(action, 'closeRange')
         break
       case 'wait':
-        this.onFinishAction(this.characterController.getActiveCharacter())
+        this.onFinishAction()
         break
       case 'item':
         this.beforeInteractCharacter(action, 'closeRange', 1)
@@ -257,7 +257,7 @@ export default class Field extends Vue {
         this.isHostOrGuest
       )
     ) {
-      this.onFinishAction(this.characterController.getActiveCharacter())
+      this.onFinishAction()
     } else {
       this.resetCharacterState()
     }
@@ -268,7 +268,8 @@ export default class Field extends Vue {
     console.log('item', cellCharacterId)
   }
 
-  onFinishAction(activeCharacter: ICharacter | null) {
+  async onFinishAction() {
+    const activeCharacter = this.characterController.getActiveCharacter()
     if (!activeCharacter) return
     if (
       activeCharacter.latLng.x === this.winnerCell.x &&
@@ -276,27 +277,20 @@ export default class Field extends Vue {
     ) {
       this.$emit('onWin')
     }
+    activeCharacter.actionState.isEnd = true
+    await this.applyActiveCharacterStore(activeCharacter)
     this.$emit('setLastInteractCharacter', {
       id: this.battleId,
-      lastInteractCharacter: activeCharacter
+      lastInteractCharacter: _.cloneDeep(activeCharacter)
     })
-    this.$emit('setcharactersLatLngMap', activeCharacter)
-    this.applyActiveCharacterStore()
+    this.$emit('setcharactersLatLngMap', _.cloneDeep(activeCharacter))
     this.resetCharacterState()
   }
 
-  applyActiveCharacterStore() {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    if (!activeCharacter) return
-    this.updateCharacter({
+  applyActiveCharacterStore(activeCharacter: ICharacter): Promise<void> {
+    return this.updateCharacter({
       battleId: this.battleId,
-      character: {
-        ...activeCharacter,
-        actionState: {
-          ...activeCharacter.actionState,
-          isEnd: true
-        }
-      }
+      character: _.cloneDeep(activeCharacter)
     })
   }
 
@@ -326,13 +320,14 @@ export default class Field extends Vue {
       this.storeCharacters
     )
     if (!attackResultObj) return
+    attackResultObj.attacker.actionState.isEnd = true
     this.updateCharacter({
       battleId: this.battleId,
-      character: attackResultObj.attacker
+      character: _.cloneDeep(attackResultObj.attacker)
     })
     this.updateCharacter({
       battleId: this.battleId,
-      character: attackResultObj.taker
+      character: _.cloneDeep(attackResultObj.taker)
     })
     this.onEndAttackCharacter(attackResultObj.attacker, attackResultObj.taker)
   }
@@ -370,7 +365,6 @@ export default class Field extends Vue {
     if (activeCharacter) {
       const isSameId =
         existCharacter && activeCharacter.id === existCharacter.id
-      console.log(`${activeCharacter.name} ${activeCharacter.latLng.x}`)
       if (
         activeCharacter.latLng.x === latLng.x &&
         activeCharacter.latLng.y === latLng.y

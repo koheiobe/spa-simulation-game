@@ -1,4 +1,5 @@
 import { Vue } from 'vue-property-decorator'
+import _ from 'lodash'
 import { ICharacter } from '~/types/store'
 import { ILatlng } from '~/types/battle'
 import {
@@ -25,7 +26,7 @@ export default class CharacterController extends Vue {
       console.error('キャラクターが存在しません')
       return
     }
-    this.activeCharacter = targetCharacter
+    this.activeCharacter = _.cloneDeep(targetCharacter)
   }
 
   resetActiveCharacter() {
@@ -33,7 +34,7 @@ export default class CharacterController extends Vue {
   }
 
   updateActiveCharacter(param: any) {
-    this.activeCharacter = { ...this.activeCharacter, ...param }
+    this.activeCharacter = _.cloneDeep({ ...this.activeCharacter, ...param })
   }
 
   isActiveCharacterExist() {
@@ -123,7 +124,10 @@ export default class CharacterController extends Vue {
       finalDamageTakenCharacter.lastLatLng = finalDamageTakenCharacter.latLng
       finalDamageTakenCharacter.latLng = { x: -1, y: -1 }
     }
-    return { attacker: updatedAttacker, taker: finalDamageTakenCharacter }
+    return {
+      attacker: _.cloneDeep(updatedAttacker),
+      taker: _.cloneDeep(finalDamageTakenCharacter)
+    }
   }
 
   isMyCharacter(character: ICharacter | undefined, isHostOrGuest: string) {
