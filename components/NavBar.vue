@@ -8,9 +8,7 @@
           <template v-slot:button-content>
             <em>{{ userName }}</em>
           </template>
-          <b-dropdown-item v-if="user !== null" @click="signOut"
-            >Sign Out</b-dropdown-item
-          >
+          <b-dropdown-item v-if="user !== null" @click="signOut">Sign Out</b-dropdown-item>
           <b-dropdown-item v-else @click="signIn">Sign In</b-dropdown-item>
         </b-nav-item-dropdown>
       </b-navbar-nav>
@@ -57,6 +55,10 @@ export default class NavBar extends Vue {
         }
       }
     })
+  }
+
+  beforeDestroy() {
+    sessionStorage.setItem('user', JSON.stringify(this.getStoreUser))
   }
 
   signOut() {
