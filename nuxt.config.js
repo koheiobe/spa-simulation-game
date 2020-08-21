@@ -67,6 +67,7 @@ export default {
         test: /\.svg$/,
         loader: 'vue-svg-loader'
       })
-    }
+    },
+    transpile: [({ isLegacy }) => isLegacy && 'ky']
   }
 }
