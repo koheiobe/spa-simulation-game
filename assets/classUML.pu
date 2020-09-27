@@ -1,0 +1,124 @@
+@startuml
+title クラス図
+
+class GameController {
+    - string winnerCondition
+    - string userId
+    - string userName
+    - void checkWinner()
+    - bool isMyTurn()
+    + void surrender()
+    + void endMyTurn()
+    + void deployCharacter()
+}
+
+class TurnController {
+    - number count
+    + number currentTurn
+    + void startTimer()
+    + void stopTimer()
+    + void resetTimer()
+    + void changeTurn()
+}
+
+class CharacterController {
+    + void deploy()
+    + void onSelectCharacter()
+    + void move()
+    + void attack()
+    + void useMagic()
+    + void useItem()
+    + void createCharacter()
+    + void destoryCharacter()
+}
+
+class Field {
+    - {x: number, y: number}[] map
+    + void displayCharacterPlacableArea(placableArea: { x: number, y:number }[])
+    + Cell getCellObject(latLng: {x: number, y:number })
+}
+
+class Cell {
+    - cellType type
+    - Character effectCharacterCell()
+}
+
+class Character {
+    - number level
+    - number exp
+    - { x: number, y: number } latLng: 現在位置
+    - { 
+        hp: number
+        attack: number
+        defence: number
+        move: number
+        speed: number
+        magicAttack: number
+        magicDefence: number
+    } parameter
+    - { 
+        weapon: string
+        sheild: string
+        armor: string
+        acccessories: string[]
+    } equipments
+    - skillName[] skills
+    - conditionType[] condition
+    - bool isActionEnd
+
+    + bool isCharacterAlive()
+    + bool isCharacterControllable()
+    + void takeDamage(damage: number)
+    + number calcDamage()
+    + number calcmoveNum()
+    - number calcDefense()
+    - number calcSpeed()
+}
+
+class SkillController {
+    
+}
+
+enum conditionType {
+    poison,
+    stun,
+    sleep,
+    etc,
+}
+
+enum cellType {
+    mountain,
+    river,
+    forest,
+    house,
+    grass,
+}
+
+enum skillName {
+    sequencialAttack,
+    undead,
+    etc,
+}
+
+enum itemName {
+    portion,
+    etc,
+}
+
+note bottom of SkillController : スキルの使用結果をCharacterControllerに返す
+
+GameController - TurnController
+
+GameController -- CharacterController
+
+CharacterController "1" *-- "1..*" Character
+
+CharacterController "1" -- "1" SkillController
+
+CharacterController "1" -le- "1" Field
+
+Field "1" o-- "1..*" Cell
+
+
+
+@enduml
