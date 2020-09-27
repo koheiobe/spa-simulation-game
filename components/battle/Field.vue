@@ -39,7 +39,6 @@
         @on-select="onSelectBattleAction"
       />
     </Modal>
-    <!-- 開発用 -->
   </div>
 </template>
 
@@ -118,7 +117,6 @@ export default class Field extends Vue {
   fieldController!: FieldController
 
   // TODO: 各characterの移動距離と置き換える
-  public moveNum = 8
   public deployCharacterId: string = ''
   public isBattleModalOpen: boolean = false
   public characterController: CharacterController
@@ -410,11 +408,6 @@ export default class Field extends Vue {
   display: flex;
   justify-content: center;
   flex-direction: column;
-  .debugArea {
-    position: fixed;
-    left: 300px;
-    top: 20px;
-  }
 
   .field {
     background-image: url('../../assets/img/field/mountain.png');
