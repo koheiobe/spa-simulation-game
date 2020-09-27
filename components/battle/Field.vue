@@ -2,7 +2,7 @@
   <div :class="$style.container">
     <SideMenu
       v-if="isDeploying"
-      :characters="storeCharacters"
+      :characters="characterList"
       :selected-character-id="deployCharacterId"
       :is-my-character="isMyCharacter"
       :is-host-or-guest="isHostOrGuest"
@@ -76,7 +76,7 @@ const CharacterModule = namespace('character')
 export default class Field extends Vue {
   // キャラクターが移動するときに一時的に使用する。行動が完了したらdbに反映
   @CharacterModule.State('characters')
-  private storeCharacters!: ICharacter[]
+  private characterList!: ICharacter[]
 
   @CharacterModule.Action('setCharacterParam')
   private setCharacterParam!: (characterObj: {
@@ -160,7 +160,7 @@ export default class Field extends Vue {
         if (cellCharacterId.length > 0) {
           this.characterController.setActiveCharacter(
             cellCharacterId,
-            this.storeCharacters
+            this.characterList
           )
           const activeCharacter = this.characterController.getActiveCharacter()
           if (!activeCharacter) return
@@ -178,7 +178,7 @@ export default class Field extends Vue {
 
   selectDeployCharacter(id: string) {
     if (this.deployCharacterId === id) {
-      this.characterController.setActiveCharacter(id, this.storeCharacters)
+      this.characterController.setActiveCharacter(id, this.characterList)
       this.setModal(true)
     }
     this.deployCharacterId = id
@@ -253,7 +253,7 @@ export default class Field extends Vue {
     if (
       this.characterController.interactCharacter(
         cellCharacterId,
-        this.storeCharacters,
+        this.characterList,
         this.isHostOrGuest
       )
     ) {
@@ -317,7 +317,7 @@ export default class Field extends Vue {
     const attackResultObj = await this.characterController.attackCharacter(
       attackerEl,
       attacker,
-      this.storeCharacters
+      this.characterList
     )
     if (!attackResultObj) return
     attackResultObj.attacker.actionState.isEnd = true
@@ -337,7 +337,7 @@ export default class Field extends Vue {
       attacker,
       taker,
       this.isMyTurn,
-      this.storeCharacters,
+      this.characterList,
       (character) =>
         this.updateCharacter({
           battleId: this.battleId,
@@ -357,7 +357,7 @@ export default class Field extends Vue {
 
   // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
   getCharacterAtCell(latLng: ILatlng) {
-    const existCharacter = this.storeCharacters.find(
+    const existCharacter = this.characterList.find(
       (character: ICharacter) =>
         character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
