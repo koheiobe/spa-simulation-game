@@ -40,7 +40,7 @@ class Field {
 
 class Cell {
     - cellType type
-    - Character effectCharacterCell()
+    - Character applySpecialEffect(character: Character)
 }
 
 class Character {
