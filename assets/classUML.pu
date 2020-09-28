@@ -34,7 +34,7 @@ class CharacterController {
 
 class Field {
     - {x: number, y: number}[] map
-    + void displayCharacterPlacableArea(placableArea: { x: number, y:number }[])
+    + void displayInteractableArea(placableArea: { x: number, y:number }[])
     + Cell getCellObject(latLng: {x: number, y:number })
 }
 
@@ -44,35 +44,50 @@ class Cell {
 }
 
 class Character {
-    - number level
-    - number exp
     - { x: number, y: number } latLng: 現在位置
-    - { 
-        hp: number
-        attack: number
-        defence: number
-        move: number
-        speed: number
-        magicAttack: number
-        magicDefence: number
-    } parameter
-    - { 
-        weapon: string
-        sheild: string
-        armor: string
-        acccessories: string[]
-    } equipments
     - skillName[] skills
     - conditionType[] condition
-    - bool isActionEnd
 
+    - number calcDefense()
+    - number calcSpeed()
+    + bool isActionEnd()
     + bool isCharacterAlive()
     + bool isCharacterControllable()
     + void takeDamage(damage: number)
     + number calcDamage()
     + number calcmoveNum()
-    - number calcDefense()
-    - number calcSpeed()
+}
+
+class ParameterManager {
+    - number level
+    - number exp
+    - number hp
+    - number attack
+    - number defence
+    - number move
+    - number speed
+    - number magicAttack
+    - number magicDefence
+
+    + void levelUp()
+    + object getParameters()
+}
+
+class EquipmentsManager {
+    - string weapon
+    - string sheild
+    - string armor
+    - string[] acccessories
+
+    + void equipWeapon(weaponName: string)
+    + void unequipWeapon()
+    + void equipSheild(shieldName: string)
+    + void unequipSheild()
+    + void equipArmor(armorName: string)
+    + void unequipArmor()
+    + void equipAccessories(accessoryName: string)
+    + void unequipAccessories(accessoryName: string)
+    + string[] getSkills()
 }
 
 class SkillController {
@@ -107,7 +122,7 @@ enum itemName {
 
 note bottom of SkillController : スキルの使用結果をCharacterControllerに返す
 
-GameController - TurnController
+GameController "1" <.. "1" TurnController
 
 GameController -- CharacterController
 
@@ -116,6 +131,12 @@ CharacterController "1" *-- "1..*" Character
 CharacterController "1" -- "1" SkillController
 
 CharacterController "1" -le- "1" Field
+
+Character "1" <.. "1" ParameterManager
+
+Character "1" <.. "1" EquipmentsManager
+
+ParameterManager "1" <.. "1" EquipmentsManager
 
 Field "1" o-- "1..*" Cell
 
