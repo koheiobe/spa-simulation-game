@@ -48,7 +48,7 @@ import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import _ from 'lodash'
 import DevFieldUi from './devFieldUi.vue'
-import { IField, ILatlng, ActionType, WeaponType } from '~/types/battle'
+import { IField, ILatlng, ActionType } from '~/types/battle'
 import { FieldController } from '~/utility/helper/battle/field/index'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
@@ -218,32 +218,24 @@ export default class Field extends Vue {
   onSelectBattleAction(action: ActionType) {
     switch (action) {
       case 'attack':
-        this.beforeInteractCharacter(action, 'closeRange')
+        this.characterController.prepareInteractCharacter(
+          action,
+          'closeRange',
+          this.fieldController
+        )
         break
       case 'wait':
         this.onFinishAction()
         break
       case 'item':
-        this.beforeInteractCharacter(action, 'closeRange', 1)
+        this.characterController.prepareInteractCharacter(
+          action,
+          'closeRange',
+          this.fieldController,
+          0
+        )
         break
     }
-  }
-
-  beforeInteractCharacter(
-    actionType: ActionType,
-    interactType: WeaponType,
-    itemId: number = 0
-  ) {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    if (!activeCharacter) return
-    this.characterController.updateActiveCharacter({
-      actionState: {
-        ...activeCharacter.actionState,
-        name: actionType,
-        itemId
-      }
-    })
-    this.fieldController.startInteractMode(activeCharacter.latLng, interactType)
     this.setModal(false)
   }
 

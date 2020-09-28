@@ -1,7 +1,8 @@
 import { Vue } from 'vue-property-decorator'
 import _ from 'lodash'
+import { FieldController } from '../field'
 import { ICharacter } from '~/types/store'
-import { ILatlng } from '~/types/battle'
+import { ActionType, ILatlng, WeaponType } from '~/types/battle'
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
@@ -64,6 +65,24 @@ export default class CharacterController extends Vue {
       return true
     }
     return false
+  }
+
+  prepareInteractCharacter(
+    actionType: ActionType,
+    interactType: WeaponType,
+    fieldController: FieldController,
+    itemId: number = 0
+  ) {
+    if (this.activeCharacter === null) return
+    this.updateActiveCharacter({
+      actionState: {
+        ...this.activeCharacter.actionState,
+        name: actionType,
+        itemId
+      }
+    })
+
+    fieldController.startInteractMode(this.activeCharacter.latLng, interactType)
   }
 
   interactCharacter(
