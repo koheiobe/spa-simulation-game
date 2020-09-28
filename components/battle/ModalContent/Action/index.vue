@@ -5,11 +5,15 @@
       <li
         v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
         @click="$emit('on-select', 'attack')"
-      >攻撃</li>
+      >
+        攻撃
+      </li>
       <li
         v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
         @click="$emit('on-select', 'wait')"
-      >待機</li>
+      >
+        待機
+      </li>
       <!-- TODO ミニマムリリースを目指すためアイテムは落とす -->
       <!-- <li v-if="isMyTurn" @click="selectedAction = 'item'">アイテム</li> -->
       <li @click="selectedAction = 'detail'">能力</li>

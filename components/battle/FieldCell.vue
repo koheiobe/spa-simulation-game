@@ -60,12 +60,12 @@ export default {
     latLng: {
       default: (): ILatlng => ({ x: 0, y: 0 }),
       type: Object,
-      require: true
+      required: true
     },
     cellType: {
       default: '',
       type: String,
-      require: true
+      required: true
     },
     character: {
       default: (): ICharacter | undefined => undefined,
@@ -74,12 +74,12 @@ export default {
     field: {
       default: (): IField | null => null,
       type: Object,
-      require: true
+      required: true
     },
     isHostOrGuest: {
       default: '',
       type: String,
-      require: true
+      required: true
     }
   },
   methods: {

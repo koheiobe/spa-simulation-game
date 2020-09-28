@@ -8,7 +8,7 @@
       {{ TIME_LIMIT }}
     </div>
     <div>
-      <b-button variant="primary" @click="$emit('deployEnd')">
+      <b-button variant="primary" @click="$emit('deploy-end')">
         デプロイ終了
       </b-button>
     </div>
