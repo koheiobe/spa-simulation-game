@@ -62,7 +62,7 @@ export default class SideMenu extends Vue {
   @Prop({ default: () => [] })
   characters!: ICharacter[]
 
-  @Prop({ default: () => [] })
+  @Prop({ default: () => -1 })
   selectedCharacterId!: number
 
   @Prop({ default: () => {} })

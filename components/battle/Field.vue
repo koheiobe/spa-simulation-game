@@ -3,7 +3,7 @@
     <SideMenu
       v-if="isDeploying"
       :characters="characterList"
-      :selected-character-id="deployCharacterId"
+      :selected-character-id="characterController.getDeployCharacterId()"
       :is-my-character="isMyCharacter"
       :is-host-or-guest="isHostOrGuest"
       @onClickCharacter="selectDeployCharacter"
@@ -116,8 +116,6 @@ export default class Field extends Vue {
   @Prop({ default: {} })
   fieldController!: FieldController
 
-  // TODO: 各characterの移動距離と置き換える
-  public deployCharacterId: string = ''
   public isBattleModalOpen: boolean = false
   public characterController: CharacterController
   public skillController: SkillController
@@ -170,30 +168,28 @@ export default class Field extends Vue {
   }
 
   selectDeployCharacter(id: string) {
-    if (this.deployCharacterId === id) {
-      this.characterController.setActiveCharacter(id, this.characterList)
-      this.setModal(true)
-    }
-    this.deployCharacterId = id
+    this.characterController.selectDeployCharacter(
+      id,
+      this.characterList,
+      (_) => this.setModal(true)
+    )
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
-    const isCharacterDeployedCell = cellCharacterId.length > 0
-    // クリックしたセルにキャラクターが存在したら、キャラクターを除外
-    const updatedLatLng = isCharacterDeployedCell ? { x: -1, y: -1 } : latLng
-    const targetCharacterId = isCharacterDeployedCell
-      ? cellCharacterId
-      : this.deployCharacterId
-    // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
-    // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
-    this.setCharacterParam({
-      id: targetCharacterId,
-      value: {
-        latLng: updatedLatLng,
-        lastLatLng: updatedLatLng
-      }
-    })
-    this.deployCharacterId = ''
+    this.characterController.deployCharacter(
+      latLng,
+      cellCharacterId,
+      // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
+      // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
+      (targetCharacterId, updatedLatLng) =>
+        this.setCharacterParam({
+          id: targetCharacterId,
+          value: {
+            latLng: updatedLatLng,
+            lastLatLng: updatedLatLng
+          }
+        })
+    )
   }
 
   moveCharacter(latLng: ILatlng, cellCharacterId: string) {

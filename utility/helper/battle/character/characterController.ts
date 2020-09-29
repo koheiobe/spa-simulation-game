@@ -1,4 +1,3 @@
-import { Vue } from 'vue-property-decorator'
 import _ from 'lodash'
 import { FieldController } from '../field'
 import { ICharacter } from '~/types/store'
@@ -12,11 +11,16 @@ import {
   onEndCalculateDamage
 } from '~/utility/helper/battle/damageCalculator'
 
-export default class CharacterController extends Vue {
+export default class CharacterController {
   private activeCharacter: ICharacter | null = null
+  private deployCharacterId: string = ''
 
   getActiveCharacter() {
     return this.activeCharacter
+  }
+
+  getDeployCharacterId() {
+    return this.deployCharacterId
   }
 
   setActiveCharacter(cellCharacterId: string, fieldCharacters: ICharacter[]) {
@@ -40,6 +44,33 @@ export default class CharacterController extends Vue {
 
   isActiveCharacterExist() {
     return Boolean(this.activeCharacter)
+  }
+
+  selectDeployCharacter(
+    id: string,
+    characterList: ICharacter[],
+    onSelectDeployedCharacter: (id: string) => any
+  ) {
+    if (this.deployCharacterId === id) {
+      this.setActiveCharacter(id, characterList)
+      onSelectDeployedCharacter(id)
+    }
+    this.deployCharacterId = id
+  }
+
+  deployCharacter(
+    latLng: ILatlng,
+    cellCharacterId: string,
+    updateDB: (targetCharacterId: string, updatedLatLng: ILatlng) => any
+  ) {
+    const isCharacterDeployedCell = cellCharacterId.length > 0
+    // クリックしたセルにキャラクターが存在したら、キャラクターを除外
+    const updatedLatLng = isCharacterDeployedCell ? { x: -1, y: -1 } : latLng
+    const targetCharacterId = isCharacterDeployedCell
+      ? cellCharacterId
+      : this.deployCharacterId
+    this.deployCharacterId = ''
+    updateDB(targetCharacterId, updatedLatLng)
   }
 
   onSelectCharacter(
