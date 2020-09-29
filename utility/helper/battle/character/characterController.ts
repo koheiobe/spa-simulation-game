@@ -2,7 +2,7 @@ import { Vue } from 'vue-property-decorator'
 import _ from 'lodash'
 import { FieldController } from '../field'
 import { ICharacter } from '~/types/store'
-import { ActionType, ILatlng, WeaponType } from '~/types/battle'
+import { ActionType, IField, ILatlng, WeaponType } from '~/types/battle'
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
@@ -40,6 +40,22 @@ export default class CharacterController extends Vue {
 
   isActiveCharacterExist() {
     return Boolean(this.activeCharacter)
+  }
+
+  onSelectCharacter(
+    latLng: ILatlng,
+    cellCharacterId: string,
+    fieldController: FieldController,
+    charactersLatLngMap: IField,
+    characterList: ICharacter[]
+  ) {
+    this.setActiveCharacter(cellCharacterId, characterList)
+    if (!this.activeCharacter) return
+    fieldController.startMoveMode(
+      latLng,
+      this.activeCharacter,
+      charactersLatLngMap
+    )
   }
 
   moveCharacter(
@@ -89,7 +105,7 @@ export default class CharacterController extends Vue {
     cellCharacterId: string,
     fieldCharacters: ICharacter[],
     isHostOrGuest: string
-  ) {
+  ): boolean {
     if (!this.activeCharacter) return false
     const targetCharacter = fieldCharacters.find(
       (character) => character.id === cellCharacterId

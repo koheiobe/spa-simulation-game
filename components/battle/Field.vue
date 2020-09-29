@@ -154,18 +154,13 @@ export default class Field extends Vue {
         this.interactCharacter(cellCharacterId)
         break
       default:
-        // キャラクターを選択する
         if (cellCharacterId.length > 0) {
-          this.characterController.setActiveCharacter(
-            cellCharacterId,
-            this.characterList
-          )
-          const activeCharacter = this.characterController.getActiveCharacter()
-          if (!activeCharacter) return
-          this.fieldController.startMoveMode(
+          this.characterController.onSelectCharacter(
             latLng,
-            activeCharacter,
-            this.charactersLatLngMap
+            cellCharacterId,
+            this.fieldController,
+            this.charactersLatLngMap,
+            this.characterList
           )
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
