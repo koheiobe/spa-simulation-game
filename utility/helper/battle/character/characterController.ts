@@ -12,6 +12,7 @@ import {
 } from '~/utility/helper/battle/damageCalculator'
 
 export default class CharacterController {
+  public characterList: ICharacter[] = []
   private activeCharacter: ICharacter | null = null
   private deployCharacterId: string = ''
 
@@ -23,8 +24,12 @@ export default class CharacterController {
     return this.deployCharacterId
   }
 
-  setActiveCharacter(cellCharacterId: string, fieldCharacters: ICharacter[]) {
-    const targetCharacter = fieldCharacters.find(
+  setCharacterList(characterList: ICharacter[]) {
+    this.characterList = characterList
+  }
+
+  setActiveCharacter(cellCharacterId: string) {
+    const targetCharacter = this.characterList.find(
       (character) => character.id === cellCharacterId
     )
     if (!targetCharacter) {
@@ -48,11 +53,10 @@ export default class CharacterController {
 
   selectDeployCharacter(
     id: string,
-    characterList: ICharacter[],
     onSelectDeployedCharacter: (id: string) => any
   ) {
     if (this.deployCharacterId === id) {
-      this.setActiveCharacter(id, characterList)
+      this.setActiveCharacter(id)
       onSelectDeployedCharacter(id)
     }
     this.deployCharacterId = id
@@ -77,10 +81,9 @@ export default class CharacterController {
     latLng: ILatlng,
     cellCharacterId: string,
     fieldController: FieldController,
-    charactersLatLngMap: IField,
-    characterList: ICharacter[]
+    charactersLatLngMap: IField
   ) {
-    this.setActiveCharacter(cellCharacterId, characterList)
+    this.setActiveCharacter(cellCharacterId)
     if (!this.activeCharacter) return
     fieldController.startMoveMode(
       latLng,
@@ -132,13 +135,9 @@ export default class CharacterController {
     fieldController.startInteractMode(this.activeCharacter.latLng, interactType)
   }
 
-  interactCharacter(
-    cellCharacterId: string,
-    fieldCharacters: ICharacter[],
-    isHostOrGuest: string
-  ): boolean {
+  interactCharacter(cellCharacterId: string, isHostOrGuest: string): boolean {
     if (!this.activeCharacter) return false
-    const targetCharacter = fieldCharacters.find(
+    const targetCharacter = this.characterList.find(
       (character) => character.id === cellCharacterId
     )
     if (!targetCharacter || this.isMyCharacter(targetCharacter, isHostOrGuest))
@@ -154,12 +153,11 @@ export default class CharacterController {
 
   async attackCharacter(
     attackerEl: HTMLElement,
-    attacker: ICharacter,
-    fieldCharacters: ICharacter[]
+    attacker: ICharacter
   ): Promise<{ attacker: ICharacter; taker: ICharacter } | null> {
     await attackCharacterAnimation(attackerEl, attacker)
     const takerLatLng = attacker.actionState.interactLatLng
-    const taker = fieldCharacters.find(
+    const taker = this.characterList.find(
       (character) =>
         character.latLng.x === takerLatLng.x &&
         character.latLng.y === takerLatLng.y

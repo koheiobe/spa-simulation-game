@@ -22,7 +22,6 @@ export default class SkillController {
     attacker: ICharacter,
     taker: ICharacter,
     isMyTurn: boolean,
-    fieldCharacters: ICharacter[],
     updateStoreCharacter: (character: ICharacter) => void,
     isHostOrGuest: string
   ) {
@@ -32,11 +31,7 @@ export default class SkillController {
         taker,
         attacker,
         onCounter({ takerEl, updatedTaker }) {
-          self.characterController.attackCharacter(
-            takerEl,
-            updatedTaker,
-            fieldCharacters
-          )
+          self.characterController.attackCharacter(takerEl, updatedTaker)
         }
       })
     )

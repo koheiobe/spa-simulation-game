@@ -18,7 +18,7 @@
       :is-host-or-guest="isHostOrGuest"
       :set-battle-room-winner="setBattleRoomWinner"
       :set-battle-start-at="setBattleStartAt"
-      @deployEnd="$emit('deployEnd')"
+      @deploy-end="$emit('deploy-end')"
     />
     <div>
       <BIconGearFill :class="$style.gearIcon" @click="openOptionModal" />
@@ -37,9 +37,9 @@
 import Component from 'vue-class-component'
 import { BIconGearFill } from 'bootstrap-vue'
 import { Vue, Prop } from 'vue-property-decorator'
-import Option from '../ModalContent/Option.vue'
+import Option from '../ModalContent/option.vue'
 import Battle from './battle.vue'
-import Deploy from './Deploy.vue'
+import Deploy from './deploy.vue'
 import { IBattleRoomRes, IUser } from '~/types/store'
 import Modal from '~/components/utility/Modal.vue'
 

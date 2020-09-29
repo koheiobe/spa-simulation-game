@@ -12,7 +12,7 @@
       :is-host-or-guest="isHostOrGuest"
       :set-battle-start-at="setBattleStartAt"
       @surrender="onSurrender"
-      @deployEnd="finishDeployMode"
+      @deploy-end="finishDeployMode"
       @turnEnd="onTurnEnd"
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
@@ -49,7 +49,7 @@ import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
 import { ActionType, IField } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
-import EndBattleDialogue from '~/components/battle/ModalContent/EndBattleDialogue.vue'
+import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
 import Header from '~/components/battle/header/index.vue'
 import field from '~/assets/field.json'
 import {
@@ -243,6 +243,7 @@ export default class OnlineBattleRoom extends Vue {
   }
 
   async finishDeployMode() {
+    console.log('deploy end')
     if (!this.fieldController.isDeploying()) return
     this.fieldController.finishDeployMode()
     await this.updateCharacters({
