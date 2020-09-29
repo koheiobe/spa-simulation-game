@@ -73,7 +73,6 @@ const CharacterModule = namespace('character')
   }
 })
 export default class Field extends Vue {
-  // キャラクターが移動するときに一時的に使用する。行動が完了したらdbに反映
   @CharacterModule.State('characters')
   private characterList!: ICharacter[]
 
@@ -88,9 +87,6 @@ export default class Field extends Vue {
     battleId: string
     character: ICharacter
   }) => Promise<void>
-
-  @Prop({ default: false })
-  isDeployModeEnd!: boolean
 
   @Prop({ default: false })
   isMyTurn!: boolean

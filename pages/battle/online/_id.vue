@@ -18,7 +18,6 @@
     />
     <Field
       :field-controller="fieldController"
-      :is-deploy-mode-end="isDeployModeEnd"
       :is-my-turn="isMyTurn"
       :is-my-character="isMyCharacter"
       :field="field"
