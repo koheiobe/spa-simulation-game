@@ -16,42 +16,27 @@ export default class CharacterController {
   private activeCharacter: ICharacter | null = null
   private deployCharacterId: string = ''
 
-  getActiveCharacter() {
+  public getActiveCharacter() {
     return this.activeCharacter
   }
 
-  getDeployCharacterId() {
+  public getDeployCharacterId() {
     return this.deployCharacterId
   }
 
-  setCharacterList(characterList: ICharacter[]) {
+  public setCharacterList(characterList: ICharacter[]) {
     this.characterList = characterList
   }
 
-  setActiveCharacter(cellCharacterId: string) {
-    const targetCharacter = this.characterList.find(
-      (character) => character.id === cellCharacterId
-    )
-    if (!targetCharacter) {
-      console.error('キャラクターが存在しません')
-      return
-    }
-    this.activeCharacter = _.cloneDeep(targetCharacter)
-  }
-
-  resetActiveCharacter() {
+  public resetActiveCharacter() {
     this.activeCharacter = null
   }
 
-  updateActiveCharacter(param: any) {
+  public updateActiveCharacter(param: any) {
     this.activeCharacter = _.cloneDeep({ ...this.activeCharacter, ...param })
   }
 
-  isActiveCharacterExist() {
-    return Boolean(this.activeCharacter)
-  }
-
-  selectDeployCharacter(
+  public selectDeployCharacter(
     id: string,
     onSelectDeployedCharacter: (id: string) => any
   ) {
@@ -62,7 +47,7 @@ export default class CharacterController {
     this.deployCharacterId = id
   }
 
-  deployCharacter(
+  public deployCharacter(
     latLng: ILatlng,
     cellCharacterId: string,
     updateDB: (targetCharacterId: string, updatedLatLng: ILatlng) => any
@@ -77,7 +62,7 @@ export default class CharacterController {
     updateDB(targetCharacterId, updatedLatLng)
   }
 
-  onSelectCharacter(
+  public onSelectCharacter(
     latLng: ILatlng,
     cellCharacterId: string,
     fieldController: FieldController,
@@ -92,7 +77,7 @@ export default class CharacterController {
     )
   }
 
-  moveCharacter(
+  public moveCharacter(
     latLng: ILatlng,
     cellCharacterId: string,
     isMyTurn: boolean,
@@ -117,7 +102,7 @@ export default class CharacterController {
     return false
   }
 
-  prepareInteractCharacter(
+  public prepareInteractCharacter(
     actionType: ActionType,
     interactType: WeaponType,
     fieldController: FieldController,
@@ -135,7 +120,10 @@ export default class CharacterController {
     fieldController.startInteractMode(this.activeCharacter.latLng, interactType)
   }
 
-  interactCharacter(cellCharacterId: string, isHostOrGuest: string): boolean {
+  public interactCharacter(
+    cellCharacterId: string,
+    isHostOrGuest: string
+  ): boolean {
     if (!this.activeCharacter) return false
     const targetCharacter = this.characterList.find(
       (character) => character.id === cellCharacterId
@@ -151,7 +139,7 @@ export default class CharacterController {
     return true
   }
 
-  async attackCharacter(
+  public async attackCharacter(
     attackerEl: HTMLElement,
     attacker: ICharacter
   ): Promise<{ attacker: ICharacter; taker: ICharacter } | null> {
@@ -167,6 +155,16 @@ export default class CharacterController {
     if (!enemyEl) return null
     await takeDamageCharacterAnimation(enemyEl)
     return this.updateAttackerAndTaker(attacker, taker)
+  }
+
+  public isMyCharacter(
+    character: ICharacter | undefined,
+    isHostOrGuest: string
+  ) {
+    if (!character) return false
+    const matchedSuffix = character.id.match(/-.+()$/)
+    if (!matchedSuffix) return false
+    return matchedSuffix[0].replace('-', '') === isHostOrGuest
   }
 
   private updateAttackerAndTaker(attacker: ICharacter, taker: ICharacter) {
@@ -194,10 +192,14 @@ export default class CharacterController {
     }
   }
 
-  isMyCharacter(character: ICharacter | undefined, isHostOrGuest: string) {
-    if (!character) return false
-    const matchedSuffix = character.id.match(/-.+()$/)
-    if (!matchedSuffix) return false
-    return matchedSuffix[0].replace('-', '') === isHostOrGuest
+  private setActiveCharacter(cellCharacterId: string) {
+    const targetCharacter = this.characterList.find(
+      (character) => character.id === cellCharacterId
+    )
+    if (!targetCharacter) {
+      console.error('キャラクターが存在しません')
+      return
+    }
+    this.activeCharacter = _.cloneDeep(targetCharacter)
   }
 }

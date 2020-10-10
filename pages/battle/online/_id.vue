@@ -243,7 +243,6 @@ export default class OnlineBattleRoom extends Vue {
   }
 
   async finishDeployMode() {
-    console.log('deploy end')
     if (!this.fieldController.isDeploying()) return
     this.fieldController.finishDeployMode()
     await this.updateCharacters({

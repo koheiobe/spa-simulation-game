@@ -153,8 +153,7 @@ export default class Field extends Vue {
             latLng,
             cellCharacterId,
             this.fieldController,
-            this.charactersLatLngMap,
-            this.characterList
+            this.charactersLatLngMap
           )
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
@@ -164,10 +163,8 @@ export default class Field extends Vue {
   }
 
   selectDeployCharacter(id: string) {
-    this.characterController.selectDeployCharacter(
-      id,
-      this.characterList,
-      (_) => this.setModal(true)
+    this.characterController.selectDeployCharacter(id, (_) =>
+      this.setModal(true)
     )
   }
 
@@ -230,7 +227,6 @@ export default class Field extends Vue {
     if (
       this.characterController.interactCharacter(
         cellCharacterId,
-        this.characterList,
         this.isHostOrGuest
       )
     ) {
@@ -293,8 +289,7 @@ export default class Field extends Vue {
   async attackCharacter(attackerEl: HTMLElement, attacker: ICharacter) {
     const attackResultObj = await this.characterController.attackCharacter(
       attackerEl,
-      attacker,
-      this.characterList
+      attacker
     )
     if (!attackResultObj) return
     attackResultObj.attacker.actionState.isEnd = true
@@ -314,7 +309,6 @@ export default class Field extends Vue {
       attacker,
       taker,
       this.isMyTurn,
-      this.characterList,
       (character) =>
         this.updateCharacter({
           battleId: this.battleId,
@@ -355,6 +349,11 @@ export default class Field extends Vue {
     } else {
       return existCharacter
     }
+  }
+
+  @Watch('characterList')
+  onCharacterListUpdated(characterList: ICharacter[]) {
+    this.characterController.setCharacterList(characterList)
   }
 
   // 開発用
