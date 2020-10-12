@@ -35,7 +35,7 @@ export const mutations: MutationTree<ICharacterState> = {
     )
   },
   updateInteractiveCharacter(state, param) {
-    state.interactiveCharacter = { ...param }
+    state.interactiveCharacter = { ...state.interactiveCharacter, ...param }
   },
   setDeployCharacterId(state, id) {
     state.deployCharacterId = id
@@ -66,7 +66,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
   },
   updateActiveCharacter(context, param: any) {
     context.commit('updateInteractiveCharacter', {
-      ...context.state.interactiveCharacter,
       ...param
     })
   },
@@ -108,7 +107,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     })
     return true
   },
-  interactCharacter(
+  tryInteractCharacter(
     context,
     obj: { cellCharacterId: string; isHostOrGuest: string }
   ): boolean {
@@ -126,20 +125,20 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     })
     return true
   },
-  async attackCharacter(
+  async onAttackCharacter(
     context,
     obj: {
       attackerEl: HTMLElement
       attacker: ICharacter
       battleId: string
     }
-  ): Promise<boolean> {
+  ): Promise<{ attacker: ICharacter; taker: ICharacter } | null> {
     const attackResultObj = await characterService.getUpdatedAttackerAndTaker(
       obj.attackerEl,
       obj.attacker,
       context.state.characters
     )
-    if (!attackResultObj) return false
+    if (!attackResultObj) return null
     attackResultObj.attacker.actionState.isEnd = true
     context.dispatch('updateCharacter', {
       battleId: obj.battleId,
@@ -149,7 +148,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       battleId: obj.battleId,
       character: _.cloneDeep(attackResultObj.taker)
     })
-    return true
+    return attackResultObj
   },
   onSelectCharacter(context, cellCharacterId) {
     context.commit('setInteractiveCharacter', cellCharacterId)

@@ -82,6 +82,19 @@ export default class Field extends Vue {
     value: any
   }) => Promise<null>
 
+  @CharacterModule.Action('onAttackCharacter')
+  private onAttackCharacter!: (obj: {
+    attackerEl: HTMLElement
+    attacker: ICharacter
+    battleId: string
+  }) => Promise<{ attacker: ICharacter; taker: ICharacter } | null>
+
+  @CharacterModule.Action('tryInteractCharacter')
+  private tryInteractCharacter!: (obj: {
+    cellCharacterId: string
+    isHostOrGuest: string
+  }) => boolean
+
   @CharacterModule.Action('updateCharacter')
   private updateCharacter!: (dbInfo: {
     battleId: string
@@ -226,7 +239,7 @@ export default class Field extends Vue {
     if (!activeCharacter) return
     this.characterController.updateActiveCharacter({
       actionState: {
-        ...this.characterController.getActiveCharacter(),
+        ...activeCharacter.actionState,
         name: actionType,
         itemId
       }
@@ -299,27 +312,15 @@ export default class Field extends Vue {
   }
 
   async attackCharacter(attackerEl: HTMLElement, attacker: ICharacter) {
-    const attackResultObj = await this.characterController.attackCharacter(
+    const attackResultObj = await this.onAttackCharacter({
       attackerEl,
-      attacker
-    )
-    if (!attackResultObj) return
-    attackResultObj.attacker.actionState.isEnd = true
-    this.updateCharacter({
-      battleId: this.battleId,
-      character: _.cloneDeep(attackResultObj.attacker)
-    })
-    this.updateCharacter({
-      battleId: this.battleId,
-      character: _.cloneDeep(attackResultObj.taker)
-    })
-    this.onEndAttackCharacter(attackResultObj.attacker, attackResultObj.taker)
-  }
-
-  onEndAttackCharacter(attacker: ICharacter, taker: ICharacter) {
-    this.skillController.activateSkillOnEndAttack(
       attacker,
-      taker,
+      battleId: this.battleId
+    })
+    if (!attackResultObj) return
+    this.skillController.activateSkillOnEndAttack(
+      attackResultObj.attacker,
+      attackResultObj.taker,
       this.isMyTurn,
       (character) =>
         this.updateCharacter({
