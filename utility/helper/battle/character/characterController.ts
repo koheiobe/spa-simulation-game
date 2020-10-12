@@ -1,7 +1,6 @@
 import _ from 'lodash'
-import { FieldController } from '../field'
 import { ICharacter } from '~/types/store'
-import { ActionType, IField, ILatlng, WeaponType } from '~/types/battle'
+import { ILatlng } from '~/types/battle'
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
@@ -36,6 +35,10 @@ export default class CharacterController {
     this.activeCharacter = _.cloneDeep({ ...this.activeCharacter, ...param })
   }
 
+  public isActiveCharacterExist() {
+    return this.activeCharacter != null
+  }
+
   public selectDeployCharacter(
     id: string,
     onSelectDeployedCharacter: (id: string) => any
@@ -62,19 +65,8 @@ export default class CharacterController {
     updateDB(targetCharacterId, updatedLatLng)
   }
 
-  public onSelectCharacter(
-    latLng: ILatlng,
-    cellCharacterId: string,
-    fieldController: FieldController,
-    charactersLatLngMap: IField
-  ) {
+  public onSelectCharacter(cellCharacterId: string) {
     this.setActiveCharacter(cellCharacterId)
-    if (!this.activeCharacter) return
-    fieldController.startMoveMode(
-      latLng,
-      this.activeCharacter,
-      charactersLatLngMap
-    )
   }
 
   public moveCharacter(
@@ -100,24 +92,6 @@ export default class CharacterController {
       return true
     }
     return false
-  }
-
-  public prepareInteractCharacter(
-    actionType: ActionType,
-    interactType: WeaponType,
-    fieldController: FieldController,
-    itemId: number = 0
-  ) {
-    if (this.activeCharacter === null) return
-    this.updateActiveCharacter({
-      actionState: {
-        ...this.activeCharacter.actionState,
-        name: actionType,
-        itemId
-      }
-    })
-
-    fieldController.startInteractMode(this.activeCharacter.latLng, interactType)
   }
 
   public interactCharacter(

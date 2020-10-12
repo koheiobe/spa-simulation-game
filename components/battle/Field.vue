@@ -48,7 +48,7 @@ import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import _ from 'lodash'
 import DevFieldUi from './devFieldUi.vue'
-import { IField, ILatlng, ActionType } from '~/types/battle'
+import { IField, ILatlng, ActionType, WeaponType } from '~/types/battle'
 import { FieldController } from '~/utility/helper/battle/field/index'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
@@ -149,12 +149,15 @@ export default class Field extends Vue {
         break
       default:
         if (cellCharacterId.length > 0) {
-          this.characterController.onSelectCharacter(
-            latLng,
-            cellCharacterId,
-            this.fieldController,
-            this.charactersLatLngMap
-          )
+          this.characterController.onSelectCharacter(cellCharacterId)
+          const activeCharacter = this.characterController.getActiveCharacter()
+          if (activeCharacter) {
+            this.fieldController.startMoveMode(
+              latLng,
+              activeCharacter,
+              this.charactersLatLngMap
+            )
+          }
         } else {
           // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
           this.resetCharacterState()
@@ -202,25 +205,34 @@ export default class Field extends Vue {
   onSelectBattleAction(action: ActionType) {
     switch (action) {
       case 'attack':
-        this.characterController.prepareInteractCharacter(
-          action,
-          'closeRange',
-          this.fieldController
-        )
+        this.prepareInteractCharacter(action, 'closeRange')
         break
       case 'wait':
         this.onFinishAction()
         break
       case 'item':
-        this.characterController.prepareInteractCharacter(
-          action,
-          'closeRange',
-          this.fieldController,
-          0
-        )
+        this.prepareInteractCharacter(action, 'closeRange', 0)
         break
     }
     this.setModal(false)
+  }
+
+  prepareInteractCharacter(
+    actionType: string,
+    weaponType: WeaponType,
+    itemId = 0
+  ) {
+    const activeCharacter = this.characterController.getActiveCharacter()
+    if (!activeCharacter) return
+    this.characterController.updateActiveCharacter({
+      actionState: {
+        ...this.characterController.getActiveCharacter(),
+        name: actionType,
+        itemId
+      }
+    })
+
+    this.fieldController.startInteractMode(activeCharacter.latLng, weaponType)
   }
 
   interactCharacter(cellCharacterId: string) {
