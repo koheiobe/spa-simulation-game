@@ -3,7 +3,7 @@
     <SideMenu
       v-if="isDeploying"
       :characters="characterList"
-      :selected-character-id="characterController.getDeployCharacterId()"
+      :selected-character-id="deployCharacterId"
       :is-my-character="isMyCharacter"
       :is-host-or-guest="isHostOrGuest"
       @onClickCharacter="selectDeployCharacter"
@@ -32,7 +32,7 @@
     </div>
     <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
       <BattleDialogue
-        :character-controller="characterController"
+        :active-character="activeCharacter"
         :is-my-turn="isMyTurn"
         :is-deploying="isDeploying"
         :is-host-or-guest="isHostOrGuest"
@@ -57,8 +57,6 @@ import BattleDialogue from '~/components/battle/ModalContent/Action/index.vue'
 import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
-import CharacterController from '~/utility/helper/battle/character/characterController'
-import SkillController from '~/utility/helper/battle/character/skillController'
 
 const CharacterModule = namespace('character')
 
@@ -76,11 +74,47 @@ export default class Field extends Vue {
   @CharacterModule.State('characters')
   private characterList!: ICharacter[]
 
+  @CharacterModule.Getter('getActiveCharacter')
+  private activeCharacter!: ICharacter
+
+  @CharacterModule.Getter('getDeployCharacterId')
+  private deployCharacterId!: ICharacter
+
   @CharacterModule.Action('setCharacterParam')
   private setCharacterParam!: (characterObj: {
     id: string
     value: any
   }) => Promise<null>
+
+  @CharacterModule.Action('selectDeployTargetCharacter')
+  private selectDeployTargetCharacter!: (obj: {
+    id: string
+    openModal: (id: string) => void
+  }) => ICharacter | null
+
+  @CharacterModule.Action('onDeployCharacter')
+  private onDeployCharacter!: (obj: {
+    latLng: ILatlng
+    cellCharacterId: string
+  }) => void
+
+  @CharacterModule.Action('onSelectCharacter')
+  private onSelectCharacter!: (cellCharacterId: string) => ICharacter | null
+
+  @CharacterModule.Action('tryMoveCharacter')
+  private tryMoveCharacter!: (obj: {
+    latLng: ILatlng
+    cellCharacterId: string
+    isMyTurn: boolean
+    isHostOrGuest: string
+  }) => boolean
+
+  @CharacterModule.Action('tryPrepareInteractCharacter')
+  private tryPrepareInteractCharacter!: (obj: {
+    actionType: string
+    weaponType: WeaponType
+    itemId: number
+  }) => ICharacter | null
 
   @CharacterModule.Action('onAttackCharacter')
   private onAttackCharacter!: (obj: {
@@ -100,6 +134,13 @@ export default class Field extends Vue {
     battleId: string
     character: ICharacter
   }) => Promise<void>
+
+  @CharacterModule.Action('setActiveCharacterStateEnd')
+  private setActiveCharacterStateEnd!: () => void
+
+  // TODO: Mutationはなくす！
+  @CharacterModule.Mutation('resetActiveCharacter')
+  private resetActiveCharacter!: () => void
 
   @Prop({ default: false })
   isMyTurn!: boolean
@@ -126,22 +167,10 @@ export default class Field extends Vue {
   fieldController!: FieldController
 
   public isBattleModalOpen: boolean = false
-  public characterController: CharacterController
-  public skillController: SkillController
 
   // 開発用
   private isDevMode = false
   private selectedFieldIcon = ''
-
-  constructor() {
-    super()
-
-    this.characterController = new CharacterController()
-    this.skillController = new SkillController(
-      this.setModal,
-      this.characterController
-    )
-  }
 
   onClickCell(latLng: ILatlng, cellCharacterId: string) {
     // 開発用
@@ -161,54 +190,47 @@ export default class Field extends Vue {
         this.interactCharacter(cellCharacterId)
         break
       default:
-        if (cellCharacterId.length > 0) {
-          this.characterController.onSelectCharacter(cellCharacterId)
-          const activeCharacter = this.characterController.getActiveCharacter()
-          if (activeCharacter) {
-            this.fieldController.startMoveMode(
-              latLng,
-              activeCharacter,
-              this.charactersLatLngMap
-            )
-          }
-        } else {
-          // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
-          this.resetCharacterState()
-        }
+        this.selectCharacter(cellCharacterId, latLng)
     }
   }
 
   selectDeployCharacter(id: string) {
-    this.characterController.selectDeployCharacter(id, (_) =>
-      this.setModal(true)
-    )
+    this.selectDeployTargetCharacter({
+      id,
+      openModal: (_) => {
+        this.setModal(true)
+      }
+    })
   }
 
   deployCharacter(latLng: ILatlng, cellCharacterId: string) {
-    this.characterController.deployCharacter(
-      latLng,
-      cellCharacterId,
-      // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
-      // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
-      (targetCharacterId, updatedLatLng) =>
-        this.setCharacterParam({
-          id: targetCharacterId,
-          value: {
-            latLng: updatedLatLng,
-            lastLatLng: updatedLatLng
-          }
-        })
-    )
+    this.onDeployCharacter({ latLng, cellCharacterId })
+  }
+
+  selectCharacter(cellCharacterId: string, latLng: ILatlng) {
+    if (cellCharacterId.length > 0) {
+      this.onSelectCharacter(cellCharacterId)
+      if (this.activeCharacter) {
+        this.fieldController.startMoveMode(
+          latLng,
+          this.activeCharacter,
+          this.charactersLatLngMap
+        )
+      }
+    } else {
+      // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
+      this.resetCharacterState()
+    }
   }
 
   moveCharacter(latLng: ILatlng, cellCharacterId: string) {
     if (
-      this.characterController.moveCharacter(
+      this.tryMoveCharacter({
         latLng,
         cellCharacterId,
-        this.isMyTurn,
-        this.isHostOrGuest
-      )
+        isMyTurn: this.isMyTurn,
+        isHostOrGuest: this.isHostOrGuest
+      })
     ) {
       this.setModal(true)
       this.fieldController.finishMoveMode()
@@ -235,25 +257,24 @@ export default class Field extends Vue {
     weaponType: WeaponType,
     itemId = 0
   ) {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    if (!activeCharacter) return
-    this.characterController.updateActiveCharacter({
-      actionState: {
-        ...activeCharacter.actionState,
-        name: actionType,
-        itemId
-      }
+    this.tryPrepareInteractCharacter({
+      actionType,
+      weaponType,
+      itemId
     })
-
-    this.fieldController.startInteractMode(activeCharacter.latLng, weaponType)
+    if (!this.activeCharacter) return
+    this.fieldController.startInteractMode(
+      this.activeCharacter.latLng,
+      weaponType
+    )
   }
 
   interactCharacter(cellCharacterId: string) {
     if (
-      this.characterController.interactCharacter(
-        cellCharacterId,
-        this.isHostOrGuest
-      )
+      this.tryInteractCharacter({
+        isHostOrGuest: this.isHostOrGuest,
+        cellCharacterId
+      })
     ) {
       this.onFinishAction()
     } else {
@@ -267,21 +288,20 @@ export default class Field extends Vue {
   }
 
   async onFinishAction() {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    if (!activeCharacter) return
+    if (!this.activeCharacter) return
     if (
-      activeCharacter.latLng.x === this.winnerCell.x &&
-      activeCharacter.latLng.y === this.winnerCell.y
+      this.activeCharacter.latLng.x === this.winnerCell.x &&
+      this.activeCharacter.latLng.y === this.winnerCell.y
     ) {
       this.$emit('onWin')
     }
-    activeCharacter.actionState.isEnd = true
-    await this.applyActiveCharacterStore(activeCharacter)
+    this.setActiveCharacterStateEnd()
+    await this.applyActiveCharacterStore(this.activeCharacter)
     this.$emit('setLastInteractCharacter', {
       id: this.battleId,
-      lastInteractCharacter: _.cloneDeep(activeCharacter)
+      lastInteractCharacter: _.cloneDeep(this.activeCharacter)
     })
-    this.$emit('setcharactersLatLngMap', _.cloneDeep(activeCharacter))
+    this.$emit('setcharactersLatLngMap', _.cloneDeep(this.activeCharacter))
     this.resetCharacterState()
   }
 
@@ -293,7 +313,7 @@ export default class Field extends Vue {
   }
 
   resetCharacterState() {
-    this.characterController.resetActiveCharacter()
+    this.resetActiveCharacter()
     this.setModal(false)
     this.fieldController.finishInteractMode()
     this.fieldController.finishMoveMode()
@@ -318,17 +338,18 @@ export default class Field extends Vue {
       battleId: this.battleId
     })
     if (!attackResultObj) return
-    this.skillController.activateSkillOnEndAttack(
-      attackResultObj.attacker,
-      attackResultObj.taker,
-      this.isMyTurn,
-      (character) =>
-        this.updateCharacter({
-          battleId: this.battleId,
-          character
-        }),
-      this.isHostOrGuest
-    )
+    // TODO: リファクタリング上、スキルは一旦削除
+    // this.skillController.activateSkillOnEndAttack(
+    //   attackResultObj.attacker,
+    //   attackResultObj.taker,
+    //   this.isMyTurn,
+    //   (character) =>
+    //     this.updateCharacter({
+    //       battleId: this.battleId,
+    //       character
+    //     }),
+    //   this.isHostOrGuest
+    // )
     this.$emit('setLastInteractCharacter', {
       id: this.battleId,
       lastInteractCharacter: null
@@ -345,7 +366,7 @@ export default class Field extends Vue {
       (character: ICharacter) =>
         character.latLng.x === latLng.x && character.latLng.y === latLng.y
     )
-    const activeCharacter = this.characterController.getActiveCharacter()
+    const activeCharacter = this.activeCharacter
     if (activeCharacter) {
       const isSameId =
         existCharacter && activeCharacter.id === existCharacter.id
@@ -362,11 +383,6 @@ export default class Field extends Vue {
     } else {
       return existCharacter
     }
-  }
-
-  @Watch('characterList')
-  onCharacterListUpdated(characterList: ICharacter[]) {
-    this.characterController.setCharacterList(characterList)
   }
 
   // 開発用

@@ -20,12 +20,11 @@ import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import { ICharacter } from '~/types/store'
 import { SkillType } from '~/types/battle'
-import CharacterController from '~/utility/helper/battle/character/characterController'
 
 @Component
 export default class CharacterDetail extends Vue {
   @Prop({ default: () => {} })
-  characterController!: CharacterController
+  activeCharacter!: ICharacter
 
   getSkillDescription(skill: SkillType, character: ICharacter) {
     switch (skill) {
@@ -68,7 +67,7 @@ export default class CharacterDetail extends Vue {
   }
 
   get character() {
-    const activeCharacter = this.characterController.getActiveCharacter()
+    const activeCharacter = this.activeCharacter
     if (!activeCharacter) {
       throw new ReferenceError('no active character exist')
     }

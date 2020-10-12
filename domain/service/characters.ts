@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import { ILatlng } from '~/types/battle'
 import { ICharacter } from '~/types/store'
 import {
   attackCharacterAnimation,
@@ -27,6 +28,21 @@ export const getMovableCharacter = (
     return interactiveCharacter as ICharacter
   }
   return undefined
+}
+
+// TODO: 下記２関数に関しては同じコンテキストで語られないとわかりづらい！
+export const getDeployTargetCharacterId = (
+  cellCharacterId: string,
+  deployCharacterId: string
+) => {
+  return cellCharacterId.length > 0 ? cellCharacterId : deployCharacterId
+}
+export const getDeployTargetCharacterLatlng = (
+  cellCharacterId: string,
+  latLng: ILatlng
+) => {
+  // クリックしたセルにキャラクターが存在したら、キャラクターを除外
+  return cellCharacterId.length > 0 ? { x: -1, y: -1 } : latLng
 }
 
 export const getInteractTargetCharacter = (

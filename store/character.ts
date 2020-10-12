@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter, ICharacterState, IRootState } from '~/types/store'
-import { ILatlng } from '~/types/battle'
+import { ILatlng, WeaponType } from '~/types/battle'
 
 import * as characterService from '~/domain/service/characters'
 
@@ -64,12 +64,12 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       resolve()
     })
   },
-  updateActiveCharacter(context, param: any) {
-    context.commit('updateInteractiveCharacter', {
-      ...param
-    })
-  },
-  selectDeployCharacter(
+  // updateActiveCharacter(context, param: any) {
+  //   context.commit('updateInteractiveCharacter', {
+  //     ...param
+  //   })
+  // },
+  selectDeployTargetCharacter(
     context,
     obj: { id: string; openModal: (id: string) => void }
   ) {
@@ -78,6 +78,31 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     }
     context.commit('setDeployCharacterId', obj.id)
   },
+  onDeployCharacter(
+    context,
+    obj: {
+      latLng: ILatlng
+      cellCharacterId: string
+    }
+  ) {
+    // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
+    // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
+    const updatedLatLng = characterService.getDeployTargetCharacterLatlng(
+      obj.cellCharacterId,
+      obj.latLng
+    )
+    context.commit('setCharacterParam', {
+      id: characterService.getDeployTargetCharacterId(
+        obj.cellCharacterId,
+        context.state.deployCharacterId
+      ),
+      value: {
+        latLng: updatedLatLng,
+        lastLatLng: updatedLatLng
+      }
+    })
+    context.commit('setDeployCharacterId', '')
+  },
   openCharacterModal(
     context,
     obj: { id: string; openModal: (id: string) => void }
@@ -85,7 +110,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     context.commit('setInteractiveCharacter', obj.id)
     obj.openModal(obj.id)
   },
-  moveCharacter(
+  tryMoveCharacter(
     context,
     obj: {
       latLng: ILatlng
@@ -101,11 +126,28 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       context.state.interactiveCharacter
     )
     if (!movableCharacter) return false
-    context.commit('setInteractiveCharacter', {
+    context.commit('updateInteractiveCharacter', {
       latLng: obj.latLng,
       lastLatLng: movableCharacter.latLng
     })
     return true
+  },
+  tryPrepareInteractCharacter(
+    context,
+    obj: {
+      actionType: string
+      weaponType: WeaponType
+      itemId: number
+    }
+  ): void {
+    if (!context.state.interactiveCharacter) return
+    context.commit('updateInteractiveCharacter', {
+      actionState: {
+        ...context.state.interactiveCharacter.actionState,
+        name: obj.actionType,
+        itemId: obj.itemId
+      }
+    })
   },
   tryInteractCharacter(
     context,
@@ -120,8 +162,10 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     )
     if (!targetCharacter || !interactiveCharacter) return false
     context.commit('updateInteractiveCharacter', {
-      ...interactiveCharacter.actionState,
-      interactLatLng: targetCharacter.latLng
+      actionState: {
+        ...interactiveCharacter.actionState,
+        interactLatLng: targetCharacter.latLng
+      }
     })
     return true
   },
@@ -152,5 +196,13 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
   },
   onSelectCharacter(context, cellCharacterId) {
     context.commit('setInteractiveCharacter', cellCharacterId)
+  },
+  setActiveCharacterStateEnd(context) {
+    context.commit('updateInteractiveCharacter', {
+      actionState: {
+        ...context.state.interactiveCharacter?.actionState,
+        isEnd: true
+      }
+    })
   }
 }

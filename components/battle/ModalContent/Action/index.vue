@@ -42,7 +42,7 @@
       <b-button @click="backToTop">もどる</b-button>
     </div>-->
     <div v-if="selectedAction === 'detail'">
-      <Detail :character-controller="characterController" />
+      <Detail :active-character="activeCharacter" />
     </div>
   </div>
 </template>
@@ -52,7 +52,8 @@ import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import Detail from './CharacterDetail.vue'
 import Modal from '~/components/utility/Modal.vue'
-import CharacterController from '~/utility/helper/battle/character/characterController.ts'
+import { isMyCharacter } from '~/domain/service/characters'
+import { ICharacter } from '~/types/store'
 
 @Component({
   components: {
@@ -62,7 +63,7 @@ import CharacterController from '~/utility/helper/battle/character/characterCont
 })
 export default class BattleDialogue extends Vue {
   @Prop({ default: () => {} })
-  characterController!: CharacterController
+  activeCharacter!: ICharacter
 
   @Prop({ default: '' })
   isHostOrGuest!: string
@@ -86,22 +87,16 @@ export default class BattleDialogue extends Vue {
   }
 
   get characterName() {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    return activeCharacter ? activeCharacter.name : ''
+    return this.activeCharacter ? this.activeCharacter.name : ''
   }
 
   get isEnd() {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    return activeCharacter ? activeCharacter.actionState.isEnd : true
+    return this.activeCharacter ? this.activeCharacter.actionState.isEnd : true
   }
 
   get isMyCharacter() {
-    const activeCharacter = this.characterController.getActiveCharacter()
-    return activeCharacter
-      ? this.characterController.isMyCharacter(
-          activeCharacter,
-          this.isHostOrGuest
-        )
+    return this.activeCharacter
+      ? isMyCharacter(this.activeCharacter, this.isHostOrGuest)
       : false
   }
 }
