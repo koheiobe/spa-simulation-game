@@ -1,4 +1,5 @@
 import { ILatlng, ActionType, SkillType } from '~/types/battle'
+import { FieldController } from '~/utility/helper/battle/field/index'
 
 export interface IRootState {
   version: string
@@ -16,6 +17,10 @@ export interface ICharacterState {
   characters: ICharacter[]
   interactiveCharacter: ICharacter | undefined
   deployCharacterId: string
+}
+
+export interface IFieldState {
+  fieldController: undefined | FieldController
 }
 
 export interface IUserState {

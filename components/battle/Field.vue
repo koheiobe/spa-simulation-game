@@ -13,7 +13,7 @@
       <div v-for="y of 30" :key="y" :class="$style.row">
         <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
           <FieldCell
-            :cell-type="fieldController.getModeType({ x, y })"
+            :cell-type="getModeType({ x, y })"
             :character="getCharacterAtCell({ x, y })"
             :is-host-or-guest="isHostOrGuest"
             :lat-lng="{ x, y }"
@@ -48,8 +48,13 @@ import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import _ from 'lodash'
 import DevFieldUi from './devFieldUi.vue'
-import { IField, ILatlng, ActionType, WeaponType } from '~/types/battle'
-import { FieldController } from '~/utility/helper/battle/field/index'
+import {
+  IField,
+  ILatlng,
+  ActionType,
+  WeaponType,
+  CellType
+} from '~/types/battle'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -59,6 +64,7 @@ import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
 
 const CharacterModule = namespace('character')
+const FieldModule = namespace('field')
 
 @Component({
   components: {
@@ -99,7 +105,16 @@ export default class Field extends Vue {
   }) => void
 
   @CharacterModule.Action('onSelectCharacter')
-  private onSelectCharacter!: (cellCharacterId: string) => ICharacter | null
+  private onSelectCharacter!: (obj: {
+    cellCharacterId: string
+    latLng: ILatlng
+    charactersLatLngMap: IField
+    closeModal: () => void
+  }) => void
+
+  // TODO: charactersLatLngMapが存在するため完全に分離できず。分離出来次第、関数名を直す！！
+  @CharacterModule.Action('onFinishAction')
+  private OnFinishAction!: (isHostOrGuest: string) => void
 
   @CharacterModule.Action('tryMoveCharacter')
   private tryMoveCharacter!: (obj: {
@@ -138,9 +153,19 @@ export default class Field extends Vue {
   @CharacterModule.Action('setActiveCharacterStateEnd')
   private setActiveCharacterStateEnd!: () => void
 
+  // TODO: setModalをどう分離するか決まっていないため、一時的に関数名を大文字にする！
+  @CharacterModule.Action('resetCharacterState')
+  private ResetCharacterState!: () => void
+
   // TODO: Mutationはなくす！
   @CharacterModule.Mutation('resetActiveCharacter')
   private resetActiveCharacter!: () => void
+
+  @FieldModule.Getter('modeType')
+  private getModeType!: (latLng: ILatlng) => CellType | ''
+
+  @FieldModule.Getter('isDeploying')
+  private isDeploying!: () => boolean
 
   @Prop({ default: false })
   isMyTurn!: boolean
@@ -163,9 +188,6 @@ export default class Field extends Vue {
   @Prop({ default: '' })
   battleId!: string
 
-  @Prop({ default: {} })
-  fieldController!: FieldController
-
   public isBattleModalOpen: boolean = false
 
   // 開発用
@@ -179,7 +201,7 @@ export default class Field extends Vue {
       return
     }
 
-    switch (this.fieldController.getModeType(latLng)) {
+    switch (this.getModeType(latLng)) {
       case 'deploy':
         this.deployCharacter(latLng, cellCharacterId)
         break
@@ -208,19 +230,12 @@ export default class Field extends Vue {
   }
 
   selectCharacter(cellCharacterId: string, latLng: ILatlng) {
-    if (cellCharacterId.length > 0) {
-      this.onSelectCharacter(cellCharacterId)
-      if (this.activeCharacter) {
-        this.fieldController.startMoveMode(
-          latLng,
-          this.activeCharacter,
-          this.charactersLatLngMap
-        )
-      }
-    } else {
-      // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
-      this.resetCharacterState()
-    }
+    this.onSelectCharacter({
+      cellCharacterId,
+      latLng,
+      charactersLatLngMap: this.charactersLatLngMap,
+      closeModal: () => this.setModal(false)
+    })
   }
 
   moveCharacter(latLng: ILatlng, cellCharacterId: string) {
@@ -233,7 +248,6 @@ export default class Field extends Vue {
       })
     ) {
       this.setModal(true)
-      this.fieldController.finishMoveMode()
     }
   }
 
@@ -262,11 +276,6 @@ export default class Field extends Vue {
       weaponType,
       itemId
     })
-    if (!this.activeCharacter) return
-    this.fieldController.startInteractMode(
-      this.activeCharacter.latLng,
-      weaponType
-    )
   }
 
   interactCharacter(cellCharacterId: string) {
@@ -287,36 +296,14 @@ export default class Field extends Vue {
     console.log('item', cellCharacterId)
   }
 
-  async onFinishAction() {
-    if (!this.activeCharacter) return
-    if (
-      this.activeCharacter.latLng.x === this.winnerCell.x &&
-      this.activeCharacter.latLng.y === this.winnerCell.y
-    ) {
-      this.$emit('onWin')
-    }
-    this.setActiveCharacterStateEnd()
-    await this.applyActiveCharacterStore(this.activeCharacter)
-    this.$emit('setLastInteractCharacter', {
-      id: this.battleId,
-      lastInteractCharacter: _.cloneDeep(this.activeCharacter)
-    })
+  onFinishAction() {
     this.$emit('setcharactersLatLngMap', _.cloneDeep(this.activeCharacter))
-    this.resetCharacterState()
-  }
-
-  applyActiveCharacterStore(activeCharacter: ICharacter): Promise<void> {
-    return this.updateCharacter({
-      battleId: this.battleId,
-      character: _.cloneDeep(activeCharacter)
-    })
+    this.OnFinishAction(this.isHostOrGuest)
   }
 
   resetCharacterState() {
-    this.resetActiveCharacter()
+    this.ResetCharacterState()
     this.setModal(false)
-    this.fieldController.finishInteractMode()
-    this.fieldController.finishMoveMode()
   }
 
   @Watch('lastInteractCharacter')
@@ -398,14 +385,6 @@ export default class Field extends Vue {
   saveFieldJson() {
     const text = JSON.stringify(this.field)
     downloadFile(text, 'json', 'field')
-  }
-
-  get winnerCell() {
-    return this.fieldController.getWinnerCell(this.isHostOrGuest)
-  }
-
-  get isDeploying() {
-    return this.fieldController.isDeploying()
   }
 }
 </script>

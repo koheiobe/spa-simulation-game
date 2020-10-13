@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter, ICharacterState, IRootState } from '~/types/store'
-import { ILatlng, WeaponType } from '~/types/battle'
+import { IField, ILatlng, WeaponType } from '~/types/battle'
 
 import * as characterService from '~/domain/service/characters'
 
@@ -13,8 +13,12 @@ export const state = (): ICharacterState => ({
 })
 
 export const getters: GetterTree<ICharacterState, IRootState> = {
-  getActiveCharacter: (state: ICharacterState) => state.interactiveCharacter,
-  getDeployCharacterId: (state: ICharacterState) => state.deployCharacterId
+  getActiveCharacter: (state) => {
+    return state.interactiveCharacter
+  },
+  getDeployCharacterId: (state) => {
+    return state.deployCharacterId
+  }
 }
 
 export const mutations: MutationTree<ICharacterState> = {
@@ -22,9 +26,6 @@ export const mutations: MutationTree<ICharacterState> = {
     state.characters = state.characters.map((character) =>
       character.id === obj.id ? { ...character, ...obj.value } : character
     )
-  },
-  setCharacterList(state, characterList) {
-    state.characters = characterList
   },
   resetActiveCharacter(state) {
     state.interactiveCharacter = undefined
@@ -130,6 +131,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       latLng: obj.latLng,
       lastLatLng: movableCharacter.latLng
     })
+    context.commit('field/finishMoveMode', undefined, { root: true })
     return true
   },
   tryPrepareInteractCharacter(
@@ -148,6 +150,14 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
         itemId: obj.itemId
       }
     })
+    context.commit(
+      'field/startInteractMode',
+      {
+        latLng: context.state.interactiveCharacter.latLng,
+        weaponType: obj.weaponType
+      },
+      { root: true }
+    )
   },
   tryInteractCharacter(
     context,
@@ -194,8 +204,68 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     })
     return attackResultObj
   },
-  onSelectCharacter(context, cellCharacterId) {
-    context.commit('setInteractiveCharacter', cellCharacterId)
+  onSelectCharacter(
+    context,
+    obj: {
+      cellCharacterId: string
+      latLng: ILatlng
+      charactersLatLngMap: IField
+      closeModal: () => void
+    }
+  ) {
+    if (obj.cellCharacterId.length > 0) {
+      context.commit('setInteractiveCharacter', obj.cellCharacterId)
+      if (context.state.interactiveCharacter) {
+        context.commit(
+          'field/startMoveMode',
+          {
+            latLng: obj.latLng,
+            character: context.state.interactiveCharacter,
+            charactersLatLngMap: obj.charactersLatLngMap
+          },
+          { root: true }
+        )
+      }
+    } else {
+      // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
+      context.dispatch('resetCharacterState')
+    }
+  },
+  onFinishAction(context, isHostOrGuest: string) {
+    const battleId = context.rootGetters['user/getUser'].battleId
+    context.dispatch('checkWinner', isHostOrGuest)
+    context.dispatch('setActiveCharacterStateEnd')
+    context.dispatch('updateCharacter', {
+      battleId,
+      character: _.cloneDeep(context.state.interactiveCharacter)
+    })
+    context.dispatch(
+      'battleRoom/setLastInteractCharacter',
+      {
+        id: battleId,
+        lastInteractCharacter: _.cloneDeep(context.state.interactiveCharacter)
+      },
+      { root: true }
+    )
+    context.dispatch('resetCharacterState')
+  },
+  checkWinner(context, isHostOrGuest: string) {
+    const activeCharacter = context.getters.getActiveCharacter
+    const winnerCell = context.rootGetters['field/winnerCell'](isHostOrGuest)
+    if (!activeCharacter) return
+    if (
+      activeCharacter.latLng.x === winnerCell.x &&
+      activeCharacter.latLng.y === winnerCell.y
+    ) {
+      context.dispatch(
+        'battleRoom/setBattleRoomWinner',
+        {
+          id: context.rootGetters['user/getUser'].battleId,
+          winnerUid: context.rootGetters['user/getUser'].uid
+        },
+        { root: true }
+      )
+    }
   },
   setActiveCharacterStateEnd(context) {
     context.commit('updateInteractiveCharacter', {
@@ -204,5 +274,10 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
         isEnd: true
       }
     })
+  },
+  resetCharacterState(context) {
+    context.commit('resetActiveCharacter')
+    context.commit('field/finishInteractMode', undefined, { root: true })
+    context.commit('field/finishMoveMode', undefined, { root: true })
   }
 }

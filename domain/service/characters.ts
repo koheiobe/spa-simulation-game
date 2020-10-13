@@ -75,7 +75,6 @@ export const getUpdatedAttackerAndTaker = async (
   attacker: ICharacter,
   characterList: ICharacter[]
 ) => {
-  console.log(attackerEl, attacker)
   await attackCharacterAnimation(attackerEl, attacker)
   const takerLatLng = attacker.actionState.interactLatLng
   const taker = characterList.find(

@@ -36,6 +36,7 @@ import Modal from '~/components/utility/Modal.vue'
 import { IUser, IBattleRoomRes } from '~/types/store'
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
+const FieldModule = namespace('field')
 
 @Component({
   components: {
@@ -84,6 +85,9 @@ export default class OnlineBattle extends Vue {
 
   @BattleRoomModule.Action('bindBattleRoomRef')
   private bindBattleRoomRef!: (ref: any) => void
+
+  @FieldModule.Action('setFieldController')
+  private setFieldController!: (stageId: number) => void
 
   private isOpneWaitingMatchModal: boolean = false
   private setTimeId: NodeJS.Timeout | null = null
@@ -151,6 +155,8 @@ export default class OnlineBattle extends Vue {
 
   async goToBattleRoom() {
     if (this.storeUser.battleId) {
+      // TODO: ステージを選択できるようにするなら、ここを可変にする
+      this.setFieldController(1)
       await this.bindBattleRoomRef(
         this.$firestore.getBattleRoomRef(this.storeUser.battleId)
       )

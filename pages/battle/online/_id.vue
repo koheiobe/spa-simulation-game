@@ -17,7 +17,6 @@
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
     <Field
-      :field-controller="fieldController"
       :is-my-turn="isMyTurn"
       :is-my-character="isMyCharacter"
       :field="field"
@@ -52,17 +51,11 @@ import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
 import Header from '~/components/battle/header/index.vue'
 import field from '~/assets/field.json'
-import {
-  hostDeployableAreas,
-  guestDeployableAreas,
-  hostWinCell,
-  guestWinCell,
-  FieldController
-} from '~/utility/helper/battle/field/index'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
 const CharacterModule = namespace('character')
+const FieldModule = namespace('field')
 
 @Component({
   components: { Field, Modal, EndBattleDialogue, Header },
@@ -144,25 +137,25 @@ export default class OnlineBattleRoom extends Vue {
   @BattleRoomModule.Action('unBindBattleRoomRef')
   private unBindBattleRoomRef!: () => void
 
+  @FieldModule.Mutation('startDeployMode')
+  private startDeployMode!: (isHostOrGuest: string) => void
+
+  // TODO: finishDeployModeの関数名がかぶっているため大文字に。storeで処理をまとめる
+  @FieldModule.Mutation('finishDeployMode')
+  private FinishDeployMode!: () => void
+
+  @FieldModule.Getter('isDeploying')
+  private isDeploying!: () => boolean
+
   public charactersLatLngMap: IField = {}
+
   public battleId: string = ''
   public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
-  public fieldController: FieldController
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
   public battleStartAt: number = 0
   public winnerMessage = ''
-
-  constructor() {
-    super()
-    this.fieldController = new FieldController({
-      hostWinCell,
-      guestWinCell,
-      hostDeployableAreas,
-      guestDeployableAreas
-    })
-  }
 
   async created() {
     this.battleId = this.$route.params.id
@@ -176,7 +169,7 @@ export default class OnlineBattleRoom extends Vue {
     }
 
     if (!this.isDeployModeEnd) {
-      this.startDeployMode()
+      this.startDeployMode(this.isHostOrGuest)
     }
 
     const characters =
@@ -238,13 +231,9 @@ export default class OnlineBattleRoom extends Vue {
     return this.bindCharactersRef(dbCharactersRef)
   }
 
-  startDeployMode() {
-    this.fieldController.startDeployMode(this.isHostOrGuest)
-  }
-
   async finishDeployMode() {
-    if (!this.fieldController.isDeploying()) return
-    this.fieldController.finishDeployMode()
+    if (!this.isDeploying) return
+    this.FinishDeployMode()
     await this.updateCharacters({
       battleId: this.battleId,
       // 敵キャラクターまで初期化すると、ローカルに存在する敵キャラクターのデータで
@@ -428,7 +417,7 @@ export default class OnlineBattleRoom extends Vue {
   // 開発用
   toggleDeployMode() {
     if (this.isDeployModeEnd) {
-      this.startDeployMode()
+      this.startDeployMode(this.isHostOrGuest)
       // この機能を使用する場合、components/header/deployの
       // setBattleRoomWinner を削除する必要がある
       this.setDeployModeEnd({
