@@ -12,9 +12,10 @@
     <div :class="$style.field">
       <div v-for="y of 30" :key="y" :class="$style.row">
         <div v-for="x of 30" :id="`${y}-${x}`" :key="`${y}-${x}`">
+          <!-- FieldCellの関数はレンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする -->
           <FieldCell
             :cell-type="getModeType({ x, y })"
-            :character="getCharacterAtCell({ x, y })"
+            :character="characterAtCell({ x, y })"
             :is-host-or-guest="isHostOrGuest"
             :lat-lng="{ x, y }"
             :field="field"
@@ -46,7 +47,6 @@
 import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import _ from 'lodash'
 import DevFieldUi from './devFieldUi.vue'
 import {
   IField,
@@ -80,17 +80,14 @@ export default class Field extends Vue {
   @CharacterModule.State('characters')
   private characterList!: ICharacter[]
 
-  @CharacterModule.Getter('getActiveCharacter')
+  @CharacterModule.Getter('activeCharacter')
   private activeCharacter!: ICharacter
 
-  @CharacterModule.Getter('getDeployCharacterId')
+  @CharacterModule.Getter('deployCharacterId')
   private deployCharacterId!: ICharacter
 
-  @CharacterModule.Action('setCharacterParam')
-  private setCharacterParam!: (characterObj: {
-    id: string
-    value: any
-  }) => Promise<null>
+  @CharacterModule.Getter('characterAtCell')
+  private characterAtCell!: (latLng: ILatlng) => undefined | ICharacter
 
   @CharacterModule.Action('selectDeployTargetCharacter')
   private selectDeployTargetCharacter!: (obj: {
@@ -98,23 +95,21 @@ export default class Field extends Vue {
     openModal: (id: string) => void
   }) => ICharacter | null
 
-  @CharacterModule.Action('onDeployCharacter')
-  private onDeployCharacter!: (obj: {
+  @CharacterModule.Action('deployCharacter')
+  private deployCharacter!: (obj: {
     latLng: ILatlng
     cellCharacterId: string
   }) => void
 
-  @CharacterModule.Action('onSelectCharacter')
-  private onSelectCharacter!: (obj: {
+  @CharacterModule.Action('selectCharacter')
+  private selectCharacter!: (obj: {
     cellCharacterId: string
     latLng: ILatlng
     charactersLatLngMap: IField
-    closeModal: () => void
   }) => void
 
-  // TODO: charactersLatLngMapが存在するため完全に分離できず。分離出来次第、関数名を直す！！
   @CharacterModule.Action('onFinishAction')
-  private OnFinishAction!: (isHostOrGuest: string) => void
+  private onFinishAction!: (isHostOrGuest: string) => void
 
   @CharacterModule.Action('tryMoveCharacter')
   private tryMoveCharacter!: (obj: {
@@ -122,6 +117,7 @@ export default class Field extends Vue {
     cellCharacterId: string
     isMyTurn: boolean
     isHostOrGuest: string
+    succeeded: () => void
   }) => boolean
 
   @CharacterModule.Action('tryPrepareInteractCharacter')
@@ -131,35 +127,22 @@ export default class Field extends Vue {
     itemId: number
   }) => ICharacter | null
 
-  @CharacterModule.Action('onAttackCharacter')
-  private onAttackCharacter!: (obj: {
-    attackerEl: HTMLElement
-    attacker: ICharacter
-    battleId: string
-  }) => Promise<{ attacker: ICharacter; taker: ICharacter } | null>
-
   @CharacterModule.Action('tryInteractCharacter')
   private tryInteractCharacter!: (obj: {
     cellCharacterId: string
     isHostOrGuest: string
   }) => boolean
 
-  @CharacterModule.Action('updateCharacter')
-  private updateCharacter!: (dbInfo: {
-    battleId: string
-    character: ICharacter
-  }) => Promise<void>
-
-  @CharacterModule.Action('setActiveCharacterStateEnd')
-  private setActiveCharacterStateEnd!: () => void
+  @CharacterModule.Action('onChangeLastInteractCharacter')
+  private onChangeLastInteractCharacter!: (obj: {
+    interacterEl: HTMLElement
+    interacter: ICharacter
+    isHostOrGuest: string
+  }) => void
 
   // TODO: setModalをどう分離するか決まっていないため、一時的に関数名を大文字にする！
   @CharacterModule.Action('resetCharacterState')
   private ResetCharacterState!: () => void
-
-  // TODO: Mutationはなくす！
-  @CharacterModule.Mutation('resetActiveCharacter')
-  private resetActiveCharacter!: () => void
 
   @FieldModule.Getter('modeType')
   private getModeType!: (latLng: ILatlng) => CellType | ''
@@ -203,16 +186,32 @@ export default class Field extends Vue {
 
     switch (this.getModeType(latLng)) {
       case 'deploy':
-        this.deployCharacter(latLng, cellCharacterId)
+        this.deployCharacter({ latLng, cellCharacterId })
         break
       case 'move':
-        this.moveCharacter(latLng, cellCharacterId)
+        this.tryMoveCharacter({
+          latLng,
+          cellCharacterId,
+          isMyTurn: this.isMyTurn,
+          isHostOrGuest: this.isHostOrGuest,
+          succeeded: () => this.setModal(true)
+        })
         break
       case 'interact':
         this.interactCharacter(cellCharacterId)
         break
       default:
-        this.selectCharacter(cellCharacterId, latLng)
+        // キャラクターが存在した場合
+        if (cellCharacterId.length > 0) {
+          this.selectCharacter({
+            cellCharacterId,
+            latLng,
+            charactersLatLngMap: this.charactersLatLngMap
+          })
+          // キャラクターが存在しないセルをクリックした場合、すべての行動をキャンセル
+        } else {
+          this.resetCharacterState()
+        }
     }
   }
 
@@ -225,39 +224,13 @@ export default class Field extends Vue {
     })
   }
 
-  deployCharacter(latLng: ILatlng, cellCharacterId: string) {
-    this.onDeployCharacter({ latLng, cellCharacterId })
-  }
-
-  selectCharacter(cellCharacterId: string, latLng: ILatlng) {
-    this.onSelectCharacter({
-      cellCharacterId,
-      latLng,
-      charactersLatLngMap: this.charactersLatLngMap,
-      closeModal: () => this.setModal(false)
-    })
-  }
-
-  moveCharacter(latLng: ILatlng, cellCharacterId: string) {
-    if (
-      this.tryMoveCharacter({
-        latLng,
-        cellCharacterId,
-        isMyTurn: this.isMyTurn,
-        isHostOrGuest: this.isHostOrGuest
-      })
-    ) {
-      this.setModal(true)
-    }
-  }
-
   onSelectBattleAction(action: ActionType) {
     switch (action) {
       case 'attack':
         this.prepareInteractCharacter(action, 'closeRange')
         break
       case 'wait':
-        this.onFinishAction()
+        this.onFinishAction(this.isHostOrGuest)
         break
       case 'item':
         this.prepareInteractCharacter(action, 'closeRange', 0)
@@ -280,14 +253,12 @@ export default class Field extends Vue {
 
   interactCharacter(cellCharacterId: string) {
     if (
-      this.tryInteractCharacter({
+      !this.tryInteractCharacter({
         isHostOrGuest: this.isHostOrGuest,
         cellCharacterId
       })
     ) {
-      this.onFinishAction()
-    } else {
-      this.resetCharacterState()
+      this.setModal(false)
     }
   }
 
@@ -296,80 +267,26 @@ export default class Field extends Vue {
     console.log('item', cellCharacterId)
   }
 
-  onFinishAction() {
-    this.$emit('setcharactersLatLngMap', _.cloneDeep(this.activeCharacter))
-    this.OnFinishAction(this.isHostOrGuest)
-  }
-
   resetCharacterState() {
     this.ResetCharacterState()
     this.setModal(false)
   }
 
+  // 最後に行動をとったキャラクターの状態をプレイヤー1とプレイヤー2の画面に反映させる
   @Watch('lastInteractCharacter')
-  onChangeLastInteractCharacter(interacter: ICharacter | undefined) {
+  syncLastInteractCharacter(interacter: ICharacter | undefined) {
     if (!interacter) return
     const interacterEl = document.getElementById(interacter.id)
     if (!interacterEl) return
-    switch (interacter.actionState.name) {
-      case 'attack':
-        this.attackCharacter(interacterEl, interacter)
-    }
-    this.$emit('setcharactersLatLngMap', interacter)
-  }
-
-  async attackCharacter(attackerEl: HTMLElement, attacker: ICharacter) {
-    const attackResultObj = await this.onAttackCharacter({
-      attackerEl,
-      attacker,
-      battleId: this.battleId
-    })
-    if (!attackResultObj) return
-    // TODO: リファクタリング上、スキルは一旦削除
-    // this.skillController.activateSkillOnEndAttack(
-    //   attackResultObj.attacker,
-    //   attackResultObj.taker,
-    //   this.isMyTurn,
-    //   (character) =>
-    //     this.updateCharacter({
-    //       battleId: this.battleId,
-    //       character
-    //     }),
-    //   this.isHostOrGuest
-    // )
-    this.$emit('setLastInteractCharacter', {
-      id: this.battleId,
-      lastInteractCharacter: null
+    this.onChangeLastInteractCharacter({
+      interacterEl,
+      interacter,
+      isHostOrGuest: this.isHostOrGuest
     })
   }
 
   setModal(bool: boolean) {
     this.isBattleModalOpen = bool
-  }
-
-  // レンダリングするたびに全てのセルから呼び出されるため、可能な限り処理を軽くする
-  getCharacterAtCell(latLng: ILatlng) {
-    const existCharacter = this.characterList.find(
-      (character: ICharacter) =>
-        character.latLng.x === latLng.x && character.latLng.y === latLng.y
-    )
-    const activeCharacter = this.activeCharacter
-    if (activeCharacter) {
-      const isSameId =
-        existCharacter && activeCharacter.id === existCharacter.id
-      if (
-        activeCharacter.latLng.x === latLng.x &&
-        activeCharacter.latLng.y === latLng.y
-      ) {
-        return activeCharacter
-      } else if (isSameId) {
-        return undefined
-      } else {
-        return existCharacter
-      }
-    } else {
-      return existCharacter
-    }
   }
 
   // 開発用

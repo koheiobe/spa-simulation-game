@@ -10,6 +10,9 @@ export const state = (): IBattleRoomState => ({
 export const getters: GetterTree<IBattleRoomState, IRootState> = {
   getBattles: (state) => {
     return state.list
+  },
+  battleRoom: (state) => {
+    return state.battleRoom
   }
 }
 
@@ -83,13 +86,13 @@ export const actions: ActionTree<IRootState, IRootState> = {
     this.$firestore.setBattleRoomWinner(battleRoomInfo)
   },
   setLastInteractCharacter(
-    _,
-    battleRoomInfo: {
-      id: string
-      lastInteractCharacter: ICharacter | null
-    }
+    { rootGetters },
+    lastInteractCharacter: ICharacter | null
   ) {
-    return this.$firestore.setLastInteractCharacter(battleRoomInfo)
+    return this.$firestore.setLastInteractCharacter({
+      id: rootGetters['user/getUser'].battleId,
+      lastInteractCharacter
+    })
   },
   setTurnInfo(
     _,

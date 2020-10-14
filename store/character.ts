@@ -9,15 +9,29 @@ import * as characterService from '~/domain/service/characters'
 export const state = (): ICharacterState => ({
   characters: [] as ICharacter[],
   interactiveCharacter: undefined,
+  charactersLatLngMap: {},
   deployCharacterId: ''
 })
 
 export const getters: GetterTree<ICharacterState, IRootState> = {
-  getActiveCharacter: (state) => {
+  characterList: (state) => {
+    return state.characters
+  },
+  activeCharacter: (state) => {
     return state.interactiveCharacter
   },
-  getDeployCharacterId: (state) => {
+  deployCharacterId: (state) => {
     return state.deployCharacterId
+  },
+  charactersLatLngMap: (state) => {
+    return state.charactersLatLngMap
+  },
+  characterAtCell: (state) => (latLng: ILatlng) => {
+    return characterService.getCharacterAtCell(
+      state.characters,
+      state.interactiveCharacter,
+      latLng
+    )
   }
 }
 
@@ -40,6 +54,9 @@ export const mutations: MutationTree<ICharacterState> = {
   },
   setDeployCharacterId(state, id) {
     state.deployCharacterId = id
+  },
+  setcharactersLatLngMap(state, charactersLatLngMap: IField) {
+    state.charactersLatLngMap = charactersLatLngMap
   }
 }
 
@@ -65,11 +82,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       resolve()
     })
   },
-  // updateActiveCharacter(context, param: any) {
-  //   context.commit('updateInteractiveCharacter', {
-  //     ...param
-  //   })
-  // },
   selectDeployTargetCharacter(
     context,
     obj: { id: string; openModal: (id: string) => void }
@@ -79,7 +91,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     }
     context.commit('setDeployCharacterId', obj.id)
   },
-  onDeployCharacter(
+  deployCharacter(
     context,
     obj: {
       latLng: ILatlng
@@ -118,21 +130,22 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       cellCharacterId: string
       isMyTurn: boolean
       isHostOrGuest: string
+      succeeded: () => void
     }
-  ): boolean {
+  ): void {
     const movableCharacter = characterService.getMovableCharacter(
       obj.cellCharacterId,
       obj.isMyTurn,
       obj.isHostOrGuest,
       context.state.interactiveCharacter
     )
-    if (!movableCharacter) return false
+    if (!movableCharacter) return
     context.commit('updateInteractiveCharacter', {
       latLng: obj.latLng,
       lastLatLng: movableCharacter.latLng
     })
     context.commit('field/finishMoveMode', undefined, { root: true })
-    return true
+    obj.succeeded()
   },
   tryPrepareInteractCharacter(
     context,
@@ -170,65 +183,76 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       interactiveCharacter,
       context.state.characters
     )
-    if (!targetCharacter || !interactiveCharacter) return false
+    if (!targetCharacter || !interactiveCharacter) {
+      context.dispatch('resetCharacterState')
+      return false
+    }
     context.commit('updateInteractiveCharacter', {
       actionState: {
         ...interactiveCharacter.actionState,
         interactLatLng: targetCharacter.latLng
       }
     })
+    context.dispatch('onFinishAction', obj.isHostOrGuest)
     return true
   },
-  async onAttackCharacter(
+  async attackCharacter(
     context,
     obj: {
       attackerEl: HTMLElement
       attacker: ICharacter
-      battleId: string
     }
-  ): Promise<{ attacker: ICharacter; taker: ICharacter } | null> {
+  ): Promise<void> {
+    const battleId = context.rootGetters['user/getUser'].battleId
     const attackResultObj = await characterService.getUpdatedAttackerAndTaker(
       obj.attackerEl,
       obj.attacker,
       context.state.characters
     )
-    if (!attackResultObj) return null
-    attackResultObj.attacker.actionState.isEnd = true
+    if (!attackResultObj) return
     context.dispatch('updateCharacter', {
-      battleId: obj.battleId,
+      battleId,
       character: _.cloneDeep(attackResultObj.attacker)
     })
     context.dispatch('updateCharacter', {
-      battleId: obj.battleId,
+      battleId,
       character: _.cloneDeep(attackResultObj.taker)
     })
-    return attackResultObj
+    //   // TODO: リファクタリング上、スキルは一旦削除
+    //   // this.skillController.activateSkillOnEndAttack(
+    //   //   attackResultObj.attacker,
+    //   //   attackResultObj.taker,
+    //   //   this.isMyTurn,
+    //   //   (character) =>
+    //   //     this.updateCharacter({
+    //   //       battleId: this.battleId,
+    //   //       character
+    //   //     }),
+    //   //   this.isHostOrGuest
+    //   // )
+    context.dispatch('battleRoom/setLastInteractCharacter', null, {
+      root: true
+    })
   },
-  onSelectCharacter(
+  selectCharacter(
     context,
     obj: {
       cellCharacterId: string
       latLng: ILatlng
       charactersLatLngMap: IField
-      closeModal: () => void
     }
   ) {
-    if (obj.cellCharacterId.length > 0) {
-      context.commit('setInteractiveCharacter', obj.cellCharacterId)
-      if (context.state.interactiveCharacter) {
-        context.commit(
-          'field/startMoveMode',
-          {
-            latLng: obj.latLng,
-            character: context.state.interactiveCharacter,
-            charactersLatLngMap: obj.charactersLatLngMap
-          },
-          { root: true }
-        )
-      }
-    } else {
-      // インタラクトモードで、アクティブセル以外をクリックした時に状態をキャンセルするため
-      context.dispatch('resetCharacterState')
+    context.commit('setInteractiveCharacter', obj.cellCharacterId)
+    if (context.state.interactiveCharacter) {
+      context.commit(
+        'field/startMoveMode',
+        {
+          latLng: obj.latLng,
+          character: context.state.interactiveCharacter,
+          charactersLatLngMap: obj.charactersLatLngMap
+        },
+        { root: true }
+      )
     }
   },
   onFinishAction(context, isHostOrGuest: string) {
@@ -241,16 +265,14 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     })
     context.dispatch(
       'battleRoom/setLastInteractCharacter',
-      {
-        id: battleId,
-        lastInteractCharacter: _.cloneDeep(context.state.interactiveCharacter)
-      },
+      _.cloneDeep(context.state.interactiveCharacter),
       { root: true }
     )
     context.dispatch('resetCharacterState')
+    context.dispatch('updateCharactersLatLngMap', isHostOrGuest)
   },
   checkWinner(context, isHostOrGuest: string) {
-    const activeCharacter = context.getters.getActiveCharacter
+    const activeCharacter = context.getters.activeCharacter
     const winnerCell = context.rootGetters['field/winnerCell'](isHostOrGuest)
     if (!activeCharacter) return
     if (
@@ -267,6 +289,25 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       )
     }
   },
+  initCharactersLatLngMap({ getters, commit }, isHostOrGuest: string) {
+    commit(
+      'setcharactersLatLngMap',
+      characterService.getInitCharactersLatLngMap(
+        getters.characterList,
+        isHostOrGuest
+      )
+    )
+  },
+  updateCharactersLatLngMap({ state, commit }, isHostOrGuest: string) {
+    commit(
+      'setcharactersLatLngMap',
+      characterService.getUpdatedCharactersLatLngMap(
+        state.interactiveCharacter,
+        state.charactersLatLngMap,
+        isHostOrGuest
+      )
+    )
+  },
   setActiveCharacterStateEnd(context) {
     context.commit('updateInteractiveCharacter', {
       actionState: {
@@ -274,6 +315,23 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
         isEnd: true
       }
     })
+  },
+  onChangeLastInteractCharacter(
+    { dispatch },
+    obj: {
+      interacterEl: HTMLElement
+      interacter: ICharacter
+      isHostOrGuest: string
+    }
+  ) {
+    switch (obj.interacter.actionState.name) {
+      case 'attack':
+        dispatch('attackCharacter', {
+          attackerEl: obj.interacterEl,
+          attacker: obj.interacter
+        })
+    }
+    dispatch('updateCharactersLatLngMap', obj.isHostOrGuest)
   },
   resetCharacterState(context) {
     context.commit('resetActiveCharacter')

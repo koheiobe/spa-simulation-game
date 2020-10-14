@@ -1,4 +1,4 @@
-import { ILatlng, ActionType, SkillType } from '~/types/battle'
+import { ILatlng, ActionType, SkillType, IField } from '~/types/battle'
 import { FieldController } from '~/utility/helper/battle/field/index'
 
 export interface IRootState {
@@ -15,6 +15,7 @@ export interface IBattleRoomState {
 
 export interface ICharacterState {
   characters: ICharacter[]
+  charactersLatLngMap: IField
   interactiveCharacter: ICharacter | undefined
   deployCharacterId: string
 }

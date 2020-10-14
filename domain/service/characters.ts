@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { ILatlng } from '~/types/battle'
+import { IField, ILatlng } from '~/types/battle'
 import { ICharacter } from '~/types/store'
 import {
   attackCharacterAnimation,
@@ -9,6 +9,32 @@ import {
   calculateDamage,
   onEndCalculateDamage
 } from '~/utility/helper/battle/damageCalculator'
+
+export const getCharacterAtCell = (
+  characterList: ICharacter[],
+  activeCharacter: ICharacter | undefined,
+  latLng: ILatlng
+) => {
+  const existCharacter = characterList.find(
+    (character: ICharacter) =>
+      character.latLng.x === latLng.x && character.latLng.y === latLng.y
+  )
+  if (activeCharacter) {
+    const isSameId = existCharacter && activeCharacter.id === existCharacter.id
+    if (
+      activeCharacter.latLng.x === latLng.x &&
+      activeCharacter.latLng.y === latLng.y
+    ) {
+      return activeCharacter
+    } else if (isSameId) {
+      return undefined
+    } else {
+      return existCharacter
+    }
+  } else {
+    return existCharacter
+  }
+}
 
 export const getMovableCharacter = (
   cellCharacterId: string,
@@ -70,6 +96,36 @@ export const isMyCharacter = (
   return matchedSuffix[0].replace('-', '') === isHostOrGuest
 }
 
+export const getInitCharactersLatLngMap = (
+  characters: ICharacter[],
+  isHostOrGuest: string
+) =>
+  characters.reduce((acum, cur) => {
+    if (!isMyCharacter(cur as ICharacter, isHostOrGuest) && cur.latLng.x > 0) {
+      acum[`${cur.latLng.y}_${cur.latLng.x}`] = {
+        type: 'character'
+      }
+    }
+    return acum
+  }, {} as IField)
+
+export const getUpdatedCharactersLatLngMap = (
+  activeCharacter: ICharacter | undefined,
+  charactersLatLngMap: IField,
+  isHostOrGuest: string
+): IField => {
+  if (!activeCharacter || isMyCharacter(activeCharacter, isHostOrGuest))
+    return charactersLatLngMap
+  const { lastLatLng, latLng } = activeCharacter
+  delete charactersLatLngMap[`${lastLatLng.y}_${lastLatLng.x}`]
+  if (latLng.x > 0) {
+    charactersLatLngMap[`${latLng.y}_${latLng.x}`] = {
+      type: 'character'
+    }
+  }
+  return charactersLatLngMap
+}
+
 export const getUpdatedAttackerAndTaker = async (
   attackerEl: HTMLElement,
   attacker: ICharacter,
@@ -95,7 +151,10 @@ const updateAttackerAndTaker = (attacker: ICharacter, taker: ICharacter) => {
     ...taker,
     hp: taker.hp - damage
   }
-  let updatedAttacker = attacker
+  let updatedAttacker: ICharacter = {
+    ...attacker,
+    actionState: { ...attacker.actionState, isEnd: true }
+  }
   if (attacker.skill.includes('bloodSucking')) {
     const suckedHp = attacker.hp + damage
     updatedAttacker = {

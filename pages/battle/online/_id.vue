@@ -25,9 +25,8 @@
       :last-interact-character="lastInteractCharacter"
       :battle-id="battleId"
       :characters-lat-lng-map="charactersLatLngMap"
-      @setcharactersLatLngMap="setcharactersLatLngMap"
+      @updateCharactersLatLngMap="updateCharactersLatLngMap"
       @onWin="onWin"
-      @setLastInteractCharacter="setLastInteractCharacter"
     />
     <!-- 開発用 -->
     <!-- <b-button @click="toggleDeployMode"
@@ -67,6 +66,9 @@ export default class OnlineBattleRoom extends Vue {
   @CharacterModule.State('characters')
   private storeCharacters!: ICharacter[]
 
+  @CharacterModule.Getter('charactersLatLngMap')
+  private charactersLatLngMap!: IField
+
   @CharacterModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
     battleId: string
@@ -79,6 +81,12 @@ export default class OnlineBattleRoom extends Vue {
       firebase.firestore.DocumentData
     >
   ) => Promise<firebase.firestore.DocumentData[]>
+
+  @CharacterModule.Action('initCharactersLatLngMap')
+  private initCharactersLatLngMap!: (isHostOrGuest: string) => void
+
+  @CharacterModule.Action('updateCharactersLatLngMap')
+  private updateCharactersLatLngMap!: (isHostOrGuest: string) => void
 
   @BattleRoomModule.State('battleRoom')
   private battleRoom!: IBattleRoomRes
@@ -122,12 +130,6 @@ export default class OnlineBattleRoom extends Vue {
     bool: boolean
   }) => void
 
-  @BattleRoomModule.Action('setLastInteractCharacter')
-  private setLastInteractCharacter!: (battleRoomInfo: {
-    id: string
-    lastInteractCharacter: ICharacter | null
-  }) => {}
-
   @BattleRoomModule.Action('setBattleStartAt')
   private setBattleStartAt!: (battleInfo: {
     id: string
@@ -146,8 +148,6 @@ export default class OnlineBattleRoom extends Vue {
 
   @FieldModule.Getter('isDeploying')
   private isDeploying!: () => boolean
-
-  public charactersLatLngMap: IField = {}
 
   public battleId: string = ''
   public winnerName: string = ''
@@ -179,7 +179,7 @@ export default class OnlineBattleRoom extends Vue {
         : await this.syncVuexFirestoreCharacters(this.battleId)
 
     if (characters) {
-      this.initCharactersLatLngMap(characters)
+      this.initCharactersLatLngMap(this.isHostOrGuest)
     }
     // ウィンドウを閉じる時に注意を表示
     window.addEventListener('beforeunload', function(e) {
@@ -242,8 +242,8 @@ export default class OnlineBattleRoom extends Vue {
         this.isMyCharacter(character)
       )
     })
-    const characters = await this.syncVuexFirestoreCharacters(this.battleId)
-    this.initCharactersLatLngMap(characters)
+    await this.syncVuexFirestoreCharacters(this.battleId)
+    this.initCharactersLatLngMap(this.isHostOrGuest)
     // Field.vueのdeployCharacterのthis.setCharacterParamをすると
     // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
     this.setDeployModeEnd({
@@ -276,7 +276,7 @@ export default class OnlineBattleRoom extends Vue {
       battleId: this.battleId,
       characters: initActionStatesCharacter
     })
-    this.initCharactersLatLngMap(this.storeCharacters)
+    this.initCharactersLatLngMap(this.isHostOrGuest)
   }
 
   onTurnEnd() {
@@ -342,28 +342,6 @@ export default class OnlineBattleRoom extends Vue {
     const matchedSuffix = character.id.match(/-.+()$/)
     if (!matchedSuffix) return false
     return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
-  }
-
-  initCharactersLatLngMap(characters: firebase.firestore.DocumentData[]) {
-    this.charactersLatLngMap = characters.reduce((acum, cur) => {
-      if (!this.isMyCharacter(cur as ICharacter) && cur.latLng.x > 0) {
-        acum[`${cur.latLng.y}_${cur.latLng.x}`] = {
-          type: 'character'
-        }
-      }
-      return acum
-    }, {})
-  }
-
-  setcharactersLatLngMap(character: ICharacter) {
-    if (this.isMyCharacter(character)) return
-    const { lastLatLng, latLng } = character
-    delete this.charactersLatLngMap[`${lastLatLng.y}_${lastLatLng.x}`]
-    if (latLng.x > 0) {
-      this.charactersLatLngMap[`${latLng.y}_${latLng.x}`] = {
-        type: 'character'
-      }
-    }
   }
 
   CAHARACTERS_NUM = 25
