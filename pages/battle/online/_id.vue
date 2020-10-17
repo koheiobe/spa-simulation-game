@@ -53,7 +53,7 @@ import field from '~/assets/field.json'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
-const CharacterModule = namespace('character')
+const CharacterModule = namespace('character/character')
 const FieldModule = namespace('field')
 
 @Component({

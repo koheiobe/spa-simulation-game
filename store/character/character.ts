@@ -8,7 +8,6 @@ import * as characterService from '~/domain/service/characters'
 
 export const state = (): ICharacterState => ({
   characters: [] as ICharacter[],
-  interactiveCharacter: undefined,
   charactersLatLngMap: {},
   deployCharacterId: ''
 })
@@ -17,8 +16,8 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   characterList: (state) => {
     return state.characters
   },
-  activeCharacter: (state) => {
-    return state.interactiveCharacter
+  activeCharacter: (_, _1, _2, rootGetters) => {
+    return rootGetters['character/activeCharacter/activeCharacter']
   },
   deployCharacterId: (state) => {
     return state.deployCharacterId
@@ -26,10 +25,10 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   charactersLatLngMap: (state) => {
     return state.charactersLatLngMap
   },
-  characterAtCell: (state) => (latLng: ILatlng) => {
+  characterAtCell: (state, getters) => (latLng: ILatlng) => {
     return characterService.getCharacterAtCell(
       state.characters,
-      state.interactiveCharacter,
+      getters.activeCharacter,
       latLng
     )
   }
@@ -41,17 +40,6 @@ export const mutations: MutationTree<ICharacterState> = {
       character.id === obj.id ? { ...character, ...obj.value } : character
     )
   },
-  resetActiveCharacter(state) {
-    state.interactiveCharacter = undefined
-  },
-  setInteractiveCharacter(state, cellCharacterId: string) {
-    state.interactiveCharacter = state.characters.find(
-      (character) => cellCharacterId === character.id
-    )
-  },
-  updateInteractiveCharacter(state, param) {
-    state.interactiveCharacter = { ...state.interactiveCharacter, ...param }
-  },
   setDeployCharacterId(state, id) {
     state.deployCharacterId = id
   },
@@ -61,6 +49,19 @@ export const mutations: MutationTree<ICharacterState> = {
 }
 
 export const actions: ActionTree<ICharacterState, IRootState> = {
+  setActiveCharacter({ state, commit }, cellCharacterId: string) {
+    const activeCharacter = state.characters.find(
+      (character) => cellCharacterId === character.id
+    )
+    commit('character/activeCharacter/setActiveCharacter', activeCharacter, {
+      root: true
+    })
+  },
+  updateActiveCharacter({ commit }, param) {
+    commit('character/activeCharacter/updateActiveCharacter', param, {
+      root: true
+    })
+  },
   bindCharactersRef: firestoreAction(
     ({ bindFirestoreRef }, ref): Promise<firebase.firestore.DocumentData[]> => {
       // bindしてからfirestoreではなくvuexの値を更新すると、bindが外れてしまう！
@@ -120,11 +121,11 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     context,
     obj: { id: string; openModal: (id: string) => void }
   ) {
-    context.commit('setInteractiveCharacter', obj.id)
+    context.dispatch('setActiveCharacter', obj.id)
     obj.openModal(obj.id)
   },
   tryMoveCharacter(
-    context,
+    { commit, dispatch },
     obj: {
       latLng: ILatlng
       cellCharacterId: string
@@ -133,66 +134,54 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       succeeded: () => void
     }
   ): void {
-    const movableCharacter = characterService.getMovableCharacter(
-      obj.cellCharacterId,
-      obj.isMyTurn,
-      obj.isHostOrGuest,
-      context.state.interactiveCharacter
-    )
-    if (!movableCharacter) return
-    context.commit('updateInteractiveCharacter', {
-      latLng: obj.latLng,
-      lastLatLng: movableCharacter.latLng
-    })
-    context.commit('field/finishMoveMode', undefined, { root: true })
-    obj.succeeded()
+    const args = {
+      ...obj,
+      succeeded: () => {
+        commit('field/finishMoveMode', undefined, { root: true })
+        obj.succeeded()
+      }
+    }
+    dispatch('character/activeCharacter/tryMoveCharacter', args, { root: true })
   },
   tryPrepareInteractCharacter(
-    context,
+    { commit, getters, dispatch },
     obj: {
       actionType: string
       weaponType: WeaponType
       itemId: number
     }
   ): void {
-    if (!context.state.interactiveCharacter) return
-    context.commit('updateInteractiveCharacter', {
-      actionState: {
-        ...context.state.interactiveCharacter.actionState,
-        name: obj.actionType,
-        itemId: obj.itemId
-      }
+    dispatch('character/activeCharacter/tryPrepareInteractCharacter', obj, {
+      root: true
     })
-    context.commit(
+    commit(
       'field/startInteractMode',
       {
-        latLng: context.state.interactiveCharacter.latLng,
+        latLng: getters.activeCharacter.latLng,
         weaponType: obj.weaponType
       },
       { root: true }
     )
   },
-  tryInteractCharacter(
+  async tryInteractCharacter(
     context,
     obj: { cellCharacterId: string; isHostOrGuest: string }
-  ): boolean {
-    const interactiveCharacter = context.state.interactiveCharacter
-    const targetCharacter = characterService.getInteractTargetCharacter(
-      obj.cellCharacterId,
-      obj.isHostOrGuest,
-      interactiveCharacter,
-      context.state.characters
+  ): Promise<boolean> {
+    const interactedCharacter = context.state.characters.find(
+      (character) => character.id === obj.cellCharacterId
     )
-    if (!targetCharacter || !interactiveCharacter) {
+    const isInteracted = await context.dispatch(
+      'character/activeCharacter/tryInteractCharacter',
+      {
+        ...obj,
+        interactedCharacter
+      },
+      { root: true }
+    )
+    if (!isInteracted) {
       context.dispatch('resetCharacterState')
       return false
     }
-    context.commit('updateInteractiveCharacter', {
-      actionState: {
-        ...interactiveCharacter.actionState,
-        interactLatLng: targetCharacter.latLng
-      }
-    })
     context.dispatch('onFinishAction', obj.isHostOrGuest)
     return true
   },
@@ -202,14 +191,23 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       attackerEl: HTMLElement
       attacker: ICharacter
     }
-  ): Promise<void> {
+  ): Promise<boolean> {
     const battleId = context.rootGetters['user/getUser'].battleId
-    const attackResultObj = await characterService.getUpdatedAttackerAndTaker(
-      obj.attackerEl,
-      obj.attacker,
-      context.state.characters
+    const takerLatLng = obj.attacker.actionState.interactLatLng
+    const taker = context.state.characters.find(
+      (character) =>
+        character.latLng.x === takerLatLng.x &&
+        character.latLng.y === takerLatLng.y
     )
-    if (!attackResultObj) return
+    const attackResultObj = await context.dispatch(
+      'character/activeCharacter/attackCharacter',
+      {
+        ...obj,
+        taker
+      },
+      { root: true }
+    )
+    if (!attackResultObj) return false
     context.dispatch('updateCharacter', {
       battleId,
       character: _.cloneDeep(attackResultObj.attacker)
@@ -218,21 +216,10 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       battleId,
       character: _.cloneDeep(attackResultObj.taker)
     })
-    //   // TODO: リファクタリング上、スキルは一旦削除
-    //   // this.skillController.activateSkillOnEndAttack(
-    //   //   attackResultObj.attacker,
-    //   //   attackResultObj.taker,
-    //   //   this.isMyTurn,
-    //   //   (character) =>
-    //   //     this.updateCharacter({
-    //   //       battleId: this.battleId,
-    //   //       character
-    //   //     }),
-    //   //   this.isHostOrGuest
-    //   // )
     context.dispatch('battleRoom/setLastInteractCharacter', null, {
       root: true
     })
+    return true
   },
   selectCharacter(
     context,
@@ -242,30 +229,34 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       charactersLatLngMap: IField
     }
   ) {
-    context.commit('setInteractiveCharacter', obj.cellCharacterId)
-    if (context.state.interactiveCharacter) {
-      context.commit(
-        'field/startMoveMode',
-        {
-          latLng: obj.latLng,
-          character: context.state.interactiveCharacter,
-          charactersLatLngMap: obj.charactersLatLngMap
-        },
-        { root: true }
-      )
-    }
+    context.dispatch('setActiveCharacter', obj.cellCharacterId)
+    context.commit(
+      'field/startMoveMode',
+      {
+        latLng: obj.latLng,
+        character: context.getters.activeCharacter,
+        charactersLatLngMap: obj.charactersLatLngMap
+      },
+      { root: true }
+    )
   },
   onFinishAction(context, isHostOrGuest: string) {
     const battleId = context.rootGetters['user/getUser'].battleId
     context.dispatch('checkWinner', isHostOrGuest)
-    context.dispatch('setActiveCharacterStateEnd')
+    context.dispatch(
+      'character/activeCharacter/setActiveCharacterStateEnd',
+      undefined,
+      {
+        root: true
+      }
+    )
     context.dispatch('updateCharacter', {
       battleId,
-      character: _.cloneDeep(context.state.interactiveCharacter)
+      character: _.cloneDeep(context.getters.activeCharacter)
     })
     context.dispatch(
       'battleRoom/setLastInteractCharacter',
-      _.cloneDeep(context.state.interactiveCharacter),
+      _.cloneDeep(context.getters.activeCharacter),
       { root: true }
     )
     context.dispatch('resetCharacterState')
@@ -298,23 +289,15 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       )
     )
   },
-  updateCharactersLatLngMap({ state, commit }, isHostOrGuest: string) {
+  updateCharactersLatLngMap({ state, commit, getters }, isHostOrGuest: string) {
     commit(
       'setcharactersLatLngMap',
       characterService.getUpdatedCharactersLatLngMap(
-        state.interactiveCharacter,
+        getters.activeCharacter,
         state.charactersLatLngMap,
         isHostOrGuest
       )
     )
-  },
-  setActiveCharacterStateEnd(context) {
-    context.commit('updateInteractiveCharacter', {
-      actionState: {
-        ...context.state.interactiveCharacter?.actionState,
-        isEnd: true
-      }
-    })
   },
   onChangeLastInteractCharacter(
     { dispatch },
@@ -333,9 +316,11 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     }
     dispatch('updateCharactersLatLngMap', obj.isHostOrGuest)
   },
-  resetCharacterState(context) {
-    context.commit('resetActiveCharacter')
-    context.commit('field/finishInteractMode', undefined, { root: true })
-    context.commit('field/finishMoveMode', undefined, { root: true })
+  resetCharacterState({ commit }) {
+    commit('character/activeCharacter/resetActiveCharacter', undefined, {
+      root: true
+    })
+    commit('field/finishInteractMode', undefined, { root: true })
+    commit('field/finishMoveMode', undefined, { root: true })
   }
 }

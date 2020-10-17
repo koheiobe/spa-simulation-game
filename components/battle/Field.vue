@@ -31,7 +31,7 @@
         @saveFieldJson="saveFieldJson"
       />-->
     </div>
-    <Modal :is-open="isBattleModalOpen" @onClickOuter="resetCharacterState">
+    <Modal :is-open="isBattleModalOpen" @onClickOuter="onClickModalOuter">
       <BattleDialogue
         :active-character="activeCharacter"
         :is-my-turn="isMyTurn"
@@ -63,7 +63,7 @@ import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
 
-const CharacterModule = namespace('character')
+const CharacterModule = namespace('character/character')
 const FieldModule = namespace('field')
 
 @Component({
@@ -140,9 +140,8 @@ export default class Field extends Vue {
     isHostOrGuest: string
   }) => void
 
-  // TODO: setModalをどう分離するか決まっていないため、一時的に関数名を大文字にする！
   @CharacterModule.Action('resetCharacterState')
-  private ResetCharacterState!: () => void
+  private resetCharacterState!: () => void
 
   @FieldModule.Getter('modeType')
   private getModeType!: (latLng: ILatlng) => CellType | ''
@@ -211,6 +210,7 @@ export default class Field extends Vue {
           // キャラクターが存在しないセルをクリックした場合、すべての行動をキャンセル
         } else {
           this.resetCharacterState()
+          this.setModal(false)
         }
     }
   }
@@ -251,9 +251,9 @@ export default class Field extends Vue {
     })
   }
 
-  interactCharacter(cellCharacterId: string) {
+  async interactCharacter(cellCharacterId: string) {
     if (
-      !this.tryInteractCharacter({
+      await !this.tryInteractCharacter({
         isHostOrGuest: this.isHostOrGuest,
         cellCharacterId
       })
@@ -267,8 +267,8 @@ export default class Field extends Vue {
     console.log('item', cellCharacterId)
   }
 
-  resetCharacterState() {
-    this.ResetCharacterState()
+  onClickModalOuter() {
+    this.resetCharacterState()
     this.setModal(false)
   }
 

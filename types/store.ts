@@ -16,8 +16,11 @@ export interface IBattleRoomState {
 export interface ICharacterState {
   characters: ICharacter[]
   charactersLatLngMap: IField
-  interactiveCharacter: ICharacter | undefined
   deployCharacterId: string
+}
+
+export interface IActiveCharacterState {
+  activeCharacter: ICharacter
 }
 
 export interface IFieldState {

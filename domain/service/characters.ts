@@ -72,18 +72,14 @@ export const getDeployTargetCharacterLatlng = (
 }
 
 export const getInteractTargetCharacter = (
-  cellCharacterId: string,
   isHostOrGuest: string,
   interactiveCharacter: ICharacter | undefined,
-  characterList: ICharacter[]
+  interactedCharacter: ICharacter
 ) => {
   if (!interactiveCharacter) return undefined
-  const targetCharacter = characterList.find(
-    (character) => character.id === cellCharacterId
-  )
-  if (!targetCharacter || isMyCharacter(targetCharacter, isHostOrGuest))
+  if (!interactedCharacter || isMyCharacter(interactedCharacter, isHostOrGuest))
     return undefined
-  return targetCharacter
+  return interactedCharacter
 }
 
 export const isMyCharacter = (
@@ -129,18 +125,13 @@ export const getUpdatedCharactersLatLngMap = (
 export const getUpdatedAttackerAndTaker = async (
   attackerEl: HTMLElement,
   attacker: ICharacter,
-  characterList: ICharacter[]
+  taker: ICharacter
 ) => {
   await attackCharacterAnimation(attackerEl, attacker)
-  const takerLatLng = attacker.actionState.interactLatLng
-  const taker = characterList.find(
-    (character) =>
-      character.latLng.x === takerLatLng.x &&
-      character.latLng.y === takerLatLng.y
-  )
-  if (!taker) return false
+
+  if (!taker) return undefined
   const enemyEl = document.getElementById(taker.id)
-  if (!enemyEl) return false
+  if (!enemyEl) return undefined
   await takeDamageCharacterAnimation(enemyEl)
   return updateAttackerAndTaker(attacker, taker)
 }

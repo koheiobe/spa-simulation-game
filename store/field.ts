@@ -62,6 +62,7 @@ export const mutations: MutationTree<IFieldState> = {
       console.error(errorSentence)
       return
     }
+    if (obj.latLng.x < 0 || obj.latLng.y < 0) return
     state.fieldController.startMoveMode(
       obj.latLng,
       obj.character,
@@ -80,6 +81,7 @@ export const mutations: MutationTree<IFieldState> = {
       console.error(errorSentence)
       return
     }
+    if (obj.latLng.x < 0 || obj.latLng.y < 0) return
     state.fieldController.startInteractMode(obj.latLng, obj.weaponType)
   },
   finishInteractMode(state) {
