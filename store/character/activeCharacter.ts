@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { IActiveCharacterState, ICharacter, IRootState } from '~/types/store'
 import { IField, ILatlng, WeaponType, ActionType } from '~/types/battle'

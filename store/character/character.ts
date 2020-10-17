@@ -2,13 +2,12 @@ import _ from 'lodash'
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
 import { ICharacter, ICharacterState, IRootState } from '~/types/store'
-import { IField, ILatlng, WeaponType } from '~/types/battle'
+import { ILatlng, WeaponType } from '~/types/battle'
 
 import * as characterService from '~/domain/service/characters'
 
 export const state = (): ICharacterState => ({
   characters: [] as ICharacter[],
-  charactersLatLngMap: {},
   deployCharacterId: ''
 })
 
@@ -21,9 +20,6 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   },
   deployCharacterId: (state) => {
     return state.deployCharacterId
-  },
-  charactersLatLngMap: (state) => {
-    return state.charactersLatLngMap
   },
   characterAtCell: (state, getters) => (latLng: ILatlng) => {
     return characterService.getCharacterAtCell(
@@ -42,9 +38,6 @@ export const mutations: MutationTree<ICharacterState> = {
   },
   setDeployCharacterId(state, id) {
     state.deployCharacterId = id
-  },
-  setcharactersLatLngMap(state, charactersLatLngMap: IField) {
-    state.charactersLatLngMap = charactersLatLngMap
   }
 }
 
@@ -226,7 +219,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     obj: {
       cellCharacterId: string
       latLng: ILatlng
-      charactersLatLngMap: IField
     }
   ) {
     context.dispatch('setActiveCharacter', obj.cellCharacterId)
@@ -235,7 +227,8 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       {
         latLng: obj.latLng,
         character: context.getters.activeCharacter,
-        charactersLatLngMap: obj.charactersLatLngMap
+        charactersLatLngMap:
+          context.rootGetters['character/latLngMap/charactersLatLngMap']
       },
       { root: true }
     )
@@ -260,7 +253,11 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       { root: true }
     )
     context.dispatch('resetCharacterState')
-    context.dispatch('updateCharactersLatLngMap', isHostOrGuest)
+    context.dispatch(
+      'character/latLngMap/updateCharactersLatLngMap',
+      isHostOrGuest,
+      { root: true }
+    )
   },
   checkWinner(context, isHostOrGuest: string) {
     const activeCharacter = context.getters.activeCharacter
@@ -280,25 +277,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       )
     }
   },
-  initCharactersLatLngMap({ getters, commit }, isHostOrGuest: string) {
-    commit(
-      'setcharactersLatLngMap',
-      characterService.getInitCharactersLatLngMap(
-        getters.characterList,
-        isHostOrGuest
-      )
-    )
-  },
-  updateCharactersLatLngMap({ state, commit, getters }, isHostOrGuest: string) {
-    commit(
-      'setcharactersLatLngMap',
-      characterService.getUpdatedCharactersLatLngMap(
-        getters.activeCharacter,
-        state.charactersLatLngMap,
-        isHostOrGuest
-      )
-    )
-  },
   onChangeLastInteractCharacter(
     { dispatch },
     obj: {
@@ -314,7 +292,11 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
           attacker: obj.interacter
         })
     }
-    dispatch('updateCharactersLatLngMap', obj.isHostOrGuest)
+    dispatch(
+      'character/latLngMap/updateCharactersLatLngMap',
+      obj.isHostOrGuest,
+      { root: true }
+    )
   },
   resetCharacterState({ commit }) {
     commit('character/activeCharacter/resetActiveCharacter', undefined, {

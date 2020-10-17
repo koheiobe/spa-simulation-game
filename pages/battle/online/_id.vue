@@ -24,7 +24,6 @@
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
       :battle-id="battleId"
-      :characters-lat-lng-map="charactersLatLngMap"
       @updateCharactersLatLngMap="updateCharactersLatLngMap"
       @onWin="onWin"
     />
@@ -45,7 +44,7 @@ import { namespace } from 'vuex-class'
 import { CHARACTERS, EXCEPTION_CHARACTERS_NAME } from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
 import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
-import { ActionType, IField } from '~/types/battle'
+import { ActionType } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
 import Header from '~/components/battle/header/index.vue'
@@ -54,6 +53,7 @@ import field from '~/assets/field.json'
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
 const CharacterModule = namespace('character/character')
+const CharacterLatLngModule = namespace('character/latLngMap')
 const FieldModule = namespace('field')
 
 @Component({
@@ -65,9 +65,6 @@ export default class OnlineBattleRoom extends Vue {
 
   @CharacterModule.State('characters')
   private storeCharacters!: ICharacter[]
-
-  @CharacterModule.Getter('charactersLatLngMap')
-  private charactersLatLngMap!: IField
 
   @CharacterModule.Action('updateCharacters')
   private updateCharacters!: (dbInfo: {
@@ -82,10 +79,10 @@ export default class OnlineBattleRoom extends Vue {
     >
   ) => Promise<firebase.firestore.DocumentData[]>
 
-  @CharacterModule.Action('initCharactersLatLngMap')
+  @CharacterLatLngModule.Action('initCharactersLatLngMap')
   private initCharactersLatLngMap!: (isHostOrGuest: string) => void
 
-  @CharacterModule.Action('updateCharactersLatLngMap')
+  @CharacterLatLngModule.Action('updateCharactersLatLngMap')
   private updateCharactersLatLngMap!: (isHostOrGuest: string) => void
 
   @BattleRoomModule.State('battleRoom')

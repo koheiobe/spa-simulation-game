@@ -105,7 +105,6 @@ export default class Field extends Vue {
   private selectCharacter!: (obj: {
     cellCharacterId: string
     latLng: ILatlng
-    charactersLatLngMap: IField
   }) => void
 
   @CharacterModule.Action('onFinishAction')
@@ -164,9 +163,6 @@ export default class Field extends Vue {
   @Prop({ default: (_: ICharacter | undefined) => false })
   isMyCharacter!: (character: ICharacter | undefined) => boolean
 
-  @Prop({ default: () => {} })
-  charactersLatLngMap!: IField
-
   @Prop({ default: '' })
   battleId!: string
 
@@ -204,8 +200,7 @@ export default class Field extends Vue {
         if (cellCharacterId.length > 0) {
           this.selectCharacter({
             cellCharacterId,
-            latLng,
-            charactersLatLngMap: this.charactersLatLngMap
+            latLng
           })
           // キャラクターが存在しないセルをクリックした場合、すべての行動をキャンセル
         } else {
