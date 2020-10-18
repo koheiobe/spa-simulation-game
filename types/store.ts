@@ -15,6 +15,9 @@ export interface IBattleRoomState {
 
 export interface ICharacterState {
   characters: ICharacter[]
+}
+
+export interface IDeployCharacterState {
   deployCharacterId: string
 }
 

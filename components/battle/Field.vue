@@ -63,6 +63,7 @@ import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
 
+const DeployCharacterModule = namespace('character/deploy')
 const CharacterModule = namespace('character/character')
 const FieldModule = namespace('field')
 
@@ -83,23 +84,23 @@ export default class Field extends Vue {
   @CharacterModule.Getter('activeCharacter')
   private activeCharacter!: ICharacter
 
-  @CharacterModule.Getter('deployCharacterId')
+  @DeployCharacterModule.Getter('deployCharacterId')
   private deployCharacterId!: ICharacter
 
-  @CharacterModule.Getter('characterAtCell')
-  private characterAtCell!: (latLng: ILatlng) => undefined | ICharacter
-
-  @CharacterModule.Action('selectDeployTargetCharacter')
+  @DeployCharacterModule.Action('selectDeployTargetCharacter')
   private selectDeployTargetCharacter!: (obj: {
     id: string
     openModal: (id: string) => void
   }) => ICharacter | null
 
-  @CharacterModule.Action('deployCharacter')
+  @DeployCharacterModule.Action('deployCharacter')
   private deployCharacter!: (obj: {
     latLng: ILatlng
     cellCharacterId: string
   }) => void
+
+  @CharacterModule.Getter('characterAtCell')
+  private characterAtCell!: (latLng: ILatlng) => undefined | ICharacter
 
   @CharacterModule.Action('selectCharacter')
   private selectCharacter!: (obj: {
