@@ -36,7 +36,7 @@
         :active-character="activeCharacter"
         :is-my-turn="isMyTurn"
         :is-deploying="isDeploying"
-        :is-host-or-guest="isHostOrGuest"
+        :is-my-character="isMyCharacter"
         @on-select="onSelectBattleAction"
       />
     </Modal>
@@ -161,7 +161,7 @@ export default class Field extends Vue {
   lastInteractCharacter?: ICharacter
 
   @Prop({ default: (_: ICharacter | undefined) => false })
-  isMyCharacter!: (character: ICharacter | undefined) => boolean
+  isMyCharacter!: (character: ICharacter) => boolean
 
   @Prop({ default: '' })
   battleId!: string

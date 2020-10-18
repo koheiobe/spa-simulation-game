@@ -15,6 +15,14 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   characterList: (state) => {
     return state.characters
   },
+  myCharacterList: (state, getters) => {
+    return state.characters.reduce((acum, cur) => {
+      if (getters.isMyCharacter(cur as ICharacter)) {
+        acum.push(cur)
+      }
+      return acum
+    }, [] as ICharacter[])
+  },
   activeCharacter: (_, _1, _2, rootGetters) => {
     return rootGetters['character/activeCharacter/activeCharacter']
   },
@@ -26,6 +34,14 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
       state.characters,
       getters.activeCharacter,
       latLng
+    )
+  },
+  isMyCharacter: (_1, _2, _3, rootGetters) => (
+    character: ICharacter
+  ): boolean => {
+    return characterService.isMyCharacter(
+      character,
+      rootGetters['battleRoom/isHostOrGuest']
     )
   }
 }
@@ -118,7 +134,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     obj.openModal(obj.id)
   },
   tryMoveCharacter(
-    { commit, dispatch },
+    { getters, commit, dispatch },
     obj: {
       latLng: ILatlng
       cellCharacterId: string
@@ -127,6 +143,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       succeeded: () => void
     }
   ): void {
+    if (!getters.isMyCharacter(getters.activeCharacter)) return
     const args = {
       ...obj,
       succeeded: () => {
@@ -160,6 +177,8 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     context,
     obj: { cellCharacterId: string; isHostOrGuest: string }
   ): Promise<boolean> {
+    if (!context.getters.isMyCharacter(context.getters.activeCharacter))
+      return false
     const interactedCharacter = context.state.characters.find(
       (character) => character.id === obj.cellCharacterId
     )
@@ -255,7 +274,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     context.dispatch('resetCharacterState')
     context.dispatch(
       'character/latLngMap/updateCharactersLatLngMap',
-      isHostOrGuest,
+      undefined,
       { root: true }
     )
   },
@@ -292,11 +311,9 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
           attacker: obj.interacter
         })
     }
-    dispatch(
-      'character/latLngMap/updateCharactersLatLngMap',
-      obj.isHostOrGuest,
-      { root: true }
-    )
+    dispatch('character/latLngMap/updateCharactersLatLngMap', undefined, {
+      root: true
+    })
   },
   resetCharacterState({ commit }) {
     commit('character/activeCharacter/resetActiveCharacter', undefined, {

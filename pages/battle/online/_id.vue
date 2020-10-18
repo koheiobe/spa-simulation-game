@@ -63,6 +63,9 @@ const FieldModule = namespace('field')
 export default class OnlineBattleRoom extends Vue {
   @UserModule.Getter('getUser') private storeUser!: IUser
 
+  @CharacterModule.Getter('isMyCharacter')
+  private isMyCharacter!: (character: ICharacter) => boolean
+
   @CharacterModule.State('characters')
   private storeCharacters!: ICharacter[]
 
@@ -80,10 +83,10 @@ export default class OnlineBattleRoom extends Vue {
   ) => Promise<firebase.firestore.DocumentData[]>
 
   @CharacterLatLngModule.Action('initCharactersLatLngMap')
-  private initCharactersLatLngMap!: (isHostOrGuest: string) => void
+  private initCharactersLatLngMap!: () => void
 
   @CharacterLatLngModule.Action('updateCharactersLatLngMap')
-  private updateCharactersLatLngMap!: (isHostOrGuest: string) => void
+  private updateCharactersLatLngMap!: () => void
 
   @BattleRoomModule.State('battleRoom')
   private battleRoom!: IBattleRoomRes
@@ -176,7 +179,7 @@ export default class OnlineBattleRoom extends Vue {
         : await this.syncVuexFirestoreCharacters(this.battleId)
 
     if (characters) {
-      this.initCharactersLatLngMap(this.isHostOrGuest)
+      this.initCharactersLatLngMap()
     }
     // ウィンドウを閉じる時に注意を表示
     window.addEventListener('beforeunload', function(e) {
@@ -240,7 +243,7 @@ export default class OnlineBattleRoom extends Vue {
       )
     })
     await this.syncVuexFirestoreCharacters(this.battleId)
-    this.initCharactersLatLngMap(this.isHostOrGuest)
+    this.initCharactersLatLngMap()
     // Field.vueのdeployCharacterのthis.setCharacterParamをすると
     // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
     this.setDeployModeEnd({
@@ -273,7 +276,7 @@ export default class OnlineBattleRoom extends Vue {
       battleId: this.battleId,
       characters: initActionStatesCharacter
     })
-    this.initCharactersLatLngMap(this.isHostOrGuest)
+    this.initCharactersLatLngMap()
   }
 
   onTurnEnd() {
@@ -332,13 +335,6 @@ export default class OnlineBattleRoom extends Vue {
     // 残されたクライアント側でエラーが発生するため、同期を中止する
     this.unBindBattleRoomRef()
     window.setTimeout(() => this.$router.push('/battle/online'), 5000)
-  }
-
-  isMyCharacter(character: ICharacter | undefined) {
-    if (!character) return false
-    const matchedSuffix = character.id.match(/-.+()$/)
-    if (!matchedSuffix) return false
-    return matchedSuffix[0].replace('-', '') === this.isHostOrGuest
   }
 
   CAHARACTERS_NUM = 25

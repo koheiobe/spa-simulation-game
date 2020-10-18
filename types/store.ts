@@ -21,11 +21,9 @@ export interface ICharacterState {
 export interface ICharacterLatLngMapState {
   charactersLatLngMap: IField
 }
-
 export interface IActiveCharacterState {
   activeCharacter: ICharacter
 }
-
 export interface IFieldState {
   fieldController: undefined | FieldController
 }
@@ -64,6 +62,8 @@ export interface ICharacter {
     interactLatLng: ILatlng
   }
 }
+
+export type HostOrGuest = 'host' | 'guest'
 
 interface battleRoomUser {
   uid: IUser['uid']

@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { IField, ILatlng } from '~/types/battle'
-import { ICharacter } from '~/types/store'
+import { HostOrGuest, ICharacter } from '~/types/store'
 import {
   attackCharacterAnimation,
   takeDamageCharacterAnimation
@@ -39,7 +39,6 @@ export const getCharacterAtCell = (
 export const getMovableCharacter = (
   cellCharacterId: string,
   isMyTurn: boolean,
-  isHostOrGuest: string,
   interactiveCharacter: ICharacter | undefined
 ) => {
   if (!interactiveCharacter) return undefined
@@ -48,7 +47,6 @@ export const getMovableCharacter = (
   if (
     isMovableCell &&
     isMyTurn &&
-    isMyCharacter(interactiveCharacter, isHostOrGuest) &&
     interactiveCharacter.actionState.isEnd === false
   ) {
     return interactiveCharacter as ICharacter
@@ -72,32 +70,27 @@ export const getDeployTargetCharacterLatlng = (
 }
 
 export const getInteractTargetCharacter = (
-  isHostOrGuest: string,
   interactiveCharacter: ICharacter | undefined,
   interactedCharacter: ICharacter
 ) => {
   if (!interactiveCharacter) return undefined
-  if (!interactedCharacter || isMyCharacter(interactedCharacter, isHostOrGuest))
-    return undefined
+  if (!interactedCharacter) return undefined
   return interactedCharacter
 }
 
 export const isMyCharacter = (
   character: ICharacter | undefined,
-  isHostOrGuest: string
+  isHostOrGuest: HostOrGuest | ''
 ) => {
-  if (!character) return false
+  if (!character || isHostOrGuest.length <= 0) return false
   const matchedSuffix = character.id.match(/-.+()$/)
   if (!matchedSuffix) return false
   return matchedSuffix[0].replace('-', '') === isHostOrGuest
 }
 
-export const getInitCharactersLatLngMap = (
-  characters: ICharacter[],
-  isHostOrGuest: string
-) =>
-  characters.reduce((acum, cur) => {
-    if (!isMyCharacter(cur as ICharacter, isHostOrGuest) && cur.latLng.x > 0) {
+export const getInitCharactersLatLngMap = (myCharacters: ICharacter[]) =>
+  myCharacters.reduce((acum, cur) => {
+    if (cur.latLng.x > 0) {
       acum[`${cur.latLng.y}_${cur.latLng.x}`] = {
         type: 'character'
       }
@@ -106,11 +99,10 @@ export const getInitCharactersLatLngMap = (
   }, {} as IField)
 
 export const getUpdatedCharactersLatLngMap = (
-  activeCharacter: ICharacter | undefined,
-  charactersLatLngMap: IField,
-  isHostOrGuest: string
+  activeCharacter: ICharacter,
+  charactersLatLngMap: IField
 ): IField => {
-  if (!activeCharacter || isMyCharacter(activeCharacter, isHostOrGuest))
+  if (activeCharacter.latLng.x <= 0 || activeCharacter.latLng.x <= 0)
     return charactersLatLngMap
   const { lastLatLng, latLng } = activeCharacter
   delete charactersLatLngMap[`${lastLatLng.y}_${lastLatLng.x}`]

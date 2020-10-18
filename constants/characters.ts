@@ -1,6 +1,7 @@
 import { ICharacter } from '~/types/store'
 
 // id は ~/pages/online/_id で初期値 + guest か host の文字列を追加され初期化される
+
 export const CHARACTERS: { [characterName: string]: ICharacter } = {
   centaur: {
     name: 'Centaur',

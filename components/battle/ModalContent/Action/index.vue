@@ -3,13 +3,17 @@
     <div :class="$style.characterNameContainer">Name: {{ characterName }}</div>
     <ul v-if="selectedAction === 'none'" :class="$style.actionOptions">
       <li
-        v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
+        v-if="
+          !isDeploying && isMyTurn && isMyCharacter(activeCharacter) && !isEnd
+        "
         @click="$emit('on-select', 'attack')"
       >
         攻撃
       </li>
       <li
-        v-if="!isDeploying && isMyTurn && isMyCharacter && !isEnd"
+        v-if="
+          !isDeploying && isMyTurn && isMyCharacter(activeCharacter) && !isEnd
+        "
         @click="$emit('on-select', 'wait')"
       >
         待機
@@ -52,7 +56,6 @@ import Component from 'vue-class-component'
 import { Vue, Prop } from 'vue-property-decorator'
 import Detail from './CharacterDetail.vue'
 import Modal from '~/components/utility/Modal.vue'
-import { isMyCharacter } from '~/domain/service/characters'
 import { ICharacter } from '~/types/store'
 
 @Component({
@@ -74,6 +77,9 @@ export default class BattleDialogue extends Vue {
   @Prop({ default: false })
   isDeploying!: boolean
 
+  @Prop({ default: false })
+  isMyCharacter!: (character: ICharacter) => boolean
+
   public itemList: string[] = ['dd', 'dd', 'dd', 'dd', 'dd', 'dd']
   public selectedAction: 'item' | 'detail' | 'none' = 'none'
   public isItemModalOpen: boolean = false
@@ -92,12 +98,6 @@ export default class BattleDialogue extends Vue {
 
   get isEnd() {
     return this.activeCharacter ? this.activeCharacter.actionState.isEnd : true
-  }
-
-  get isMyCharacter() {
-    return this.activeCharacter
-      ? isMyCharacter(this.activeCharacter, this.isHostOrGuest)
-      : false
   }
 }
 </script>

@@ -1,5 +1,10 @@
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
-import { IActiveCharacterState, ICharacter, IRootState } from '~/types/store'
+import {
+  ICharacter,
+  IRootState,
+  HostOrGuest,
+  IActiveCharacterState
+} from '~/types/store'
 import { IField, ILatlng, WeaponType, ActionType } from '~/types/battle'
 
 import * as characterService from '~/domain/service/characters'
@@ -16,6 +21,7 @@ const initActiveCharacter = {
   level: 0,
   moveDistance: 0,
   id: '',
+  hostOrGuest: '' as HostOrGuest,
   latLng: { x: -1, y: -1 },
   lastLatLng: { x: -1, y: -1 },
   skill: [],
@@ -73,7 +79,6 @@ export const actions: ActionTree<IActiveCharacterState, IRootState> = {
     const movableCharacter = characterService.getMovableCharacter(
       obj.cellCharacterId,
       obj.isMyTurn,
-      obj.isHostOrGuest,
       context.state.activeCharacter
     )
     if (!movableCharacter) return
@@ -109,7 +114,6 @@ export const actions: ActionTree<IActiveCharacterState, IRootState> = {
   ): boolean {
     const activeCharacter = context.state.activeCharacter
     const targetCharacter = characterService.getInteractTargetCharacter(
-      obj.isHostOrGuest,
       activeCharacter,
       obj.interactedCharacter
     )

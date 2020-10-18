@@ -21,25 +21,20 @@ export const mutations: MutationTree<ICharacterLatLngMapState> = {
 }
 
 export const actions: ActionTree<ICharacterLatLngMapState, IRootState> = {
-  initCharactersLatLngMap({ commit, rootGetters }, isHostOrGuest: string) {
+  initCharactersLatLngMap({ commit, rootGetters }) {
     commit(
       'setcharactersLatLngMap',
       characterService.getInitCharactersLatLngMap(
-        rootGetters['character/character/characterList'],
-        isHostOrGuest
+        rootGetters['character/character/myCharacterList']
       )
     )
   },
-  updateCharactersLatLngMap(
-    { state, commit, rootGetters },
-    isHostOrGuest: string
-  ) {
+  updateCharactersLatLngMap({ state, commit, rootGetters }) {
     commit(
       'setcharactersLatLngMap',
       characterService.getUpdatedCharactersLatLngMap(
         rootGetters['character/activeCharacter/activeCharacter'],
-        state.charactersLatLngMap,
-        isHostOrGuest
+        state.charactersLatLngMap
       )
     )
   }

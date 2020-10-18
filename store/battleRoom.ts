@@ -1,6 +1,11 @@
 import { ActionTree, GetterTree } from 'vuex'
 import { firestoreAction } from 'vuexfire'
-import { IBattleRoomState, IRootState, ICharacter } from '~/types/store'
+import {
+  IBattleRoomState,
+  IRootState,
+  ICharacter,
+  HostOrGuest
+} from '~/types/store'
 
 export const state = (): IBattleRoomState => ({
   list: [],
@@ -13,6 +18,13 @@ export const getters: GetterTree<IBattleRoomState, IRootState> = {
   },
   battleRoom: (state) => {
     return state.battleRoom
+  },
+  isHostOrGuest: (state, _1, _2, rootGetters): HostOrGuest | '' => {
+    return state.battleRoom
+      ? state.battleRoom.host.uid === rootGetters['user/getUser'].uid
+        ? 'host'
+        : 'guest'
+      : ''
   }
 }
 
