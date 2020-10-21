@@ -24,7 +24,6 @@
       :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
       :battle-id="battleId"
-      @updateCharactersLatLngMap="updateCharactersLatLngMap"
       @onWin="onWin"
     />
     <!-- 開発用 -->
@@ -52,8 +51,7 @@ import field from '~/assets/field.json'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
-const CharacterModule = namespace('character/character')
-const CharacterLatLngModule = namespace('character/latLngMap')
+const CharacterModule = namespace('character/module')
 const FieldModule = namespace('field')
 
 @Component({
@@ -66,7 +64,7 @@ export default class OnlineBattleRoom extends Vue {
   @CharacterModule.Getter('isMyCharacter')
   private isMyCharacter!: (character: ICharacter) => boolean
 
-  @CharacterModule.State('characters')
+  @CharacterModule.Getter('characterList')
   private storeCharacters!: ICharacter[]
 
   @CharacterModule.Action('updateCharacters')
@@ -82,11 +80,8 @@ export default class OnlineBattleRoom extends Vue {
     >
   ) => Promise<firebase.firestore.DocumentData[]>
 
-  @CharacterLatLngModule.Action('initCharactersLatLngMap')
+  @CharacterModule.Action('initCharactersLatLngMap')
   private initCharactersLatLngMap!: () => void
-
-  @CharacterLatLngModule.Action('updateCharactersLatLngMap')
-  private updateCharactersLatLngMap!: () => void
 
   @BattleRoomModule.State('battleRoom')
   private battleRoom!: IBattleRoomRes

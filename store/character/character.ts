@@ -14,9 +14,9 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   characterList: (state) => {
     return state.characters
   },
-  myCharacterList: (state, getters) => {
+  enemyCharacterList: (state, getters) => {
     return state.characters.reduce((acum, cur) => {
-      if (getters.isMyCharacter(cur as ICharacter)) {
+      if (!getters.isMyCharacter(cur as ICharacter)) {
         acum.push(cur)
       }
       return acum
@@ -227,11 +227,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       { root: true }
     )
     context.dispatch('resetCharacterState')
-    context.dispatch(
-      'character/latLngMap/updateCharactersLatLngMap',
-      undefined,
-      { root: true }
-    )
   },
   checkWinner(context, isHostOrGuest: string) {
     const activeCharacter = context.getters.activeCharacter
@@ -266,7 +261,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
           attacker: obj.interacter
         })
     }
-    dispatch('character/latLngMap/updateCharactersLatLngMap', undefined, {
+    dispatch('character/latLngMap/updateCharactersLatLngMap', obj.interacter, {
       root: true
     })
   },

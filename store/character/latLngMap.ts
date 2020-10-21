@@ -1,5 +1,5 @@
 import { ActionTree, MutationTree, GetterTree } from 'vuex'
-import { IRootState, ICharacterLatLngMapState } from '~/types/store'
+import { IRootState, ICharacterLatLngMapState, ICharacter } from '~/types/store'
 import { IField } from '~/types/battle'
 
 import * as characterService from '~/domain/service/characters'
@@ -17,6 +17,12 @@ export const getters: GetterTree<ICharacterLatLngMapState, IRootState> = {
 export const mutations: MutationTree<ICharacterLatLngMapState> = {
   setcharactersLatLngMap(state, charactersLatLngMap: IField) {
     state.charactersLatLngMap = charactersLatLngMap
+  },
+  updateCharactersLatLngMap(state, activeCharacter: ICharacter) {
+    characterService.updatCharactersLatLngMap(
+      activeCharacter,
+      state.charactersLatLngMap
+    )
   }
 }
 
@@ -25,17 +31,16 @@ export const actions: ActionTree<ICharacterLatLngMapState, IRootState> = {
     commit(
       'setcharactersLatLngMap',
       characterService.getInitCharactersLatLngMap(
-        rootGetters['character/character/myCharacterList']
+        rootGetters['character/character/enemyCharacterList']
       )
     )
   },
-  updateCharactersLatLngMap({ state, commit, rootGetters }) {
-    commit(
-      'setcharactersLatLngMap',
-      characterService.getUpdatedCharactersLatLngMap(
-        rootGetters['character/activeCharacter/activeCharacter'],
-        state.charactersLatLngMap
-      )
-    )
+  updateCharactersLatLngMap(
+    { commit, rootGetters },
+    activeCharacter: ICharacter
+  ) {
+    if (rootGetters['character/character/isMyCharacter'](activeCharacter))
+      return
+    commit('updateCharactersLatLngMap', activeCharacter)
   }
 }

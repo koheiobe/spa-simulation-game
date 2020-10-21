@@ -88,8 +88,8 @@ export const isMyCharacter = (
   return matchedSuffix[0].replace('-', '') === isHostOrGuest
 }
 
-export const getInitCharactersLatLngMap = (myCharacters: ICharacter[]) =>
-  myCharacters.reduce((acum, cur) => {
+export const getInitCharactersLatLngMap = (enemyCharacter: ICharacter[]) =>
+  enemyCharacter.reduce((acum, cur) => {
     if (cur.latLng.x > 0) {
       acum[`${cur.latLng.y}_${cur.latLng.x}`] = {
         type: 'character'
@@ -98,7 +98,7 @@ export const getInitCharactersLatLngMap = (myCharacters: ICharacter[]) =>
     return acum
   }, {} as IField)
 
-export const getUpdatedCharactersLatLngMap = (
+export const updatCharactersLatLngMap = (
   activeCharacter: ICharacter,
   charactersLatLngMap: IField
 ): IField => {
