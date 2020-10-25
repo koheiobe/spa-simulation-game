@@ -5,7 +5,7 @@ import {
   HostOrGuest,
   IActiveCharacterState
 } from '~/types/store'
-import { IField, ILatlng, WeaponType, ActionType } from '~/types/battle'
+import { ILatlng, WeaponType, ActionType } from '~/types/battle'
 
 import * as characterService from '~/domain/service/characters'
 
@@ -56,37 +56,18 @@ export const mutations: MutationTree<IActiveCharacterState> = {
 }
 
 export const actions: ActionTree<IActiveCharacterState, IRootState> = {
-  selectCharacter(
-    context,
-    obj: {
-      activeCharacter: string
-      latLng: ILatlng
-      charactersLatLngMap: IField
-    }
-  ) {
-    context.commit('setActiveCharacter', obj.activeCharacter)
-  },
-  tryMoveCharacter(
+  moveCharacter(
     context,
     obj: {
       latLng: ILatlng
-      cellCharacterId: string
-      isMyTurn: boolean
-      isHostOrGuest: string
-      succeeded: () => void
+      movableCharacter: ICharacter
     }
-  ): void {
-    const movableCharacter = characterService.getMovableCharacter(
-      obj.cellCharacterId,
-      obj.isMyTurn,
-      context.state.activeCharacter
-    )
-    if (!movableCharacter) return
+  ): boolean {
     context.commit('updateActiveCharacter', {
       latLng: obj.latLng,
-      lastLatLng: movableCharacter.latLng
+      lastLatLng: obj.movableCharacter.latLng
     })
-    obj.succeeded()
+    return true
   },
   tryPrepareInteractCharacter(
     context,
@@ -104,26 +85,17 @@ export const actions: ActionTree<IActiveCharacterState, IRootState> = {
       }
     })
   },
-  tryInteractCharacter(
+  interactCharacter(
     context,
     obj: {
-      cellCharacterId: string
-      isHostOrGuest: string
+      activeCharacter: ICharacter
       interactedCharacter: ICharacter
     }
   ): boolean {
-    const activeCharacter = context.state.activeCharacter
-    const targetCharacter = characterService.getInteractTargetCharacter(
-      activeCharacter,
-      obj.interactedCharacter
-    )
-    if (!targetCharacter || !activeCharacter) {
-      return false
-    }
     context.commit('updateActiveCharacter', {
       actionState: {
-        ...activeCharacter.actionState,
-        interactLatLng: targetCharacter.latLng
+        ...obj.activeCharacter.actionState,
+        interactLatLng: obj.interactedCharacter.latLng
       }
     })
     return true

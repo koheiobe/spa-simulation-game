@@ -14,14 +14,6 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   characterList: (state) => {
     return state.characters
   },
-  enemyCharacterList: (state, getters) => {
-    return state.characters.reduce((acum, cur) => {
-      if (!getters.isMyCharacter(cur as ICharacter)) {
-        acum.push(cur)
-      }
-      return acum
-    }, [] as ICharacter[])
-  },
   activeCharacter: (_, _1, _2, rootGetters) => {
     return rootGetters['character/activeCharacter/activeCharacter']
   },
@@ -88,26 +80,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       resolve()
     })
   },
-  tryMoveCharacter(
-    { getters, commit, dispatch },
-    obj: {
-      latLng: ILatlng
-      cellCharacterId: string
-      isMyTurn: boolean
-      isHostOrGuest: string
-      succeeded: () => void
-    }
-  ): void {
-    if (!getters.isMyCharacter(getters.activeCharacter)) return
-    const args = {
-      ...obj,
-      succeeded: () => {
-        commit('field/finishMoveMode', undefined, { root: true })
-        obj.succeeded()
-      }
-    }
-    dispatch('character/activeCharacter/tryMoveCharacter', args, { root: true })
-  },
   tryPrepareInteractCharacter(
     { commit, getters, dispatch },
     obj: {
@@ -127,30 +99,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       },
       { root: true }
     )
-  },
-  async tryInteractCharacter(
-    context,
-    obj: { cellCharacterId: string; isHostOrGuest: string }
-  ): Promise<boolean> {
-    if (!context.getters.isMyCharacter(context.getters.activeCharacter))
-      return false
-    const interactedCharacter = context.state.characters.find(
-      (character) => character.id === obj.cellCharacterId
-    )
-    const isInteracted = await context.dispatch(
-      'character/activeCharacter/tryInteractCharacter',
-      {
-        ...obj,
-        interactedCharacter
-      },
-      { root: true }
-    )
-    if (!isInteracted) {
-      context.dispatch('resetCharacterState')
-      return false
-    }
-    context.dispatch('onFinishAction', obj.isHostOrGuest)
-    return true
   },
   async attackCharacter(
     context,

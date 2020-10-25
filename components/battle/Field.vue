@@ -48,13 +48,7 @@ import Component from 'vue-class-component'
 import { Vue, Prop, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
 import DevFieldUi from './devFieldUi.vue'
-import {
-  IField,
-  ILatlng,
-  ActionType,
-  WeaponType,
-  CellType
-} from '~/types/battle'
+import { IField, ILatlng, ActionType, CellType } from '~/types/battle'
 import FieldCell from '~/components/battle/FieldCell.vue'
 import SideMenu from '~/components/battle/SideMenu.vue'
 import Modal from '~/components/utility/Modal.vue'
@@ -86,6 +80,9 @@ export default class Field extends Vue {
   @CharacterModule.Getter('deployCharacterId')
   private deployCharacterId!: ICharacter
 
+  @CharacterModule.Getter('characterAtCell')
+  private characterAtCell!: (latLng: ILatlng) => undefined | ICharacter
+
   @CharacterModule.Action('selectDeployTargetCharacter')
   private selectDeployTargetCharacter!: (obj: {
     id: string
@@ -98,45 +95,19 @@ export default class Field extends Vue {
     cellCharacterId: string
   }) => void
 
-  @CharacterModule.Getter('characterAtCell')
-  private characterAtCell!: (latLng: ILatlng) => undefined | ICharacter
-
-  @CharacterModule.Action('selectCharacter')
-  private selectCharacter!: (obj: {
-    cellCharacterId: string
-    latLng: ILatlng
-  }) => void
-
-  @CharacterModule.Action('onFinishAction')
-  private onFinishAction!: (isHostOrGuest: string) => void
-
-  @CharacterModule.Action('tryMoveCharacter')
-  private tryMoveCharacter!: (obj: {
+  @CharacterModule.Action('clickCellOnBattle')
+  private clickCellOnBattle!: (obj: {
     latLng: ILatlng
     cellCharacterId: string
-    isMyTurn: boolean
-    isHostOrGuest: string
-    succeeded: () => void
-  }) => boolean
+  }) => Promise<boolean>
 
-  @CharacterModule.Action('tryPrepareInteractCharacter')
-  private tryPrepareInteractCharacter!: (obj: {
-    actionType: string
-    weaponType: WeaponType
-    itemId: number
-  }) => ICharacter | null
-
-  @CharacterModule.Action('tryInteractCharacter')
-  private tryInteractCharacter!: (obj: {
-    cellCharacterId: string
-    isHostOrGuest: string
-  }) => boolean
+  @CharacterModule.Action('takeBattleAction')
+  private takeBattleAction!: (actionType: ActionType) => Promise<boolean>
 
   @CharacterModule.Action('onChangeLastInteractCharacter')
   private onChangeLastInteractCharacter!: (obj: {
     interacterEl: HTMLElement
     interacter: ICharacter
-    isHostOrGuest: string
   }) => void
 
   @CharacterModule.Action('resetCharacterState')
@@ -172,41 +143,19 @@ export default class Field extends Vue {
   private isDevMode = false
   private selectedFieldIcon = ''
 
-  onClickCell(latLng: ILatlng, cellCharacterId: string) {
+  async onClickCell(latLng: ILatlng, cellCharacterId: string) {
     // 開発用
     if (this.isDevMode) {
       this.mergeField(latLng, this.selectedFieldIcon)
       return
     }
 
-    switch (this.getModeType(latLng)) {
-      case 'deploy':
-        this.deployCharacter({ latLng, cellCharacterId })
-        break
-      case 'move':
-        this.tryMoveCharacter({
-          latLng,
-          cellCharacterId,
-          isMyTurn: this.isMyTurn,
-          isHostOrGuest: this.isHostOrGuest,
-          succeeded: () => this.setModal(true)
-        })
-        break
-      case 'interact':
-        this.interactCharacter(cellCharacterId)
-        break
-      default:
-        // キャラクターが存在した場合
-        if (cellCharacterId.length > 0) {
-          this.selectCharacter({
-            cellCharacterId,
-            latLng
-          })
-          // キャラクターが存在しないセルをクリックした場合、すべての行動をキャンセル
-        } else {
-          this.resetCharacterState()
-          this.setModal(false)
-        }
+    if (this.getModeType(latLng) === 'deploy') {
+      this.deployCharacter({ latLng, cellCharacterId })
+    } else if (await this.clickCellOnBattle({ latLng, cellCharacterId })) {
+      this.setModal(true)
+    } else {
+      this.setModal(false)
     }
   }
 
@@ -220,46 +169,8 @@ export default class Field extends Vue {
   }
 
   onSelectBattleAction(action: ActionType) {
-    switch (action) {
-      case 'attack':
-        this.prepareInteractCharacter(action, 'closeRange')
-        break
-      case 'wait':
-        this.onFinishAction(this.isHostOrGuest)
-        break
-      case 'item':
-        this.prepareInteractCharacter(action, 'closeRange', 0)
-        break
-    }
+    this.takeBattleAction(action)
     this.setModal(false)
-  }
-
-  prepareInteractCharacter(
-    actionType: string,
-    weaponType: WeaponType,
-    itemId = 0
-  ) {
-    this.tryPrepareInteractCharacter({
-      actionType,
-      weaponType,
-      itemId
-    })
-  }
-
-  async interactCharacter(cellCharacterId: string) {
-    if (
-      await !this.tryInteractCharacter({
-        isHostOrGuest: this.isHostOrGuest,
-        cellCharacterId
-      })
-    ) {
-      this.setModal(false)
-    }
-  }
-
-  useItem(cellCharacterId: string) {
-    // TODO: 開発段階
-    console.log('item', cellCharacterId)
   }
 
   onClickModalOuter() {
@@ -275,8 +186,7 @@ export default class Field extends Vue {
     if (!interacterEl) return
     this.onChangeLastInteractCharacter({
       interacterEl,
-      interacter,
-      isHostOrGuest: this.isHostOrGuest
+      interacter
     })
   }
 

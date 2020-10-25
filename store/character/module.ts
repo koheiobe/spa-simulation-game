@@ -1,13 +1,14 @@
 import { ActionTree, GetterTree } from 'vuex'
 import { ICharacter, ICharacterState, IRootState } from '~/types/store'
-import { IField, ILatlng, WeaponType } from '~/types/battle'
+import { ActionType, IField, ILatlng } from '~/types/battle'
+import * as characterService from '~/domain/service/characters'
 
 export const getters: GetterTree<ICharacterState, IRootState> = {
   characterList: (_1, _2, _3, rootGetters): ICharacter[] => {
     return rootGetters['character/character/characterList']
   },
   activeCharacter: (_, _1, _2, rootGetters): ICharacter => {
-    return rootGetters['character/character/activeCharacter']
+    return rootGetters['character/activeCharacter/activeCharacter']
   },
   deployCharacterId: (_1, _2, _3, rootGetters): string => {
     return rootGetters['character/deploy/deployCharacterId']
@@ -20,7 +21,16 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
   isMyCharacter: (_1, _2, _3, rootGetters) => (
     character: ICharacter
   ): boolean => {
-    return rootGetters['character/character/isMyCharacter'](character)
+    return rootGetters['helper/character/isMyCharacter'](character)
+  },
+  isHostOrGuest: (_1, _2, _3, rootGetters): boolean => {
+    return rootGetters['helper/battleRoom/isHostOrGuest']
+  },
+  isMyTurn: (_1, _2, _3, rootGetters): boolean => {
+    return rootGetters['helper/battleRoom/isMyTurn']
+  },
+  modeType: (_1, _2, _3, rootGetters) => (latLng: ILatlng): boolean => {
+    return rootGetters['field/mdoeType'](latLng)
   },
   charactersLatLngMap: (_1, _2, _3, rootGetters) => (): IField => {
     return rootGetters['character/latLngMap/charactersLatLngMap']
@@ -47,16 +57,6 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       root: true
     })
   },
-  setActiveCharacter({ dispatch }, cellCharacterId: string) {
-    return dispatch('character/character/setActiveCharacter', cellCharacterId, {
-      root: true
-    })
-  },
-  updateActiveCharacter({ dispatch }, param) {
-    return dispatch('character/character/updateActiveCharacter', param, {
-      root: true
-    })
-  },
   bindCharactersRef({ dispatch }, ref) {
     return dispatch('character/character/bindCharactersRef', ref, {
       root: true
@@ -78,67 +78,95 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       root: true
     })
   },
-  setCharacterParam({ dispatch }, obj: { id: string; value: any }) {
-    return dispatch('character/character/setCharacterParam', obj, {
-      root: true
-    })
-  },
-  tryMoveCharacter(
-    { dispatch },
+  clickCellOnBattle(
+    { dispatch, getters, commit },
     obj: {
       latLng: ILatlng
       cellCharacterId: string
-      isMyTurn: boolean
-      isHostOrGuest: string
-      succeeded: () => void
+      setModal: (b: boolean) => void
     }
-  ) {
-    return dispatch('character/character/tryMoveCharacter', obj, { root: true })
-  },
-  tryPrepareInteractCharacter(
-    { dispatch },
-    obj: {
-      actionType: string
-      weaponType: WeaponType
-      itemId: number
+  ): boolean {
+    const modeType = getters.modeType(obj.latLng)
+    if (modeType === 'move') {
+      if (!getters.isMyCharacter(getters.activeCharacter)) return false
+      const movableCharacter = characterService.getMovableCharacter(
+        obj.cellCharacterId,
+        getters.isMyTurn,
+        getters.activeCharacter
+      )
+      if (!movableCharacter) return false
+      dispatch(
+        'character/activeCharacter/moveCharacter',
+        {
+          latLng: obj.latLng,
+          movableCharacter
+        },
+        { root: true }
+      )
+      commit('field/finishMoveMode', undefined, { root: true })
+      return true
+    } else if (modeType === 'interact') {
+      const interactedCharacter = getters.characterAtCell(obj.latLng)
+      if (
+        !interactedCharacter ||
+        !getters.isMyCharacter(getters.activeCharacter)
+      ) {
+        dispatch('resetCharacterState')
+        return false
+      }
+      dispatch(
+        'character/activeCharacter/interactCharacter',
+        {
+          activeCharacter: getters.activeCharacter,
+          interactedCharacter
+        },
+        { root: true }
+      )
+      dispatch('onFinishAction')
+      return false
+    } else {
+      // キャラクターが存在した場合
+      if (obj.cellCharacterId.length > 0) {
+        dispatch('character/character/selectCharacter', obj, {
+          root: true
+        })
+        // キャラクターが存在しないセルをクリックした場合、すべての行動をキャンセル
+      } else {
+        dispatch('resetCharacterState')
+      }
+      return false
     }
-  ) {
-    return dispatch('character/character/tryPrepareInteractCharacter', obj, {
-      root: true
-    })
   },
-  tryInteractCharacter(
-    { dispatch },
-    obj: { cellCharacterId: string; isHostOrGuest: string }
-  ): Promise<boolean> {
-    return dispatch('character/character/tryInteractCharacter', obj, {
-      root: true
-    })
-  },
-  attackCharacter(
-    { dispatch },
-    obj: {
-      attackerEl: HTMLElement
-      attacker: ICharacter
+  takeBattleAction({ dispatch }, actionType: ActionType) {
+    switch (actionType) {
+      case 'attack':
+        dispatch(
+          'character/character/tryPrepareInteractCharacter',
+          { actionType, weaponType: 'closeRange', itemId: 0 },
+          {
+            root: true
+          }
+        )
+        break
+      case 'wait':
+        dispatch('onFinishAction')
+        break
+      case 'item':
+        dispatch(
+          'character/character/tryPrepareInteractCharacter',
+          // TODO: item機能を追加する際はitemIdを引数として受け取る
+          { actionType, weaponType: 'closeRange', itemId: 0 },
+          {
+            root: true
+          }
+        )
+        break
+      default:
+        throw new Error('action type does not exist')
     }
-  ): Promise<boolean> {
-    return dispatch('character/character/attackCharacter', obj, {
-      root: true
-    })
   },
-  selectCharacter(
-    { dispatch },
-    obj: {
-      cellCharacterId: string
-      latLng: ILatlng
-    }
-  ) {
-    return dispatch('character/character/selectCharacter', obj, {
-      root: true
-    })
-  },
-  onFinishAction({ dispatch }, isHostOrGuest: string) {
-    return dispatch('character/character/onFinishAction', isHostOrGuest, {
+  onFinishAction({ dispatch, getters }) {
+    dispatch('character/character/onFinishAction', getters.isHostOrGuest, {
       root: true
     })
   },
@@ -147,12 +175,15 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     obj: {
       interacterEl: HTMLElement
       interacter: ICharacter
-      isHostOrGuest: string
     }
   ) {
-    return dispatch('character/character/onChangeLastInteractCharacter', obj, {
-      root: true
-    })
+    return dispatch(
+      'character/character/onChangeLastInteractCharacter',
+      { ...obj, isHostOrGuest: getters.isHostOrGuest },
+      {
+        root: true
+      }
+    )
   },
   resetCharacterState({ dispatch }) {
     return dispatch('character/character/resetCharacterState', undefined, {

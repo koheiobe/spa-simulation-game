@@ -31,7 +31,7 @@ export const actions: ActionTree<ICharacterLatLngMapState, IRootState> = {
     commit(
       'setcharactersLatLngMap',
       characterService.getInitCharactersLatLngMap(
-        rootGetters['character/character/enemyCharacterList']
+        rootGetters['helper/character/enemyCharacterList']
       )
     )
   },
