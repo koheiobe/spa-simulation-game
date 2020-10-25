@@ -39,8 +39,7 @@ export const actions: ActionTree<ICharacterLatLngMapState, IRootState> = {
     { commit, rootGetters },
     activeCharacter: ICharacter
   ) {
-    if (rootGetters['character/character/isMyCharacter'](activeCharacter))
-      return
+    if (rootGetters['helper/character/isMyCharacter'](activeCharacter)) return
     commit('updateCharactersLatLngMap', activeCharacter)
   }
 }

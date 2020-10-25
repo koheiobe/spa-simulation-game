@@ -69,7 +69,7 @@ export const actions: ActionTree<IActiveCharacterState, IRootState> = {
     })
     return true
   },
-  tryPrepareInteractCharacter(
+  prepareInteractCharacter(
     context,
     obj: {
       actionType: string

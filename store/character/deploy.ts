@@ -37,8 +37,6 @@ export const actions: ActionTree<IDeployCharacterState, IRootState> = {
       cellCharacterId: string
     }
   ) {
-    // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
-    // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
     const updatedLatLng = characterService.getDeployTargetCharacterLatlng(
       obj.cellCharacterId,
       obj.latLng

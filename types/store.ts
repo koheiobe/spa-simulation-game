@@ -3,7 +3,9 @@ import { FieldController } from '~/utility/helper/battle/field/index'
 
 export interface IRootState {
   version: string
-  battle: ICharacterState
+  character: {
+    character: ICharacterState
+  }
   battleRoom: IBattleRoomState
   user: IUserState
 }

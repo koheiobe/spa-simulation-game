@@ -1,27 +1,38 @@
+import _ from 'lodash'
 import { ActionTree, GetterTree } from 'vuex'
-import { ICharacter, ICharacterState, IRootState } from '~/types/store'
-import { ActionType, IField, ILatlng } from '~/types/battle'
+import { ICharacter, IRootState } from '~/types/store'
+import { ActionType, IField, ILatlng, WeaponType } from '~/types/battle'
 import * as characterService from '~/domain/service/characters'
 
-export const getters: GetterTree<ICharacterState, IRootState> = {
+export const getters: GetterTree<{}, IRootState> = {
   characterList: (_1, _2, _3, rootGetters): ICharacter[] => {
     return rootGetters['character/character/characterList']
   },
-  activeCharacter: (_, _1, _2, rootGetters): ICharacter => {
+  activeCharacter: (_1, _2, _3, rootGetters): ICharacter => {
     return rootGetters['character/activeCharacter/activeCharacter']
   },
   deployCharacterId: (_1, _2, _3, rootGetters): string => {
     return rootGetters['character/deploy/deployCharacterId']
   },
-  characterAtCell: (_1, _2, _3, rootGetters) => (
+  characterAtCell: (_1, getters) => (
     latLng: ILatlng
-  ): ICharacterState | undefined => {
-    return rootGetters['character/character/characterAtCell'](latLng)
+  ): ICharacter | undefined => {
+    return characterService.getCharacterAtCell(
+      getters.characterList,
+      getters.activeCharacter,
+      latLng
+    )
   },
   isMyCharacter: (_1, _2, _3, rootGetters) => (
     character: ICharacter
   ): boolean => {
     return rootGetters['helper/character/isMyCharacter'](character)
+  },
+  battleId: (_1, _2, _3, rootGetters): boolean => {
+    return rootGetters['user/getUser'].battleId
+  },
+  userUid: (_1, _2, _3, rootGetters): boolean => {
+    return rootGetters['user/getUser'].uid
   },
   isHostOrGuest: (_1, _2, _3, rootGetters): boolean => {
     return rootGetters['helper/battleRoom/isHostOrGuest']
@@ -30,14 +41,17 @@ export const getters: GetterTree<ICharacterState, IRootState> = {
     return rootGetters['helper/battleRoom/isMyTurn']
   },
   modeType: (_1, _2, _3, rootGetters) => (latLng: ILatlng): boolean => {
-    return rootGetters['field/mdoeType'](latLng)
+    return rootGetters['field/modeType'](latLng)
+  },
+  winnerCell: (_1, getters, _3, rootGetters): ILatlng => {
+    return rootGetters['field/winnerCell'](getters.isHostOrGuest)
   },
   charactersLatLngMap: (_1, _2, _3, rootGetters) => (): IField => {
     return rootGetters['character/latLngMap/charactersLatLngMap']
   }
 }
 
-export const actions: ActionTree<ICharacterState, IRootState> = {
+export const actions: ActionTree<{}, IRootState> = {
   selectDeployTargetCharacter(
     { dispatch },
     obj: { id: string; openModal: (id: string) => void }
@@ -53,6 +67,8 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       cellCharacterId: string
     }
   ) {
+    // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
+    // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
     return dispatch('character/deploy/deployCharacter', obj, {
       root: true
     })
@@ -72,7 +88,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
   },
   updateCharacters(
     { dispatch },
-    dbInfo: { battleId: string; character: ICharacter }
+    dbInfo: { battleId: string; characters: ICharacter }
   ) {
     return dispatch('character/character/updateCharacters', dbInfo, {
       root: true
@@ -127,9 +143,7 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
     } else {
       // キャラクターが存在した場合
       if (obj.cellCharacterId.length > 0) {
-        dispatch('character/character/selectCharacter', obj, {
-          root: true
-        })
+        dispatch('selectCharacter', obj)
         // キャラクターが存在しないセルをクリックした場合、すべての行動をキャンセル
       } else {
         dispatch('resetCharacterState')
@@ -137,38 +151,103 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       return false
     }
   },
+  selectCharacter(
+    { getters, commit },
+    obj: {
+      cellCharacterId: string
+      latLng: ILatlng
+    }
+  ) {
+    const activeCharacter = getters.characterAtCell(obj.latLng)
+    commit('character/activeCharacter/setActiveCharacter', activeCharacter, {
+      root: true
+    })
+    commit(
+      'field/startMoveMode',
+      {
+        latLng: obj.latLng,
+        character: activeCharacter,
+        charactersLatLngMap: getters.charactersLatLngMap
+      },
+      { root: true }
+    )
+  },
   takeBattleAction({ dispatch }, actionType: ActionType) {
     switch (actionType) {
       case 'attack':
-        dispatch(
-          'character/character/tryPrepareInteractCharacter',
-          { actionType, weaponType: 'closeRange', itemId: 0 },
-          {
-            root: true
-          }
-        )
+        dispatch('prepareInteractCharacter', {
+          actionType,
+          weaponType: 'closeRange',
+          itemId: 0
+        })
         break
       case 'wait':
         dispatch('onFinishAction')
         break
       case 'item':
         dispatch(
-          'character/character/tryPrepareInteractCharacter',
+          'prepareInteractCharacter',
           // TODO: item機能を追加する際はitemIdを引数として受け取る
-          { actionType, weaponType: 'closeRange', itemId: 0 },
-          {
-            root: true
-          }
+          { actionType, weaponType: 'closeRange', itemId: 0 }
         )
         break
       default:
         throw new Error('action type does not exist')
     }
   },
-  onFinishAction({ dispatch, getters }) {
-    dispatch('character/character/onFinishAction', getters.isHostOrGuest, {
+  prepareInteractCharacter(
+    { commit, getters, dispatch },
+    obj: {
+      actionType: string
+      weaponType: WeaponType
+      itemId: number
+    }
+  ): void {
+    dispatch('character/activeCharacter/prepareInteractCharacter', obj, {
       root: true
     })
+    commit(
+      'field/startInteractMode',
+      {
+        latLng: getters.activeCharacter.latLng,
+        weaponType: obj.weaponType
+      },
+      { root: true }
+    )
+  },
+  async onFinishAction({ getters, dispatch }) {
+    dispatch('checkWinner')
+    dispatch(
+      'character/activeCharacter/setActiveCharacterStateEnd',
+      undefined,
+      {
+        root: true
+      }
+    )
+    await dispatch('updateCharacterList', _.cloneDeep(getters.activeCharacter))
+    dispatch(
+      'battleRoom/setLastInteractCharacter',
+      _.cloneDeep(getters.activeCharacter),
+      { root: true }
+    )
+    dispatch('resetCharacterState')
+  },
+  checkWinner({ getters, dispatch }) {
+    const activeCharacter = getters.activeCharacter
+    const winnerCell = getters.winnerCell
+    if (
+      activeCharacter.latLng.x === winnerCell.x &&
+      activeCharacter.latLng.y === winnerCell.y
+    ) {
+      dispatch(
+        'battleRoom/setBattleRoomWinner',
+        {
+          id: getters.battleId,
+          winnerUid: getters.userUid
+        },
+        { root: true }
+      )
+    }
   },
   onChangeLastInteractCharacter(
     { dispatch },
@@ -177,18 +256,61 @@ export const actions: ActionTree<ICharacterState, IRootState> = {
       interacter: ICharacter
     }
   ) {
-    return dispatch(
-      'character/character/onChangeLastInteractCharacter',
-      { ...obj, isHostOrGuest: getters.isHostOrGuest },
-      {
-        root: true
-      }
-    )
-  },
-  resetCharacterState({ dispatch }) {
-    return dispatch('character/character/resetCharacterState', undefined, {
+    switch (obj.interacter.actionState.name) {
+      case 'attack':
+        dispatch('attackCharacter', {
+          attackerEl: obj.interacterEl,
+          attacker: obj.interacter
+        })
+    }
+    dispatch('character/latLngMap/updateCharactersLatLngMap', obj.interacter, {
       root: true
     })
+  },
+  async attackCharacter(
+    { dispatch, getters },
+    obj: {
+      attackerEl: HTMLElement
+      attacker: ICharacter
+    }
+  ) {
+    const takerLatLng = obj.attacker.actionState.interactLatLng
+    const taker = getters.characterList.find(
+      (character: ICharacter) =>
+        character.latLng.x === takerLatLng.x &&
+        character.latLng.y === takerLatLng.y
+    )
+    const attackResultObj = await dispatch(
+      'character/activeCharacter/attackCharacter',
+      {
+        ...obj,
+        taker
+      },
+      { root: true }
+    )
+    if (!attackResultObj) return
+    dispatch('updateCharacterList', _.cloneDeep(attackResultObj.attacker))
+    dispatch('updateCharacterList', _.cloneDeep(attackResultObj.taker))
+    dispatch('battleRoom/setLastInteractCharacter', null, {
+      root: true
+    })
+  },
+  updateCharacterList({ dispatch, getters }, character: ICharacter) {
+    return dispatch(
+      'character/character/updateCharacter',
+      {
+        battleId: getters.battleId,
+        character
+      },
+      { root: true }
+    )
+  },
+  resetCharacterState({ commit }) {
+    commit('character/activeCharacter/resetActiveCharacter', undefined, {
+      root: true
+    })
+    commit('field/finishInteractMode', undefined, { root: true })
+    commit('field/finishMoveMode', undefined, { root: true })
   },
   initCharactersLatLngMap({ dispatch }) {
     return dispatch('character/latLngMap/initCharactersLatLngMap', undefined, {
