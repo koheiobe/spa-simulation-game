@@ -19,7 +19,7 @@ export const mutations: MutationTree<ICharacterLatLngMapState> = {
     state.charactersLatLngMap = charactersLatLngMap
   },
   updateCharactersLatLngMap(state, activeCharacter: ICharacter) {
-    characterService.updatCharactersLatLngMap(
+    state.charactersLatLngMap = characterService.updatCharactersLatLngMap(
       activeCharacter,
       state.charactersLatLngMap
     )
@@ -39,6 +39,8 @@ export const actions: ActionTree<ICharacterLatLngMapState, IRootState> = {
     { commit, rootGetters },
     activeCharacter: ICharacter
   ) {
+    console.log(activeCharacter)
+    console.log(rootGetters['helper/character/isMyCharacter'](activeCharacter))
     if (rootGetters['helper/character/isMyCharacter'](activeCharacter)) return
     commit('updateCharactersLatLngMap', activeCharacter)
   }

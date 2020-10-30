@@ -52,7 +52,7 @@ export const getters: GetterTree<{}, IRootState> = {
   winnerCell: (_1, getters, _3, rootGetters): ILatlng => {
     return rootGetters['field/winnerCell'](getters.isHostOrGuest)
   },
-  charactersLatLngMap: (_1, _2, _3, rootGetters) => (): IField => {
+  charactersLatLngMap: (_1, _2, _3, rootGetters): IField => {
     return rootGetters['character/latLngMap/charactersLatLngMap']
   }
 }
@@ -171,6 +171,7 @@ export const actions: ActionTree<{}, IRootState> = {
     commit('character/activeCharacter/setActiveCharacter', activeCharacter, {
       root: true
     })
+    console.log("charactersLatLngMap on select character: ", getters.charactersLatLngMap)
     commit(
       'field/startMoveMode',
       {
