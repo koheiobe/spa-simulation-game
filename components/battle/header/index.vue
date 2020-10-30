@@ -8,7 +8,7 @@
       :turn-uid="turnUid"
       :set-opponent-offline-times="setOpponentOfflineTimes"
       :set-battle-room-winner="setBattleRoomWinner"
-      @turnEnd="$emit('turnEnd')"
+      @turnEnd="$emit('turn-end')"
     />
     <Deploy
       v-else

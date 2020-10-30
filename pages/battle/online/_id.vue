@@ -14,7 +14,7 @@
       :set-battle-start-at="setBattleStartAt"
       @surrender="onSurrender"
       @deploy-end="finishDeployMode"
-      @turnEnd="onTurnEnd"
+      @turn-end="onTurnEnd"
       @opponentOfflineThreeTimes="setBattleRoomWinner"
     />
     <Field
