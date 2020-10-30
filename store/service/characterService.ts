@@ -1,10 +1,13 @@
 import _ from 'lodash'
 import { ActionTree, GetterTree } from 'vuex'
-import { ICharacter, IRootState } from '~/types/store'
+import { HostOrGuest, ICharacter, IRootState } from '~/types/store'
 import { ActionType, IField, ILatlng, WeaponType } from '~/types/battle'
 import * as characterService from '~/domain/service/characters'
 
 export const getters: GetterTree<{}, IRootState> = {
+  battleRoom: (_1, _2, _3, rootGetters): ICharacter[] => {
+    return rootGetters['battleRoom/battleRoom']
+  },
   characterList: (_1, _2, _3, rootGetters): ICharacter[] => {
     return rootGetters['character/character/characterList']
   },
@@ -37,8 +40,11 @@ export const getters: GetterTree<{}, IRootState> = {
   isHostOrGuest: (_1, _2, _3, rootGetters): boolean => {
     return rootGetters['helper/battleRoom/isHostOrGuest']
   },
-  isMyTurn: (_1, _2, _3, rootGetters): boolean => {
+  isMyTurn: (_1, _2, _3, rootGetters): HostOrGuest | '' => {
     return rootGetters['helper/battleRoom/isMyTurn']
+  },
+  isDeployModeEnd: (_1, _2, _3, rootGetters): HostOrGuest | '' => {
+    return rootGetters['helper/deploy/isDeployModeEnd']
   },
   modeType: (_1, _2, _3, rootGetters) => (latLng: ILatlng): boolean => {
     return rootGetters['field/modeType'](latLng)
@@ -52,6 +58,24 @@ export const getters: GetterTree<{}, IRootState> = {
 }
 
 export const actions: ActionTree<{}, IRootState> = {
+  async onCreatField({ commit, dispatch, getters }) {
+    if (!getters.isDeployModeEnd) {
+      commit("field/startDeployMode", getters.isHostOrGuest, { root: true })
+    }
+
+    if (getters.battleRoom.turn.number === 0) {
+      await dispatch('character/character/initCharacters', {
+        isMyCharacter: getters.isMyCharacter,
+        isHostOrGuest: getters.isHostOrGuest,
+        battleId: getters.battleId
+      }, {
+        root: true
+      })
+    } else {
+      await dispatch('syncVuexFirestoreCharacters')
+    }
+    dispatch('initCharactersLatLngMap')
+  },
   selectDeployTargetCharacter(
     { dispatch },
     obj: { id: string; openModal: (id: string) => void }
@@ -67,22 +91,7 @@ export const actions: ActionTree<{}, IRootState> = {
       cellCharacterId: string
     }
   ) {
-    // HACK: storeのみを書き換えた結果、vuexfireのrefが外れてしまう。
-    // deployモードを終了する時に再度、vuexfireのrefを設定する必要がある
     return dispatch('character/deploy/deployCharacter', obj, {
-      root: true
-    })
-  },
-  bindCharactersRef({ dispatch }, ref) {
-    return dispatch('character/character/bindCharactersRef', ref, {
-      root: true
-    })
-  },
-  updateCharacter(
-    { dispatch },
-    dbInfo: { battleId: string; character: ICharacter }
-  ) {
-    return dispatch('character/character/updateCharacter', dbInfo, {
       root: true
     })
   },
@@ -325,5 +334,10 @@ export const actions: ActionTree<{}, IRootState> = {
         root: true
       }
     )
+  },
+  syncVuexFirestoreCharacters({ dispatch, getters }) {
+    return dispatch('character/character/syncVuexFirestoreCharacters', getters.battleId, {
+      root: true
+    })
   }
 }

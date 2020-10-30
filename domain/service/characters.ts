@@ -9,6 +9,7 @@ import {
   calculateDamage,
   onEndCalculateDamage
 } from '~/utility/helper/battle/damageCalculator'
+import { EXCEPTION_CHARACTERS_NAME } from '~/constants/characters'
 
 export const getCharacterAtCell = (
   characterList: ICharacter[],
@@ -154,4 +155,22 @@ const updateAttackerAndTaker = (attacker: ICharacter, taker: ICharacter) => {
     attacker: _.cloneDeep(updatedAttacker),
     taker: _.cloneDeep(finalDamageTakenCharacter)
   }
+}
+
+export const getRandomCharacters = (characters: ICharacter[]) => {
+  const randomCharacters: ICharacter[] = []
+  // デプロイできるのは25体まで
+  while (randomCharacters.length < 25) {
+    const index = Math.floor((Math.random() * 100) % characters.length)
+    const character = characters[index]
+    if (
+      randomCharacters.includes(character) ||
+      EXCEPTION_CHARACTERS_NAME.includes(character.name)
+    ) {
+      continue
+    } else {
+      randomCharacters.push(characters[index])
+    }
+  }
+  return randomCharacters
 }

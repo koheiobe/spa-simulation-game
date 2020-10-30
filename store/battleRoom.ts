@@ -35,7 +35,7 @@ export const actions: ActionTree<IRootState, IRootState> = {
   bindBattleRoomRef: firestoreAction(({ bindFirestoreRef }, ref) => {
     return bindFirestoreRef('battleRoom', ref, { reset: false })
   }),
-  unBindBattleRoomRef: firestoreAction(({ unbindFirestoreRef }) => {
+  unbindBattleRoomRef: firestoreAction(({ unbindFirestoreRef }) => {
     // 引数は１つしか受け取れないようになっているが、公式ページなどを確認すると
     // 第二引数が受け取れるようになっているし、実際にうまく動作する。おそらくバグ
     // @ts-ignore

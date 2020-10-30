@@ -70,7 +70,7 @@ export interface ICharacter {
 
 export type HostOrGuest = 'host' | 'guest'
 
-interface battleRoomUser {
+export interface battleRoomUser {
   uid: IUser['uid']
   name: IUser['name']
   opponentOfflineTimes: number

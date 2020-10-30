@@ -65,6 +65,9 @@ export default class BattleRoomHeader extends Vue {
   @Prop({ default: '' })
   turnUid!: string
 
+  @Prop({ default: 0 })
+  turnNumber!: number
+
   @Prop({ default: undefined })
   setOpponentOfflineTimes!: (battleRoomInfo: {
     id: string
@@ -99,10 +102,6 @@ export default class BattleRoomHeader extends Vue {
 
   closeOptionModal() {
     this.isOptionModalOpen = false
-  }
-
-  get turnNumber() {
-    return this.battleRoom.turn.number
   }
 }
 </script>

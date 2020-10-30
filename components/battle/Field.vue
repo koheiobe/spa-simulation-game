@@ -57,7 +57,7 @@ import CharacterRenderer from '~/components/CharacterRenderer.vue'
 import { ICharacter } from '~/types/store'
 import { downloadFile } from '~/utility/download'
 
-const CharacterModule = namespace('character/module')
+const CharacterModule = namespace('service/characterService')
 const FieldModule = namespace('field')
 
 @Component({
@@ -82,6 +82,9 @@ export default class Field extends Vue {
 
   @CharacterModule.Getter('characterAtCell')
   private characterAtCell!: (latLng: ILatlng) => undefined | ICharacter
+
+  @CharacterModule.Action('onCreatField')
+  private onCreatField!: () => void
 
   @CharacterModule.Action('selectDeployTargetCharacter')
   private selectDeployTargetCharacter!: (obj: {
@@ -142,6 +145,10 @@ export default class Field extends Vue {
   // 開発用
   private isDevMode = false
   private selectedFieldIcon = ''
+
+  created() {
+    this.onCreatField()
+  }
 
   async onClickCell(latLng: ILatlng, cellCharacterId: string) {
     // 開発用

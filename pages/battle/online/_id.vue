@@ -6,6 +6,7 @@
       :battle-room="battleRoom"
       :is-my-turn="isMyTurn"
       :turn-uid="turnUid"
+      :turn-number="turnNumber"
       :set-opponent-offline-times="setOpponentOfflineTimes"
       :set-battle-room-winner="setBattleRoomWinner"
       :is-deploy-mode-end="isDeployModeEnd"
@@ -21,7 +22,6 @@
       :is-my-character="isMyCharacter"
       :field="field"
       :is-host-or-guest="isHostOrGuest"
-      :sync-vuex-firestore-characters="syncVuexFirestoreCharacters"
       :last-interact-character="lastInteractCharacter"
       :battle-id="battleId"
       @onWin="onWin"
@@ -40,9 +40,8 @@
 import Component from 'vue-class-component'
 import { Vue, Watch } from 'vue-property-decorator'
 import { namespace } from 'vuex-class'
-import { CHARACTERS, EXCEPTION_CHARACTERS_NAME } from '~/constants/characters'
 import Field from '~/components/battle/Field.vue'
-import { IUser, ICharacter, IBattleRoomRes } from '~/types/store'
+import { IUser, ICharacter, IBattleRoomRes, HostOrGuest } from '~/types/store'
 import { ActionType } from '~/types/battle'
 import Modal from '~/components/utility/Modal.vue'
 import EndBattleDialogue from '~/components/battle/ModalContent/endBattleDialogue.vue'
@@ -51,7 +50,8 @@ import field from '~/assets/field.json'
 
 const UserModule = namespace('user')
 const BattleRoomModule = namespace('battleRoom')
-const CharacterModule = namespace('character/module')
+const BattleRoomService = namespace('service/battleRoomService')
+const CharacterModule = namespace('service/characterService')
 const FieldModule = namespace('field')
 
 @Component({
@@ -64,51 +64,68 @@ export default class OnlineBattleRoom extends Vue {
   @CharacterModule.Getter('isMyCharacter')
   private isMyCharacter!: (character: ICharacter) => boolean
 
-  @CharacterModule.Getter('characterList')
-  private storeCharacters!: ICharacter[]
+  @CharacterModule.Getter('isMyTurn')
+  private isMyTurn!: () => boolean
 
-  @CharacterModule.Action('updateCharacters')
-  private updateCharacters!: (dbInfo: {
-    battleId: string
-    characters: ICharacter[]
-  }) => Promise<void>
+  @CharacterModule.Getter('isHostOrGuest')
+  private isHostOrGuest!: HostOrGuest | ''
 
-  @CharacterModule.Action('bindCharactersRef')
-  private bindCharactersRef!: (
-    characterRef: firebase.firestore.CollectionReference<
-      firebase.firestore.DocumentData
-    >
-  ) => Promise<firebase.firestore.DocumentData[]>
+  @BattleRoomService.Getter('winnerName')
+  private winnerName!: string
 
-  @CharacterModule.Action('initCharactersLatLngMap')
-  private initCharactersLatLngMap!: () => void
+  @BattleRoomService.Getter('winnerUid')
+  private winnerUid!: string
+
+  // TODO: Header側のturn機能をこのファイルに移植する
+  @BattleRoomService.Getter('turnUid')
+  private turnUid!: string
+
+  @BattleRoomService.Getter('lastInteractCharacter')
+  private lastInteractCharacter!: ICharacter | undefined
+
+  @BattleRoomService.Getter('isDeployModeEnd')
+  private isDeployModeEnd!: boolean
+
+  @BattleRoomService.Getter('isHostAndGuestDeployModeEnd')
+  private isHostAndGuestDeployModeEnd!: boolean
+
+  @BattleRoomService.Getter('isBattleRoomUser')
+  private isBattleRoomUser!: boolean
+
+  @BattleRoomService.Getter('turnNumber')
+  private turnNumber!: boolean
+
+  @BattleRoomService.Action('finishDeployMode')
+  private finishDeployMode!: () => void
+
+  @BattleRoomService.Action('changeTurn')
+  private changeTurn!: (turnUid: string) => void
+
+  @BattleRoomService.Action('onTurnEnd')
+  private onTurnEnd!: () => void
+
+  @BattleRoomService.Action('onWin')
+  private onWin!: () => void
+
+  @BattleRoomService.Action('onSurrender')
+  private onSurrender!: () => void
+
+  @BattleRoomService.Action('beforeLeaveBattleRoom')
+  private beforeLeaveBattleRoom!: () => void
+
+  @BattleRoomService.Action('startBattle')
+  private startBattle!: () => void
+
+  @BattleRoomService.Action('toggleDeployMode')
+  private toggleDeployMode!: () => void
 
   @BattleRoomModule.State('battleRoom')
   private battleRoom!: IBattleRoomRes
-
-  @BattleRoomModule.Action('deleteBattleRoom')
-  private deleteBattleRoom!: (battleId: string) => Promise<null>
-
-  @BattleRoomModule.Action('setUserBattleId')
-  private setUserBattleId!: (userInfo: {
-    uid: string
-    battleId: string
-  }) => Promise<null>
 
   @BattleRoomModule.Action('setBattleRoomWinner')
   private _setBattleRoomWinner!: (battleRoomInfo: {
     id: string
     winnerUid: string
-  }) => void
-
-  @BattleRoomModule.Action('deleteUserBattleId')
-  private deleteUserBattleId!: (uid: string) => void
-
-  @BattleRoomModule.Action('setTurnInfo')
-  private setTurnInfo!: (battleRoomInfo: {
-    id: string
-    uid: string
-    turnNumber: number
   }) => void
 
   @BattleRoomModule.Action('setOpponentOfflineTimes')
@@ -118,173 +135,31 @@ export default class OnlineBattleRoom extends Vue {
     offlineTimes: number
   }) => void
 
-  @BattleRoomModule.Action('setDeployModeEnd')
-  public setDeployModeEnd!: (battleRoomInfo: {
-    id: string
-    hostOrGuest: 'host' | 'guest'
-    bool: boolean
-  }) => void
-
   @BattleRoomModule.Action('setBattleStartAt')
   private setBattleStartAt!: (battleInfo: {
     id: string
     hostOrGuest: 'host' | 'guest'
   }) => {}
 
-  @BattleRoomModule.Action('unBindBattleRoomRef')
-  private unBindBattleRoomRef!: () => void
-
-  @FieldModule.Mutation('startDeployMode')
-  private startDeployMode!: (isHostOrGuest: string) => void
-
-  // TODO: finishDeployModeの関数名がかぶっているため大文字に。storeで処理をまとめる
-  @FieldModule.Mutation('finishDeployMode')
-  private FinishDeployMode!: () => void
-
-  @FieldModule.Getter('isDeploying')
-  private isDeploying!: () => boolean
-
   public battleId: string = ''
-  public winnerName: string = ''
   public isBattleFinishModalOpen: boolean = false
   // TODO: プレイヤーが変更 or ランダムで選択できるようにする
   public field = field
-  public battleStartAt: number = 0
   public winnerMessage = ''
 
   async created() {
     this.battleId = this.$route.params.id
     // 対戦者以外は戦闘が見れない
-    if (
-      this.storeUser.uid !== this.battleRoom.host.uid &&
-      this.storeUser.uid !== this.battleRoom.guest.uid
-    ) {
+    if (!this.isBattleRoomUser) {
       this.$router.push('/battle/online')
       return
     }
 
-    if (!this.isDeployModeEnd) {
-      this.startDeployMode(this.isHostOrGuest)
-    }
-
-    const characters =
-      this.battleRoom.turn.number === 0
-        ? // TODO: キャラクターの登録方法は戦闘開始前に行う予定だが、詳細は未定
-          await this.initCharacters()
-        : await this.syncVuexFirestoreCharacters(this.battleId)
-
-    if (characters) {
-      this.initCharactersLatLngMap()
-    }
     // ウィンドウを閉じる時に注意を表示
     window.addEventListener('beforeunload', function(e) {
       e.preventDefault()
     })
     this.preventHistoryBack()
-  }
-
-  destroyed() {
-    this.deleteBattleRoom(this.battleId).catch((e) =>
-      // TODO: エラーハンドリングはあとで考える
-      console.error('battleRoomの削除に失敗しました。', e)
-    )
-    this.deleteUserBattleId(this.storeUser.uid)
-  }
-
-  async initCharacters() {
-    const firestoreCharacters = await this.syncVuexFirestoreCharacters(
-      this.battleId
-    )
-
-    if (
-      firestoreCharacters.some((character) =>
-        this.isMyCharacter(character as ICharacter)
-      )
-    )
-      return firestoreCharacters
-
-    const characterList = CHARACTERS as { [name: string]: ICharacter }
-    const characters = [] as ICharacter[]
-    const hostOrGuest = this.isHostOrGuest
-    Object.keys(characterList).forEach((key) => {
-      characters.push({
-        ...characterList[key],
-        id: characterList[key].id + '-' + hostOrGuest
-      })
-    })
-    const randomCharacters = this.getRandomCharacters(characters)
-
-    this.updateCharacters({
-      battleId: this.battleId,
-      characters: randomCharacters
-    })
-    return randomCharacters
-  }
-
-  syncVuexFirestoreCharacters(battleId: string) {
-    const dbCharactersRef = this.$firestore.getCharactersRef(battleId)
-    return this.bindCharactersRef(dbCharactersRef)
-  }
-
-  async finishDeployMode() {
-    if (!this.isDeploying) return
-    this.FinishDeployMode()
-    await this.updateCharacters({
-      battleId: this.battleId,
-      // 敵キャラクターまで初期化すると、ローカルに存在する敵キャラクターのデータで
-      // 敵がすでに変更したfirestore上の敵キャラクターデータを上書きしてしまうためfilterする
-      characters: this.storeCharacters.filter((character) =>
-        this.isMyCharacter(character)
-      )
-    })
-    await this.syncVuexFirestoreCharacters(this.battleId)
-    this.initCharactersLatLngMap()
-    // Field.vueのdeployCharacterのthis.setCharacterParamをすると
-    // vuexとfirestoreの参照が外れるため再度、同期させる必要がある
-    this.setDeployModeEnd({
-      id: this.battleId,
-      hostOrGuest: this.isHostOrGuest,
-      bool: true
-    })
-  }
-
-  startBattle() {
-    // TODO: どっちが先行なのか、どうやって決めるかは未定
-    const turnNumber = this.battleRoom.turn.number
-    this.setTurnInfo({
-      id: this.battleId,
-      uid: this.storeUser.uid,
-      turnNumber: turnNumber === 0 ? 1 : turnNumber
-    })
-  }
-
-  onTurnStart() {
-    const initActionStatesCharacter = this.storeCharacters.map((character) => ({
-      ...character,
-      actionState: {
-        ...character.actionState,
-        name: '' as ActionType,
-        isEnd: false
-      }
-    }))
-    this.updateCharacters({
-      battleId: this.battleId,
-      characters: initActionStatesCharacter
-    })
-    this.initCharactersLatLngMap()
-  }
-
-  onTurnEnd() {
-    const nextTurnUid =
-      this.battleRoom.turn.uid === this.battleRoom.host.uid
-        ? this.battleRoom.guest.uid
-        : this.battleRoom.host.uid
-    const nextTurnNumber = this.battleRoom.turn.number + 1
-    this.setTurnInfo({
-      id: this.battleId,
-      uid: nextTurnUid,
-      turnNumber: nextTurnNumber
-    })
   }
 
   setBattleRoomWinner(battleRoomInfo: {
@@ -300,54 +175,14 @@ export default class OnlineBattleRoom extends Vue {
     })
   }
 
-  onSurrender() {
-    const opponentUid =
-      this.battleRoom.host.uid === this.storeUser.uid
-        ? this.battleRoom.guest.uid
-        : this.battleRoom.host.uid
-    this._setBattleRoomWinner({
-      id: this.battleId,
-      winnerUid: opponentUid
-    })
-  }
-
-  onWin() {
-    this._setBattleRoomWinner({
-      id: this.battleId,
-      winnerUid: this.storeUser.uid
-    })
-  }
-
   onDecideWinner() {
     if (this.isBattleFinishModalOpen) return
     this.isBattleFinishModalOpen = true
-    this.winnerName =
-      this.battleRoom.host.uid === this.battleRoom.winnerUid
-        ? this.battleRoom.host.name
-        : this.battleRoom.guest.name
 
     // ホストかゲスト、どちらか先に退出してfirestoreのデータを削除すると
     // 残されたクライアント側でエラーが発生するため、同期を中止する
-    this.unBindBattleRoomRef()
+    this.beforeLeaveBattleRoom()
     window.setTimeout(() => this.$router.push('/battle/online'), 5000)
-  }
-
-  CAHARACTERS_NUM = 25
-  getRandomCharacters(characters: ICharacter[]) {
-    const randomCharacters: ICharacter[] = []
-    while (randomCharacters.length < this.CAHARACTERS_NUM) {
-      const index = Math.floor((Math.random() * 100) % characters.length)
-      const character = characters[index]
-      if (
-        randomCharacters.includes(character) ||
-        EXCEPTION_CHARACTERS_NAME.includes(character.name)
-      ) {
-        continue
-      } else {
-        randomCharacters.push(characters[index])
-      }
-    }
-    return randomCharacters
   }
 
   preventHistoryBack() {
@@ -358,12 +193,8 @@ export default class OnlineBattleRoom extends Vue {
   }
 
   @Watch('battleRoom')
-  onChangeIsDeployModeEnd(battleRoom: IBattleRoomRes) {
-    if (
-      battleRoom.turn.number === 0 &&
-      battleRoom.host.isDeployModeEnd &&
-      battleRoom.guest.isDeployModeEnd
-    ) {
+  onChangeBattleRoom(battleRoom: IBattleRoomRes) {
+    if (this.isHostAndGuestDeployModeEnd) {
       this.startBattle()
     }
   }
@@ -375,52 +206,7 @@ export default class OnlineBattleRoom extends Vue {
 
   @Watch('turnUid')
   onChangeTurn(turnUid: string) {
-    if (turnUid === '' || !this.isMyTurn) return
-
-    this.onTurnStart()
-  }
-
-  // 開発用
-  toggleDeployMode() {
-    if (this.isDeployModeEnd) {
-      this.startDeployMode(this.isHostOrGuest)
-      // この機能を使用する場合、components/header/deployの
-      // setBattleRoomWinner を削除する必要がある
-      this.setDeployModeEnd({
-        id: this.battleId,
-        hostOrGuest: this.isHostOrGuest,
-        bool: false
-      })
-    } else {
-      this.finishDeployMode()
-    }
-  }
-
-  get isMyTurn() {
-    return this.battleRoom.turn.uid === this.storeUser.uid
-  }
-
-  get winnerUid() {
-    return this.battleRoom.winnerUid
-  }
-
-  // TODO: Header側のturn機能をこのファイルに移植する
-  get turnUid() {
-    return this.battleRoom.turn.uid
-  }
-
-  get lastInteractCharacter() {
-    return this.battleRoom.lastInteractCharacter
-  }
-
-  get isHostOrGuest() {
-    return this.battleRoom.host.uid === this.storeUser.uid ? 'host' : 'guest'
-  }
-
-  get isDeployModeEnd() {
-    return this.isHostOrGuest === 'host'
-      ? this.battleRoom.host.isDeployModeEnd
-      : this.battleRoom.guest.isDeployModeEnd
+    this.changeTurn(turnUid)
   }
 }
 </script>

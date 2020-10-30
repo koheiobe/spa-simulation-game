@@ -17,5 +17,10 @@ module.exports = {
   // add your custom rules here
   rules: {
     "no-unused-expressions": "off",
-  }
+    "indent": "off",
+    "prettier/prettier": ["error", {
+      "endOfLine":"off"
+    }],
+  },
+  
 }
